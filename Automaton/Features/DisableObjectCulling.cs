@@ -1,6 +1,6 @@
 ﻿namespace Automaton.Features;
 
-[Tweak]
+[Tweak(outdated: true, disabledReason: "Moved to Simple Tweaks")]
 internal class DisableObjectCulling : Tweak
 {
     public override string Name => "Disable Object Culling";
