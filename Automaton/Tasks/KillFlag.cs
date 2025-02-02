@@ -6,7 +6,7 @@ public sealed class KillFlag : CommonTasks
 {
     protected override async Task Execute()
     {
-        await TeleportTo(PlayerEx.MapFlag.TerritoryId, PlayerEx.MapFlag.ToVector3());
+        await TeleportTo(PlayerEx.MapFlag.TerritoryId, Coords.FlagToWorld(PlayerEx.MapFlag));
         await MoveTo(PlayerEx.MapFlag, 5, true, true);
         using var stop = new OnDispose(() => Service.BossMod.ClearActive());
         await Kill();

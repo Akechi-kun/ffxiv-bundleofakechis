@@ -1,4 +1,5 @@
-﻿using System.Threading;
+﻿using System.Drawing.Design;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Automaton.Services;
@@ -152,6 +153,9 @@ public sealed class Automation : IDisposable
             // else: some other task is now executing
         }, OnCompleted);
     }
+
+    public string Name => CurrentTask?.GetType().Name ?? "None";
+    public string Status => CurrentTask?.Status ?? "Idle";
 }
 
 public readonly record struct OnDispose(Action A) : IDisposable

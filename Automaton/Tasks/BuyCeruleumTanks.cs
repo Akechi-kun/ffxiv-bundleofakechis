@@ -40,7 +40,7 @@ public sealed class BuyCeruleumTanks : CommonTasks
                 Status = $"Buying x{count} ceruleum tanks";
                 tanks.Buy(Math.Min(count, tanks.MaxPurchaseSize));
                 count -= tanks.MaxPurchaseSize;
-                await WaitUntilSkipYesNo(() => GetAddonTankCount() != Inventory.GetItemCount(tanks.ItemId, false), "WaitingForPurchase");
+                await WaitUntilSkipping(() => GetAddonTankCount() != Inventory.GetItemCount(tanks.ItemId, false), "WaitingForPurchase", skipYesNo: true);
                 Status = "Waiting for purchase to go through";
                 // I could just wait until the atkvalue equals the real inventory count again but this was a fun experiment.
                 using var stop = new OnDispose(ipc.FreeCompanyDialogPacketReceiveHook.Disable);

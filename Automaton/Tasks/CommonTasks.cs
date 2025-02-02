@@ -19,7 +19,7 @@ public abstract class CommonTasks : AutoTask
         await MoveTo(pof, tolerance, mount, fly);
     }
 
-    protected async Task MoveTo(Vector3 dest, float tolerance, bool mount = false, bool fly = false)
+    protected async Task MoveTo(Vector3 dest, float tolerance, bool mount = false, bool fly = false, bool dismount = false)
     {
         using var scope = BeginScope("MoveTo");
         if (Player.DistanceTo(dest) < tolerance)
@@ -42,6 +42,8 @@ public abstract class CommonTasks : AutoTask
         Status = $"Moving to {dest}";
         using var stop = new OnDispose(Service.Navmesh.Stop);
         await WaitWhile(() => !(Player.DistanceTo(dest) < tolerance), "Navigate");
+        if (dismount)
+            await Dismount();
     }
 
     protected async Task MoveToDirectly(Vector3 dest, float tolerance)
@@ -65,7 +67,7 @@ public abstract class CommonTasks : AutoTask
 
         var closestAetheryteId = Coords.FindClosestAetheryte(territoryId, destination) ?? 0;
         var teleportAetheryteId = Coords.FindPrimaryAetheryte(closestAetheryteId);
-        ErrorIf(teleportAetheryteId == 0, $"Failed to find aetheryte in {territoryId}");
+        ErrorIf(teleportAetheryteId == 0, $"Failed to find aetheryte in [{territoryId}] {GetRow<TerritoryType>(territoryId)?.PlaceName.Value.Name}");
         var row = GetRow<Aetheryte>(teleportAetheryteId)!;
         if (Player.Territory != row.Value.Territory.RowId)
         {
@@ -81,7 +83,7 @@ public abstract class CommonTasks : AutoTask
             var (aetheryteId, aetherytePos) = Coords.FindAetheryte(teleportAetheryteId);
             await MoveTo(aetherytePos, 10);
             ErrorIf(!PlayerEx.InteractWith(aetheryteId), "Failed to interact with aetheryte");
-            await WaitUntilSkipTalk(() => Game.AddonActive("SelectString"), "WaitSelectAethernet");
+            await WaitUntilSkipping(() => Game.AddonActive("SelectString"), "WaitSelectAethernet", skipTalk: true);
             Game.TeleportToAethernet(teleportAetheryteId, closestAetheryteId);
             await WaitWhile(() => !PlayerEx.IsBusy, "TeleportAethernetStart");
             await WaitWhile(() => PlayerEx.IsBusy, "TeleportAethernetFinish");
@@ -94,7 +96,7 @@ public abstract class CommonTasks : AutoTask
             var (aetheryteId, aetherytePos) = Coords.FindAetheryte(teleportAetheryteId);
             await MoveTo(aetherytePos, 10);
             ErrorIf(!PlayerEx.InteractWith(aetheryteId), "Failed to interact with aetheryte");
-            await WaitUntilSkipTalk(() => Game.AddonActive("SelectString"), "WaitSelectFirmament");
+            await WaitUntilSkipping(() => Game.AddonActive("SelectString"), "WaitSelectFirmament", skipTalk: true);
             Game.TeleportToFirmament(teleportAetheryteId);
             await WaitWhile(() => !PlayerEx.IsBusy, "TeleportFirmamentStart");
             await WaitWhile(() => PlayerEx.IsBusy, "TeleportFirmamentFinish");
@@ -113,30 +115,44 @@ public abstract class CommonTasks : AutoTask
         ErrorIf(!Player.Mounted, "Failed to mount");
     }
 
-    protected async Task WaitUntilSkipTalk(Func<bool> condition, string scopeName)
+    private async Task Dismount()
     {
-        using var scope = BeginScope(scopeName);
-        while (!condition())
+        using var scope = BeginScope("Dismount");
+        if (!Player.Mounted) return;
+
+        if (Svc.Condition[ConditionFlag.InFlight])
         {
-            if (Game.AddonActive("Talk"))
-            {
-                Log("progressing talk...");
-                Game.ProgressTalk();
-            }
-            Log("waiting...");
-            await NextFrame();
+            Game.UseAction(FFXIVClientStructs.FFXIV.Client.Game.ActionType.GeneralAction, 23);
+            await WaitWhile(() => Svc.Condition[ConditionFlag.InFlight], "WaitingToLand");
         }
+        if (Player.Mounted && !Svc.Condition[ConditionFlag.InFlight])
+        {
+            Game.UseAction(FFXIVClientStructs.FFXIV.Client.Game.ActionType.GeneralAction, 23);
+            await WaitWhile(() => Player.Mounted, "WaitingToDismount");
+        }
+        ErrorIf(Player.Mounted, "Failed to dismount");
     }
 
-    protected async Task WaitUntilSkipYesNo(Func<bool> condition, string scopeName)
+    protected async Task WaitUntilSkipping(Func<bool> condition, string scopeName, bool skipTalk = false, bool skipYesNo = false)
     {
         using var scope = BeginScope(scopeName);
         while (!condition())
         {
-            if (Game.AddonActive("SelectYesno"))
+            if (skipTalk)
             {
-                Log("progressing yes/no...");
-                Game.SelectYes();
+                if (Game.AddonActive("Talk"))
+                {
+                    Log("progressing talk...");
+                    Game.ProgressTalk();
+                }
+            }
+            if (skipYesNo)
+            {
+                if (Game.AddonActive("SelectYesno"))
+                {
+                    Log("progressing yes/no...");
+                    Game.SelectYes();
+                }
             }
             Log("waiting...");
             await NextFrame();
@@ -174,5 +190,23 @@ public abstract class CommonTasks : AutoTask
         await WaitWhile(() => Game.IsShopOpen(), "WaitForClose");
         await WaitWhile(() => Svc.Condition[ConditionFlag.OccupiedInEvent], "WaitForCondition");
         await NextFrame();
+    }
+
+    protected async Task InteractWith(DGameObject obj, Func<bool>? waitUntil = null)
+    {
+        using var scope = BeginScope("InteractWith");
+        Status = $"Interacting with {obj.GameObjectId}";
+        const int maxAttempts = 5;
+        for (var attempt = 0; attempt < maxAttempts; attempt++)
+        {
+            if (Game.InteractWith(obj.GameObjectId))
+            {
+                if (waitUntil is { } condition)
+                    await WaitUntilSkipping(condition, "WaitingForNpcInteractionToFinish", skipTalk: true, skipYesNo: true);
+                else return;
+            }
+            await NextFrame();
+        }
+        ErrorIf(true, $"Failed to interact with object after {maxAttempts} tries");
     }
 }

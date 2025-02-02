@@ -1,4 +1,5 @@
 ﻿using ECommons.GameFunctions;
+using FFXIVClientStructs.FFXIV.Client.Game;
 using FFXIVClientStructs.FFXIV.Client.Game.Control;
 using FFXIVClientStructs.FFXIV.Client.Game.Event;
 using FFXIVClientStructs.FFXIV.Client.Game.Object;
@@ -268,5 +269,19 @@ public unsafe class Game
             }
         }
         return (0, -1);
+    }
+
+    public static bool UseAction(ActionType type, uint actionId) => ActionManager.Instance()->UseAction(type, actionId);
+    public static bool IsActionInUse(ActionType type, uint itemId) => ActionManager.Instance()->GetActionStatus(type, itemId) != 0;
+
+    public static bool UseItem(uint itemId) => ActionManager.Instance()->UseAction(ActionType.Item, itemId, extraParam: 65535);
+
+    public static bool InteractWith(ulong gameobjectId)
+    {
+        var obj = GameObjectManager.Instance()->Objects.GetObjectByGameObjectId(gameobjectId);
+        if (obj == null)
+            return false;
+        TargetSystem.Instance()->InteractWithObject(obj, false);
+        return true;
     }
 }

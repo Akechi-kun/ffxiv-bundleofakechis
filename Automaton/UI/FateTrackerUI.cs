@@ -23,14 +23,6 @@ internal class FateTrackerUI(DateWithDestiny tweak) : Window($"Fate Tracker##{na
             _tweak.active ^= true;
             Service.Navmesh.Stop();
         }
-        //ImGui.SameLine();
-        //if (ImGuiComponents.IconButtonWithText((FontAwesomeIcon)0xf002, "Browse"))
-        //{
-        //    new TerritorySelector(SelectedTerritory, (_, x) =>
-        //    {
-        //        SelectedTerritory = x;
-        //    });
-        //}
 
         using var table = ImRaii.Table("Fates", 2, ImGuiTableFlags.SizingStretchProp | ImGuiTableFlags.RowBg | ImGuiTableFlags.ScrollY | ImGuiTableFlags.ScrollX | ImGuiTableFlags.NoHostExtendX);
         if (!table)
@@ -69,7 +61,7 @@ internal class FateTrackerUI(DateWithDestiny tweak) : Window($"Fate Tracker##{na
 
             var nameColour = _tweak.FateConditions(fate) ? new Vector4(1, 1, 1, 1) : _tweak.Config.blacklist.Contains(fate.FateId) ? new Vector4(1, 0, 0, 0.5f) : new Vector4(1, 1, 1, 0.5f);
             ImGuiEx.TextV(nameColour, $"{fate.Name} {(_tweak.Config.ShowFateTimeRemaining && fate.TimeRemaining >= 0 ? new TimeSpan(0, 0, (int)fate.TimeRemaining) : string.Empty)}");
-            if (ImGui.IsItemHovered()) ImGui.SetTooltip($"[{fate.FateId}] {fate.Position} {fate.Progress}%% {fate.TimeRemaining}/{fate.Duration}\nFate {(_tweak.FateConditions(fate) ? "meets" : "doesn't meet")} conditions and {(_tweak.FateConditions(fate) ? "will" : "won't")} be pathed to in auto mode.");
+            if (ImGui.IsItemHovered()) ImGui.SetTooltip($"[{fate.FateId}] {fate.Position} {fate.Progress}%% {fate.TimeRemaining}/{fate.Duration}\nDistance to: {Player.DistanceTo(fate.Position)}\nFate {(_tweak.FateConditions(fate) ? "meets" : "doesn't meet")} conditions and {(_tweak.FateConditions(fate) ? "will" : "won't")} be pathed to in auto mode.");
 
             ImGui.TableNextColumn();
 

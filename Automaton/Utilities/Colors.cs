@@ -16,6 +16,8 @@ public static class Colors
     public static HaselColor Grey2 { get; } = new(0.87f, 0.87f, 0.87f);
     public static HaselColor Grey3 { get; } = new(0.6f, 0.6f, 0.6f);
     public static HaselColor Grey4 { get; } = new(0.3f, 0.3f, 0.3f);
+    public static HaselColor Type { get; } = new(0.2f, 0.9f, 0.9f);
+    public static HaselColor Field { get; } = new(0.2f, 0.9f, 0.4f);
 
     public static unsafe bool IsLightTheme
         => RaptureAtkModule.Instance()->AtkUIColorHolder.ActiveColorThemeType == 1;

@@ -10,9 +10,7 @@ public struct HaselColor
     public float B { get; set; }
     public float A { get; set; }
 
-    public HaselColor()
-    {
-    }
+    public HaselColor() { }
 
     public HaselColor(float r, float g, float b, float a = 1)
     {
@@ -22,13 +20,8 @@ public struct HaselColor
         A = a;
     }
 
-    public HaselColor(Vector4 vec) : this(vec.X, vec.Y, vec.Z, vec.W)
-    {
-    }
-
-    public HaselColor(uint col) : this(ImGui.ColorConvertU32ToFloat4(col))
-    {
-    }
+    public HaselColor(Vector4 vec) : this(vec.X, vec.Y, vec.Z, vec.W) { }
+    public HaselColor(uint col) : this(ImGui.ColorConvertU32ToFloat4(col)) { }
 
     public readonly HaselColor WithRed(float r)
         => new(r, G, B, A);
@@ -71,4 +64,10 @@ public struct HaselColor
 
     public static implicit operator uint(HaselColor col)
         => ImGui.ColorConvertFloat4ToU32(col);
+}
+
+public static class HaselColorExtensions
+{
+    public static Vector3 To255Rgb(this HaselColor col)
+        => new(col.R * 255, col.G * 255, col.B * 255);
 }
