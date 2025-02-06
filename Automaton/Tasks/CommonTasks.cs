@@ -200,7 +200,7 @@ public abstract class CommonTasks : AutoTask
         await NextFrame();
     }
 
-    protected async Task InteractWith(DGameObject obj, Func<bool>? waitUntil = null, bool skipTalk = false, bool skipYesNo = false, bool skipRequest = false)
+    protected async Task InteractWith(DGameObject obj, Func<bool>? waitUntil = null, int? selectStringIndex = null, bool skipTalk = false, bool skipYesNo = false, bool skipRequest = false)
     {
         using var scope = BeginScope("InteractWith");
         Status = $"Interacting with {obj.GameObjectId}";
@@ -211,6 +211,11 @@ public abstract class CommonTasks : AutoTask
         {
             if (Game.InteractWith(obj.GameObjectId))
             {
+                if (selectStringIndex is { } index)
+                {
+                    await WaitUntil(() => Game.AddonActive("SelectString"), "WaitingForSelectString");
+                    Game.SelectString(index);
+                }
                 if (waitUntil is { } condition)
                 {
                     await WaitUntilSkipping(condition, "WaitingForNpcInteractionToFinish", skipTalk: skipTalk, skipYesNo: skipYesNo, skipRequest: skipRequest);

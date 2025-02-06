@@ -7,10 +7,14 @@ public sealed class DoQuests(List<string> questIds) : CommonTasks
     {
         foreach (var quest in questIds)
         {
+            Status = $"Doing quest #{quest}";
             if (Service.Questionable.StartSingleQuest(quest))
                 await WaitUntilThenFalse(() => Service.Questionable.IsRunning(), $"QuestionableWaitForFinish{quest}", 120);
             else
                 Error($"Failed to start quest #{quest}");
         }
+        Status = "Going home";
+        Service.Lifestream.ExecuteCommand("auto");
+        await WaitUntilThenFalse(() => Service.Lifestream.IsBusy(), "LifestreamWaitForFinish");
     }
 }

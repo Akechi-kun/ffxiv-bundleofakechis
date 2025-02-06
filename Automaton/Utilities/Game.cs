@@ -41,6 +41,16 @@ public unsafe class Game
         }
     }
 
+    public static void SelectString(int index)
+    {
+        if (TryGetAddonByName<AtkUnitBase>("SelectString", out var addon))
+        {
+            AtkValue val = default;
+            val.SetInt(index);
+            addon->FireCallback(1, &val, true);
+        }
+    }
+
     public static void TeleportToAethernet(uint currentAetheryte, uint destinationAetheryte)
     {
         Span<uint> payload = [4, destinationAetheryte];
