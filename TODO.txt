@@ -8,7 +8,6 @@ new tweaks:
     - leve turn in helper
     - Some sort of go to npc command that incorporates itemvendorlocation/lifestream/navmesh
     - /tplast command to teleport to the last linked loc
-    - a rank killer. Be able to take a flag and go to it and kill whatever A rank is there
 
 date with destiny adjustments
     - zone whitelist/blacklist
@@ -16,5 +15,4 @@ date with destiny adjustments
     - support for the achievements
     - fate whitelist/blacklist
 
-address book: move to lifestream
 g2a/achievement tracker: move to their own plugins?
