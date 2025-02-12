@@ -9,7 +9,7 @@ public sealed class DoQuests(List<string> questIds) : CommonTasks
         {
             Status = $"Doing quest #{quest}";
             if (Service.Questionable.StartSingleQuest(quest))
-                await WaitUntilThenFalse(() => Service.Questionable.IsRunning(), $"QuestionableWaitForFinish{quest}", 120);
+                await WaitWhile(() => !Game.IsQuestComplete(uint.Parse(quest)), $"QuestionableWaitForFinish{quest}", 120);
             else
                 Error($"Failed to start quest #{quest}");
         }

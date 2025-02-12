@@ -359,4 +359,6 @@ public unsafe class Game
         if (addon != null && addon->IsVisible)
             addon->Close(false);
     }
+
+    public static bool IsQuestComplete(uint questId) => QuestManager.IsQuestComplete(questId);
 }

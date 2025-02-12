@@ -25,6 +25,7 @@ public sealed class BuyCeruleumTanks : CommonTasks
 
     private async Task GoToWorkshop()
     {
+        using var scope = BeginScope("GoToWorkshop");
         static bool PlayerInWorkshop() => GetRow<TerritoryType>(Player.Territory) is { } t && t.BGM.RowId == 328;
         if (PlayerInWorkshop()) return; // already there
 
@@ -48,6 +49,7 @@ public sealed class BuyCeruleumTanks : CommonTasks
 
     private async Task EnterWorkshop()
     {
+        using var scope = BeginScope("EnterWorkshop");
         ErrorIf(Player.TerritoryIntendedUse != TerritoryIntendedUseEnum.Housing_Instances, "Not in a house");
         if (WorkshopDoor is { } door)
         {
