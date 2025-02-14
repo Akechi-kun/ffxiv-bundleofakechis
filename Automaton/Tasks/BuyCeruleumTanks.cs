@@ -14,6 +14,7 @@ public sealed class BuyCeruleumTanks : CommonTasks
     protected override async Task Execute()
     {
         await GoToWorkshop();
+        await WaitUntil(() => IsScreenReady() && Player.Interactable, "WaitingForZoneToFullyLoad");
         var npc = Game.GetNPCInfo(MammetVoyagerENpcId, Player.Territory, CeruleumTankId);
         ErrorIf(npc == null, $"Failed to find NPC {MammetVoyagerENpcId} in {Player.Territory}");
         ErrorIf(npc!.ShopId == 0, $"Failed to find shop for NPC {MammetVoyagerENpcId} in {Player.Territory}");
