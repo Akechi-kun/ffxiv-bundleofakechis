@@ -50,7 +50,7 @@ public class HuntRelayHelperConfiguration
 
     public List<(HuntRelayHelper.RelayTypes RelayType, string TypeFormat, string TypeHeuristics)> Types =
     [
-        (HuntRelayHelper.RelayTypes.SRank, "S Rank", @"s rank, rank s, /(?:^|\W)[sS](?:$|\W)/"),
+        (HuntRelayHelper.RelayTypes.SRank, "S Rank", @"s rank, rank s, /(?:^|\W)(?<!')[sS](?:$|\W)/"),
         (HuntRelayHelper.RelayTypes.Minions, "Minions", @"ssminion, /\bminions?\b/"),
         (HuntRelayHelper.RelayTypes.Train, "Train", @"train"),
         (HuntRelayHelper.RelayTypes.FATE, "FATE", @"boss, fate"),

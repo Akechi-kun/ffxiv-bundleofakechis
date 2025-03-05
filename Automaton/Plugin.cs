@@ -30,7 +30,7 @@ public class Plugin : IDalamudPlugin
         EzConfig.DefaultSerializationFactory = new YamlFactory();
         Config = EzConfig.Init<Config>();
 
-        IMigration[] migrations = [new V3()];
+        IMigration[] migrations = [new V3(), new V4()];
         foreach (var migration in migrations)
         {
             if (Config.Version < migration.Version)
