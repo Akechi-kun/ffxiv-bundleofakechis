@@ -1,3 +1,4 @@
+using ECommons.ImGuiMethods;
 using ImGuiNET;
 using System.Reflection;
 
@@ -26,10 +27,10 @@ public class BoolConfigAttribute : BaseConfigAttribute
         var desc = !cmdAttr?.HelpMessage.IsNullOrEmpty() ?? false ? cmdAttr!.HelpMessage : !attr?.Description.IsNullOrEmpty() ?? false ? attr!.Description : null;
         if (desc != null)
         {
-            ImGuiX.PushCursorY(-3);
+            ImGuiEx.PushCursorY(-3);
             using var descriptionIndent = ImGuiX.ConfigIndent();
             ImGuiHelpers.SafeTextColoredWrapped(Colors.Grey, desc);
-            ImGuiX.PushCursorY(3);
+            ImGuiEx.PushCursorY(3);
         }
     }
 }

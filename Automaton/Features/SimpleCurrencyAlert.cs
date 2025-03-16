@@ -1,5 +1,5 @@
 ﻿using Dalamud.Interface;
-using ECommons.ExcelServices;
+using ECommons.ImGuiMethods;
 using FFXIVClientStructs.FFXIV.Client.Game;
 using ImGuiNET;
 using Lumina.Excel.Sheets;
@@ -27,7 +27,7 @@ public class SimpleCurrencyAlert : Tweak<SimpleCurrencyAlertConfig>
     public override void DrawConfig()
     {
         base.DrawConfig();
-        if (ExcelCombos.ExcelSheetCombo<Item>("##Search", out var item, _ => string.Empty, x => x.Name.ToString(), x => !x.Name.ToString().IsNullOrEmpty()))
+        if (ImGuiEx.ExcelSheetCombo<Item>("##Search", out var item, _ => string.Empty, x => x.Name.ToString(), x => !x.Name.ToString().IsNullOrEmpty()))
             Config.Alerts.Add(new Alert() { ItemId = item.RowId });
 
         foreach (var i in Config.Alerts.ToList())

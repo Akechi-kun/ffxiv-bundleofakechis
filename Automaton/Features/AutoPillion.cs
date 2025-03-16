@@ -13,7 +13,7 @@ public class AutoPillion : Tweak
 
     private unsafe void OnUpdate(IFramework framework)
     {
-        if (!Player.Available || PlayerEx.IsBusy || Svc.Condition[ConditionFlag.Mounted])
+        if (!Player.Available || Player.IsBusy || Svc.Condition[ConditionFlag.Mounted])
         {
             if (TaskManager.Tasks.Count > 0)
                 TaskManager.Abort();

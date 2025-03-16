@@ -37,7 +37,7 @@ public class AutoMerge : Tweak
 
     private unsafe void OnSetup(string addonName)
     {
-        if (PlayerEx.IsBusy || !inventoryAddonNames.Contains(addonName)) return;
+        if (Player.IsBusy || !inventoryAddonNames.Contains(addonName)) return;
 
         inventorySlots.Clear();
         var inv = InventoryManager.Instance();

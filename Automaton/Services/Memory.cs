@@ -357,7 +357,7 @@ public unsafe class Memory
         private readonly ExecuteCommands ExecuteCommands = new();
         private byte ReturnDetour(AgentInterface* agent)
         {
-            if (ActionManager.Instance()->GetActionStatus(ActionType.GeneralAction, 6) != 0 || PlayerEx.InPvP)
+            if (ActionManager.Instance()->GetActionStatus(ActionType.GeneralAction, 6) != 0 || Player.IsInPvP)
                 return ReturnHook.Original(agent);
 
             if (Svc.Party.Length > 1)

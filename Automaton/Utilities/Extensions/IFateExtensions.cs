@@ -1,4 +1,5 @@
 ﻿using Dalamud.Game.ClientState.Fates;
+using ECommons.ImGuiMethods;
 using FFXIVClientStructs.FFXIV.Client.Game.Fate;
 using ImGuiNET;
 
@@ -14,7 +15,7 @@ public static class IFateExtensions
     {
         ImGui.TextColored(Colors.Grey3, $"[{fate.FateId}]");
         ImGui.SameLine();
-        ImGui.TextColored(Colors.White, $"{fate.Name}");
+        ImGui.TextColored(EzColor.White, $"{fate.Name}");
 
         ImGui.Indent();
 

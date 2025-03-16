@@ -1,4 +1,5 @@
 using Dalamud.Interface;
+using ECommons.ImGuiMethods;
 
 namespace Automaton.FeaturesSetup.Attributes;
 
@@ -8,5 +9,5 @@ public class ConfigInfoAttribute(string label, string desc) : Attribute
     public string Label { get; init; } = label;
     public string Description { get; init; } = desc;
     public FontAwesomeIcon Icon { get; init; } = FontAwesomeIcon.InfoCircle;
-    public HaselColor Color { get; init; } = Colors.Grey;
+    public EzColor Color { get; init; } = Colors.Grey;
 }

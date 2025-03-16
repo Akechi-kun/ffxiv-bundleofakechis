@@ -1,6 +1,4 @@
-﻿using Dalamud.Game.Gui.Dtr;
-using System.Drawing.Design;
-using System.Threading;
+﻿using System.Threading;
 using System.Threading.Tasks;
 
 namespace Automaton.Services;

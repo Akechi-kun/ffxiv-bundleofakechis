@@ -1,6 +1,7 @@
 using Automaton.Features;
 using ECommons.Configuration;
 using System.Collections.ObjectModel;
+using System.Text;
 using System.Text.Json.Serialization;
 using YamlDotNet.Serialization;
 
@@ -39,17 +40,13 @@ public class YamlFactory : ISerializationFactory
 {
     public string DefaultConfigFileName => $"ezAutomaton.yaml";
 
-    public T Deserialize<T>(string inputData)
-    {
-        return new DeserializerBuilder()
-            .IgnoreUnmatchedProperties()
-            .Build().Deserialize<T>(inputData);
-    }
+    public bool IsBinary => false;
 
-    public string Serialize(object s, bool prettyPrint)
-    {
-        return new SerializerBuilder().Build().Serialize(s);
-    }
+    public T Deserialize<T>(string inputData) => new DeserializerBuilder().IgnoreUnmatchedProperties().Build().Deserialize<T>(inputData);
+    public T? Deserialize<T>(byte[] inputData) => Deserialize<T>(Encoding.UTF8.GetString(inputData));
+    public string Serialize(object s, bool prettyPrint) => new SerializerBuilder().Build().Serialize(s);
+    public string? Serialize(object config) => Serialize(config, false);
+    public byte[]? SerializeAsBin(object config) => Encoding.UTF8.GetBytes(Serialize(config) ?? "");
 }
 
 public interface IMigration

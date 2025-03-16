@@ -7,7 +7,7 @@ namespace Automaton.UI;
 
 internal class DebugWindow : Window
 {
-    public DebugWindow() : base($"{Name} - Debug {VersionString}###{nameof(DebugWindow)}")
+    public DebugWindow() : base($"{Name} - Debug v{P.Version.ToString(2)}###{nameof(DebugWindow)}")
     {
         SizeConstraints = new WindowSizeConstraints
         {

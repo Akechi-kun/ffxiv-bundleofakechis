@@ -19,7 +19,7 @@ internal class RetrieveMateria : Tweak
             PrefixChar = 'C',
             Name = "Retrieve All Materia",
             OnClicked = (a) => Service.Automation.Start(new RetrieveAllMateria(inv.TargetItem.Value)),
-            IsEnabled = !PlayerEx.IsBusy,
+            IsEnabled = !Player.IsBusy,
         });
     }
 }

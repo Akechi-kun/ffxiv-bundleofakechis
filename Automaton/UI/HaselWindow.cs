@@ -12,7 +12,7 @@ public partial class HaselWindow : Window
 {
     // Style from HaselTweaks
     // https://github.com/Haselnussbomber/HaselTweaks
-    public HaselWindow() : base($"{Name} {VersionString}###{nameof(HaselWindow)}")
+    public HaselWindow() : base($"{Name} v{P.Version.ToString(2)}###{nameof(HaselWindow)}")
     {
         var width = SidebarWidth * 3 + ImGui.GetStyle().ItemSpacing.X + ImGui.GetStyle().FramePadding.X * 2;
         Size = new(width, 600);
@@ -108,11 +108,11 @@ public partial class HaselWindow : Window
 
                 drawList.PathLineTo(pos);
                 drawList.PathLineTo(pos + size);
-                drawList.PathStroke(Colors.Red, ImDrawFlags.None, frameHeight / 5f * 0.5f);
+                drawList.PathStroke(EzColor.RedBright, ImDrawFlags.None, frameHeight / 5f * 0.5f);
 
                 drawList.PathLineTo(pos + new Vector2(0, size.Y));
                 drawList.PathLineTo(pos + new Vector2(size.X, 0));
-                drawList.PathStroke(Colors.Red, ImDrawFlags.None, frameHeight / 5f * 0.5f);
+                drawList.PathStroke(EzColor.RedBright, ImDrawFlags.None, frameHeight / 5f * 0.5f);
 
                 fixY = true;
             }
@@ -124,9 +124,9 @@ public partial class HaselWindow : Window
             ImGui.TableNextColumn();
 
             if (fixY)
-                ImGuiX.PushCursorY(3); // if i only knew why this happens
+                ImGuiEx.PushCursorY(3); // if i only knew why this happens
 
-            using var colour = ImRaii.PushColor(ImGuiCol.Text, !tweak.Ready || tweak.Outdated ? (uint)Colors.Red : !enabled ? (uint)Colors.Grey : ImGui.GetColorU32(ImGuiCol.Text), !tweak.Ready || tweak.Outdated || !enabled);
+            using var colour = ImRaii.PushColor(ImGuiCol.Text, !tweak.Ready || tweak.Outdated ? EzColor.RedBright : !enabled ? (uint)Colors.Grey : ImGui.GetColorU32(ImGuiCol.Text), !tweak.Ready || tweak.Outdated || !enabled);
 
             if (ImGui.Selectable($"{tweak.Name}##Selectable_{tweak.Name}", _selectedTweak == tweak.Name))
             {
@@ -170,10 +170,10 @@ public partial class HaselWindow : Window
             ImGuiX.DrawLink("Ko-fi", "Ko-fi", "https://ko-fi.com/croizat");
 
             // version, bottom right
-            if (VersionString.Length > 1)
+            if (P.Version.ToString(2).Length > 1)
             {
-                ImGui.SetCursorPos(cursorPos + contentAvail - ImGui.CalcTextSize(VersionString));
-                ImGui.TextUnformatted(VersionString);
+                ImGui.SetCursorPos(cursorPos + contentAvail - ImGui.CalcTextSize($"v{P.Version.ToString(2)}"));
+                ImGui.TextUnformatted($"v{P.Version.ToString(2)}");
             }
 
             return;
@@ -285,7 +285,7 @@ public partial class HaselWindow : Window
         tweak.DrawConfig();
     }
 
-    private static (string, HaselColor) GetTweakStatus(Tweak tweak)
+    private static (string, EzColor) GetTweakStatus(Tweak tweak)
     {
         var status = "???";
         var color = Colors.Grey3;
@@ -293,17 +293,17 @@ public partial class HaselWindow : Window
         if (tweak.Outdated)
         {
             status = "Outdated";
-            color = Colors.Red;
+            color = EzColor.RedBright;
         }
         else if (!tweak.Ready)
         {
             status = "Initialization Failed";
-            color = Colors.Red;
+            color = EzColor.RedBright;
         }
         else if (tweak.Enabled)
         {
             status = "Enabled";
-            color = Colors.Green;
+            color = EzColor.GreenBright;
         }
         else if (!tweak.Enabled)
         {

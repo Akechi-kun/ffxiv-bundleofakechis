@@ -69,7 +69,7 @@ public sealed class AutoDeliveroo : CommonTasks
                 mod->EquipRecommendedGear();
 
         }
-        await WaitUntil(() => !PlayerEx.IsBusy, $"WaitingForNotBusy");
+        await WaitUntil(() => !Player.IsBusy, $"WaitingForNotBusy");
     }
 
     private async Task TurnIn()

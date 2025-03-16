@@ -1,4 +1,5 @@
-﻿using ImGuiNET;
+﻿using ECommons.ImGuiMethods;
+using ImGuiNET;
 
 namespace Automaton.UI.Debug.Tabs;
 internal class InstalledPluginsTab : DebugTab
@@ -9,7 +10,7 @@ internal class InstalledPluginsTab : DebugTab
         {
             ImGui.TextUnformatted($"[{plugin.InternalName}] {plugin.Name} <{plugin.Version}>");
             ImGui.SameLine();
-            ImGui.TextColored(plugin.IsLoaded ? Colors.Green : Colors.Red, "Loaded");
+            ImGui.TextColored(plugin.IsLoaded ? EzColor.GreenBright : EzColor.RedBright, "Loaded");
         }
     }
 }

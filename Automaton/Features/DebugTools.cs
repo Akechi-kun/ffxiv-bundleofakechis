@@ -68,7 +68,7 @@ public class DebugTools : Tweak<DebugToolsConfiguration>
     [CommandHandler("/noclip", "Enable NoClip", nameof(Config.EnableNoClip))]
     private void OnNoClip(string command, string arguments)
     {
-        if (PlayerEx.InPvP) return;
+        if (Player.IsInPvP) return;
         ncActive ^= true;
         Config.NoClipSpeed = float.TryParse(arguments, out var speed) ? speed : Config.NoClipSpeed;
     }
@@ -76,7 +76,7 @@ public class DebugTools : Tweak<DebugToolsConfiguration>
     [CommandHandler(["/move", "/speed"], "Modify your movement speed", nameof(Config.EnableMoveSpeed))]
     private void OnMoveSpeed(string command, string arguments)
     {
-        if (PlayerEx.InPvP) return;
+        if (Player.IsInPvP) return;
         PlayerEx.Speed = float.TryParse(arguments, out var speed) ? speed : 1.0f;
     }
 
@@ -172,7 +172,7 @@ public class DebugTools : Tweak<DebugToolsConfiguration>
     [CommandHandler("/ada", "Call actions directly.", nameof(Config.EnableDirectActions))]
     private unsafe void OnDirectAction(string command, string arguments)
     {
-        if (PlayerEx.InPvP) return;
+        if (Player.IsInPvP) return;
         try
         {
             var args = arguments.Split(' ');
@@ -198,7 +198,7 @@ public class DebugTools : Tweak<DebugToolsConfiguration>
     [CommandHandler("/tpmarker", "Teleport to a given marker", nameof(Config.EnableTPMarker))]
     private unsafe void OnTeleportMarker(string command, string arguments)
     {
-        if (PlayerEx.InPvP) return;
+        if (Player.IsInPvP) return;
         if (int.TryParse(arguments, out var i))
         {
             var m = MarkingController.Instance()->FieldMarkers[i];
@@ -211,7 +211,7 @@ public class DebugTools : Tweak<DebugToolsConfiguration>
     [CommandHandler("/tpoff", "Teleport from your current position, offset by arguments", nameof(Config.EnableTPOffset))]
     private unsafe void OnTeleportOffset(string command, string arguments)
     {
-        if (PlayerEx.InPvP) return;
+        if (Player.IsInPvP) return;
         if (arguments.TryParseVector3(out var v))
             PlayerEx.Position += v;
     }
@@ -219,7 +219,7 @@ public class DebugTools : Tweak<DebugToolsConfiguration>
     [CommandHandler("/tpabs", "Teleport to a given absolute position", nameof(Config.EnableTPAbsolute))]
     private unsafe void OnTeleportAbsolute(string command, string arguments)
     {
-        if (PlayerEx.InPvP) return;
+        if (Player.IsInPvP) return;
         if (arguments.TryParseVector3(out var v))
             PlayerEx.Position = v;
     }
