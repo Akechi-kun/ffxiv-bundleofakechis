@@ -192,7 +192,7 @@ public sealed class FateGrind(DateWithDestinyConfiguration config) : CommonTasks
         Status = "Reviving";
         (var lastZone, var lastPos) = (Player.Territory, Player.Position);
         Service.Memory.ExecuteCommand?.Invoke((int)ExecuteCommandFlag.Revive, 8); // TODO: it's either 8 or 5 depending on what GameMain.field_4095 is
-        await WaitWhile(() => Player.Territory != Player.HomeAetheryteTerritory || Player.IsBusy, "WaitingForRevive");
+        await WaitUntilTerritory(Player.HomeAetheryteTerritory);
         await TeleportTo(lastZone, lastPos);
     }
 

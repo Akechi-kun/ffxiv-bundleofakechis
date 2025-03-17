@@ -11,10 +11,10 @@ public sealed class KillFlag(string world) : CommonTasks
     {
         if (!world.IsNullOrEmpty())
         {
-            if (C.EnabledTweaks.Contains(nameof(InstantReturn)))
+            if (C.EnabledTweaks.Contains(nameof(InstantReturn)) && Player.Territory != Player.HomeAetheryteTerritory)
             {
                 Chat.Instance.SendMessage("/return");
-                await WaitUntil(() => !Player.IsBusy && Player.Territory == Player.HomeAetheryteTerritory, "WaitForReturn");
+                await WaitUntilTerritory(Player.HomeAetheryteTerritory);
             }
             Service.Lifestream.ExecuteCommand($"{world}");
             await WaitUntilThenFalse(() => Service.Lifestream.IsBusy(), "LifestreamWaitForFinish");

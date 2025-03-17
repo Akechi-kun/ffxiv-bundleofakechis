@@ -167,6 +167,12 @@ public abstract class CommonTasks : AutoTask
         }
     }
 
+    protected async Task WaitUntilTerritory(uint territoryId)
+    {
+        using var scope = BeginScope("WaitUntilTerritory");
+        await WaitWhile(() => Player.Territory != territoryId || Player.IsBusy || !Game.IsTerritoryLoaded(), "WaitingForTerritory");
+    }
+
     protected async Task<(uint, uint)> GetAchievementProgress(uint achievementId, string scopeName)
     {
         using var scope = BeginScope(scopeName);
