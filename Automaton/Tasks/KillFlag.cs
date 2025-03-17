@@ -1,12 +1,25 @@
-﻿using Dalamud.Game.ClientState.Objects.Types;
+﻿using Automaton.Features;
+using Dalamud.Game.ClientState.Objects.Types;
+using ECommons.Automation;
 using Lumina.Excel.Sheets;
 using System.Threading.Tasks;
 
 namespace Automaton.Tasks;
-public sealed class KillFlag : CommonTasks
+public sealed class KillFlag(string world) : CommonTasks
 {
     protected override async Task Execute()
     {
+        if (!world.IsNullOrEmpty())
+        {
+            if (C.EnabledTweaks.Contains(nameof(InstantReturn)))
+            {
+                Chat.Instance.SendMessage("/return");
+                await WaitUntil(() => !Player.IsBusy && Player.Territory == Player.HomeAetheryteTerritory, "WaitForReturn");
+            }
+            Service.Lifestream.ExecuteCommand($"{world}");
+            await WaitUntilThenFalse(() => Service.Lifestream.IsBusy(), "LifestreamWaitForFinish");
+            await WaitUntil(() => !Player.IsBusy, "WaitForAvailable");
+        }
         await TeleportTo(PlayerEx.MapFlag.TerritoryId, Coords.FlagToWorld(PlayerEx.MapFlag));
         await MoveTo(PlayerEx.MapFlag, 5, true, PlayerEx.MapFlag.TerritoryId != 180); // just don't ever fly in outer la noscea until navmesh is better
         using var stop = new OnDispose(() => Service.BossMod.ClearActive());

@@ -129,8 +129,8 @@ public partial class Commands : Tweak<CommandsConfiguration>
     #endregion
 
     #region Kill Flag
-    [CommandHandler("/killflag", "Goes to flag, kills hunt mob at destination. Requires VBM.", nameof(Config.EnableKillFlag))]
-    internal unsafe void OnCommandKillFlag(string command, string arguments) => Service.Automation.Start(new KillFlag());
+    [CommandHandler(["/killflag", "/kf"], "Goes to flag, kills hunt mob at destination. Requires VBM.", nameof(Config.EnableKillFlag))]
+    internal unsafe void OnCommandKillFlag(string command, string arguments) => Service.Automation.Start(new KillFlag(arguments));
     #endregion
 
 }
