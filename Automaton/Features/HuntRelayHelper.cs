@@ -44,6 +44,7 @@ public class HuntRelayHelperConfiguration
     [BoolConfig] public bool DontRepeatRelays = true;
     [BoolConfig] public bool OverrideMinionFlag = true;
     [BoolConfig] public bool AllowPartialWorldMatches = false;
+    [BoolConfig] public bool RemoveWorldFromNNCallouts = true;
     [BoolConfig] public bool DryRun = false;
     [StringConfig] public string ChatMessagePattern = "[<world>] <type> -> <flag>";
     [EnumConfig] public HuntRelayHelper.Locality AssumedLocality = HuntRelayHelper.Locality.PlayerHomeWorld;
@@ -65,7 +66,7 @@ public class HuntRelayHelper : Tweak<HuntRelayHelperConfiguration>
 
     private DalamudLinkPayload RelayLinkPayload = null!;
     private readonly string InstanceHeuristics = @"\b(?:instance\s*(?<instanceNumber>\d+)|i(?<iNumber>\d+))\b";
-    private RelayPayload LastRelay;
+    private RelayPayload? LastRelay;
 
     public override void Enable()
     {
@@ -134,6 +135,9 @@ public class HuntRelayHelper : Tweak<HuntRelayHelperConfiguration>
 
         ImGui.Checkbox("Allow partial world matching", ref Config.AllowPartialWorldMatches);
         ImGuiComponents.HelpMarker("This will allow matching shorthands of worlds (e.g. \"behe\" -> Behemoth) but may result in false positives.");
+
+        ImGui.Checkbox("Remove <world> tags for Novice Network relays", ref Config.RemoveWorldFromNNCallouts);
+        ImGuiComponents.HelpMarker("Removes the <world> tag from your relays and any non-whitespace characters surrounding it, then trims any excess whitespace before sending to Novice Network.");
 
         ImGui.Checkbox("Only send local hunts to local channels", ref Config.OnlySendLocalHuntsToLocalChannels);
         ImGuiComponents.HelpMarker("If a hunt is detected as being off your home world, it will only be relayed to non-local channels.");
@@ -236,23 +240,22 @@ public class HuntRelayHelper : Tweak<HuntRelayHelperConfiguration>
         }
 
         var relay = BuildRelayMessage(payload.MapLink, payload.World, payload.Instance, payload.RelayType);
-        foreach (var (channel, command, islocal, enabled) in Config.Channels)
+        var nnRelay = BuildRelayMessage(payload.MapLink, payload.World, payload.Instance, payload.RelayType, true);
+        foreach (var (channel, command, islocal, _) in Config.Channels.Where(c => c.Enabled))
         {
-            if (!enabled) continue;
             var channelName = channel.GetAttribute<XivChatTypeInfoAttribute>()?.FancyName ?? throw new Exception($"Channel has no {nameof(XivChatTypeInfoAttribute)}");
             if (Config.DontRepeatRelays && payload.OriginChannel == ((uint)channel)) continue; // don't send to the channel that relay was clicked from
             if (channelName.StartsWith("Linkshell") && Player.CurrentWorld != Player.HomeWorld) continue; // don't send to linkshells when off homeworld
             if (Config.OnlySendLocalHuntsToLocalChannels && islocal && !channelName.StartsWith("Novice") && Player.HomeWorldId != payload.World.RowId) continue; // don't send to non-novice local channels when off homeworld
-            if (Player.Object.CurrentWorld.Value.RowId != payload.World.RowId && channel.GetAttribute<XivChatTypeInfoAttribute>()!.FancyName.StartsWith("Novice")) continue; // don't send offworld relays to NN
+            if (channelName.StartsWith("Novice") && Player.Object.CurrentWorld.Value.RowId != payload.World.RowId) continue; // don't send offworld relays to NN
             // TODO: add a check to see if the player is in novice network before sending
 
-            //TaskManager.EnqueueDelay(500);
 #pragma warning disable CS0618 // Type or member is obsolete
             TaskManager.Enqueue(() =>
             {
                 if (Player.Available) // messages can't be sent when travelling between zones where your player goes null
                 {
-                    Chat.Instance.SendMessageUnsafe([.. Encoding.UTF8.GetBytes($"/{command} "), .. relay.ToArray()]);
+                    Chat.Instance.SendMessageUnsafe([.. Encoding.UTF8.GetBytes($"/{command} "), .. channelName.StartsWith("Novice") ? nnRelay.ToArray() : relay.ToArray()]);
                     return true;
                 }
                 else return false;
@@ -263,10 +266,11 @@ public class HuntRelayHelper : Tweak<HuntRelayHelperConfiguration>
         LastRelay = payload;
     }
 
-    private Lumina.Text.SeStringBuilder BuildRelayMessage(MapLinkPayload MapLink, World World, uint? Instance, uint RelayType)
+    private Lumina.Text.SeStringBuilder BuildRelayMessage(MapLinkPayload MapLink, World World, uint? Instance, uint RelayType, bool removeWorld = false)
     {
         var pattern = "(?i)(<flag>|<world>|<type>)";
-        var splitMsg = Regex.Split(Config.ChatMessagePattern, pattern);
+        var msg = removeWorld ? Regex.Replace(Config.ChatMessagePattern, @"[^\s]*<world>[^\s]*", "").Replace(@"\s+", " ").Trim() : Config.ChatMessagePattern;
+        var splitMsg = Regex.Split(msg, pattern);
         var sb = new Lumina.Text.SeStringBuilder();
         foreach (var s in splitMsg)
         {
