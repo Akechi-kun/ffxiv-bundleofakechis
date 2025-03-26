@@ -37,39 +37,43 @@ public class AutoMerge : Tweak
 
     private unsafe void OnSetup(string addonName)
     {
-        if (Player.IsBusy || !inventoryAddonNames.Contains(addonName)) return;
-
-        inventorySlots.Clear();
-        var inv = InventoryManager.Instance();
-        for (var container = InventoryType.Inventory1; container <= InventoryType.Inventory4; container++)
+        try
         {
-            var invContainer = inv->GetInventoryContainer(container);
-            for (var i = 1; i <= invContainer->Size; i++)
-            {
-                var item = invContainer->GetInventorySlot(i - 1);
-                if (item->Flags.HasFlag(InventoryItem.ItemFlags.Collectable)) continue;
-                if (item->Quantity == Sheet[item->ItemId].StackSize || item->ItemId == 0) continue;
+            if (Player.IsBusy || !inventoryAddonNames.Contains(addonName)) return;
 
-                var slot = new InventorySlot()
+            inventorySlots.Clear();
+            var inv = InventoryManager.Instance();
+            for (var container = InventoryType.Inventory1; container <= InventoryType.Inventory4; container++)
+            {
+                var invContainer = inv->GetInventoryContainer(container);
+                for (var i = 1; i <= invContainer->Size; i++)
                 {
-                    Container = container,
-                    ItemID = item->ItemId,
-                    Slot = (ushort)item->Slot,
-                    ItemHQ = item->Flags.HasFlag(InventoryItem.ItemFlags.HighQuality)
-                };
+                    var item = invContainer->GetInventorySlot(i - 1);
+                    if (item->Flags.HasFlag(InventoryItem.ItemFlags.Collectable)) continue;
+                    if (item->Quantity == Sheet[item->ItemId].StackSize || item->ItemId == 0) continue;
 
-                inventorySlots.Add(slot);
+                    var slot = new InventorySlot()
+                    {
+                        Container = container,
+                        ItemID = item->ItemId,
+                        Slot = (ushort)item->Slot,
+                        ItemHQ = item->Flags.HasFlag(InventoryItem.ItemFlags.HighQuality)
+                    };
+
+                    inventorySlots.Add(slot);
+                }
             }
-        }
 
-        foreach (var item in inventorySlots.GroupBy(x => new { x.ItemID, x.ItemHQ }).Where(x => x.Count() > 1))
-        {
-            var firstSlot = item.First();
-            for (var i = 1; i < item.Count(); i++)
+            foreach (var item in inventorySlots.GroupBy(x => new { x.ItemID, x.ItemHQ }).Where(x => x.Count() > 1))
             {
-                var slot = item.ToList()[i];
-                inv->MoveItemSlot(slot.Container, slot.Slot, firstSlot.Container, firstSlot.Slot, 1);
+                var firstSlot = item.First();
+                for (var i = 1; i < item.Count(); i++)
+                {
+                    var slot = item.ToList()[i];
+                    inv->MoveItemSlot(slot.Container, slot.Slot, firstSlot.Container, firstSlot.Slot, 1);
+                }
             }
         }
+        catch (Exception ex) { ex.Log(); }
     }
 }

@@ -72,7 +72,7 @@ public partial class Commands : Tweak<CommandsConfiguration>
             return;
         }
 
-        Service.Memory.SalvageItem?.Invoke(AgentSalvage.Instance(), item, 0, 0);
+        AgentSalvage.Instance()->SalvageItem(item);
         var retval = new AtkValue();
         Span<AtkValue> param = [
             new AtkValue { Type = ValueType.Int, Int = 0 },

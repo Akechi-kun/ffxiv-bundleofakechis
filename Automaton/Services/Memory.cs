@@ -1,5 +1,4 @@
-﻿using Dalamud.Game.Inventory;
-using ECommons.Automation;
+﻿using ECommons.Automation;
 using ECommons.EzHookManager;
 using FFXIVClientStructs.FFXIV.Client.Game;
 using FFXIVClientStructs.FFXIV.Client.Game.Character;
@@ -74,92 +73,6 @@ public unsafe class Memory
     }
 
     public void Dispose() { }
-
-    #region PacketDispatcher
-    public class PacketDispatcher : Hook
-    {
-        internal delegate void PacketDispatcher_OnReceivePacket(nint a1, uint a2, nint a3);
-        [EzHook(Signatures.PacketDispatcher_OnReceivePacketHookSig, false)]
-        internal EzHook<PacketDispatcher_OnReceivePacket> PacketDispatcher_OnReceivePacketHook = null!;
-        [EzHook(Signatures.PacketDispatcher_OnReceivePacketHookSig, false)]
-        internal EzHook<PacketDispatcher_OnReceivePacket> PacketDispatcher_OnReceivePacketMonitorHook = null!;
-
-        internal delegate byte PacketDispatcher_OnSendPacket(nint a1, nint a2, nint a3, byte a4);
-        [EzHook(Signatures.PacketDispatcher_OnSendPacketHook, false)]
-        internal EzHook<PacketDispatcher_OnSendPacket> PacketDispatcher_OnSendPacketHook = null!;
-
-        internal List<uint> DisallowedSentPackets = [];
-        internal List<uint> DisallowedReceivedPackets = [];
-
-        private byte PacketDispatcher_OnSendPacketDetour(nint a1, nint a2, nint a3, byte a4)
-        {
-            const byte DefaultReturnValue = 1;
-
-            if (a2 == nint.Zero)
-            {
-                PluginLog.Error("[HyperFirewall] Error: Opcode pointer is null.");
-                return DefaultReturnValue;
-            }
-
-            try
-            {
-                Events.OnPacketSent(a1, a2, a3, a4);
-                var opcode = *(ushort*)a2;
-
-                if (DisallowedSentPackets.Contains(opcode))
-                {
-                    PluginLog.Verbose($"[HyperFirewall] Suppressing outgoing packet with opcode {opcode}.");
-                }
-                else
-                {
-                    PluginLog.Verbose($"[HyperFirewall] Passing outgoing packet with opcode {opcode} through.");
-                    return PacketDispatcher_OnSendPacketHook.Original(a1, a2, a3, a4);
-                }
-            }
-            catch (Exception e)
-            {
-                PluginLog.Error($"[HyperFirewall] Exception caught while processing opcode: {e.Message}");
-                e.Log();
-                return DefaultReturnValue;
-            }
-
-            return DefaultReturnValue;
-        }
-
-        private void PacketDispatcher_OnReceivePacketDetour(nint a1, uint a2, nint a3)
-        {
-            if (a3 == nint.Zero)
-            {
-                PluginLog.Error("[HyperFirewall] Error: Data pointer is null.");
-                return;
-            }
-
-            try
-            {
-                Events.OnPacketRecieved(a1, a2, a3);
-                var opcode = *(ushort*)(a3 + 2);
-
-                if (DisallowedReceivedPackets.Contains(opcode))
-                {
-                    PluginLog.Verbose($"[HyperFirewall] Suppressing incoming packet with opcode {opcode}.");
-                }
-                else
-                {
-                    PluginLog.Verbose($"[HyperFirewall] Passing incoming packet with opcode {opcode} through.");
-                    PacketDispatcher_OnReceivePacketHook.Original(a1, a2, a3);
-                }
-            }
-            catch (Exception e)
-            {
-                PluginLog.Error($"[HyperFirewall] Exception caught while processing opcode: {e.Message}");
-                e.Log();
-                return;
-            }
-
-            return;
-        }
-    }
-    #endregion
 
     #region Bewitch
     public class BewitchProc : Hook
@@ -361,18 +274,6 @@ public unsafe class Memory
             Svc.Log.Info($"{nameof(FreeCompanyDialogPacketReceiveDetour)}: Packet received at {LastPacketTimestamp}");
             FreeCompanyDialogPacketReceiveHook.Original(ptr, packetData);
         }
-    }
-    #endregion
-
-    #region Materia
-    public unsafe void MaterializeAction(GameInventoryItem item, MaterializeEntryId eventId)
-    {
-        try
-        {
-            var _item = (InventoryItem*)item.Address;
-            RetrieveMateria?.Invoke(EventFramework.Instance(), (int)eventId, _item->Container, _item->Slot, 0);
-        }
-        catch (Exception e) { e.Log(); }
     }
     #endregion
 }

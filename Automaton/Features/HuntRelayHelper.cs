@@ -62,7 +62,7 @@ public class HuntRelayHelperConfiguration
 public class HuntRelayHelper : Tweak<HuntRelayHelperConfiguration>
 {
     public override string Name => "Hunt Relay Helper";
-    public override string Description => "Appends a clickable icon to messages with a MapLinkPayload to relay them to other channels. THIS IS CURRENTLY BROKEN, AWAITING A FIX.";
+    public override string Description => "Appends a clickable icon to messages with a MapLinkPayload to relay them to other channels.";
 
     private DalamudLinkPayload RelayLinkPayload = null!;
     private readonly string InstanceHeuristics = @"\b(?:instance\s*(?<instanceNumber>\d+)|i(?<iNumber>\d+))\b";
