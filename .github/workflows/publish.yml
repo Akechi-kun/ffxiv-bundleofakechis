@@ -28,7 +28,9 @@ jobs:
         id: latest_track
         uses: mikefarah/yq@master
         with:
-            cmd: yaml=$(curl -s https://raw.githubusercontent.com/goatcorp/dalamud-declarative/main/config.yaml)
+            run: |
+                sudo apt-install curl
+                yaml=$(curl -s https://raw.githubusercontent.com/goatcorp/dalamud-declarative/main/config.yaml)
                 versions=$(echo "$yaml" | yq '.tracks[] | .applicableGameVersion')
                 sorted_versions=$(echo "$versions" | sort -r)
                 highest_version=$(echo "$sorted_versions" | head -1)
