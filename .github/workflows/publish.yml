@@ -29,12 +29,11 @@ jobs:
         uses: mikefarah/yq@master
         with:
             cmd: |
-                sudo apt-install curl
                 yaml=$(curl -s https://raw.githubusercontent.com/goatcorp/dalamud-declarative/main/config.yaml)
                 versions=$(echo "$yaml" | yq '.tracks[] | .applicableGameVersion')
                 sorted_versions=$(echo "$versions" | sort -r)
                 highest_version=$(echo "$sorted_versions" | head -1)
-                result=$(echo "$yaml" | yq ".tracks | to_entries | map(select(.value.applicableGameVersion == \"$highest_version\")) | sort_by(.key) | .[0].key")
+                result=$(echo "$yaml" | yq ".tracks | to_entries | map(select(.value.applicableGameVersion == '$highest_version')) | sort_by(.key) | .[0].key")
                 echo "$result" >> $GITHUB_OUTPUT
 
       - name: Download Dalamud Latest
