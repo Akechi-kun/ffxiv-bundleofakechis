@@ -64,7 +64,7 @@ public static class ImGuiX
         if (RespectUiTheme && Colors.IsLightTheme)
             color = EzColor.FromUiForeground(UIColor);
 
-        ImGuiEx.Text((uint)color, Label);
+        ImGuiEx.Text(color, Label);
 
         if (drawSeparator)
         {

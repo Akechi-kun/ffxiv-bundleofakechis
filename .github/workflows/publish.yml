@@ -24,9 +24,20 @@ jobs:
         with:
           dotnet-version: 9.0.x
           
+      - name: Get Latest Track
+        id: latest_track
+        uses: mikefarah/yq@master
+        with:
+            cmd: yaml=$(curl -s https://raw.githubusercontent.com/goatcorp/dalamud-declarative/main/config.yaml)
+                versions=$(echo "$yaml" | yq '.tracks[] | .applicableGameVersion')
+                sorted_versions=$(echo "$versions" | sort -r)
+                highest_version=$(echo "$sorted_versions" | head -1)
+                result=$(echo "$yaml" | yq ".tracks | to_entries | map(select(.value.applicableGameVersion == \"$highest_version\")) | sort_by(.key) | .[0].key")
+                echo "$result" >> $GITHUB_OUTPUT
+
       - name: Download Dalamud Latest
         run: |
-          wget https://goatcorp.github.io/dalamud-distrib/stg/latest.zip -O ${{ env.DALAMUD_HOME }}.zip
+          wget https://goatcorp.github.io/dalamud-distrib/${{ steps.latest_track.outputs.result }}/latest.zip -O ${{ env.DALAMUD_HOME }}.zip
           unzip ${{ env.DALAMUD_HOME }}.zip -d ${{ env.DALAMUD_HOME }}
 
       - name: Restore Project
