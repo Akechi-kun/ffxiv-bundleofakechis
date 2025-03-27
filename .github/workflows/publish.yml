@@ -28,7 +28,7 @@ jobs:
         id: latest_track
         uses: mikefarah/yq@master
         with:
-            run: |
+            cmd: |
                 sudo apt-install curl
                 yaml=$(curl -s https://raw.githubusercontent.com/goatcorp/dalamud-declarative/main/config.yaml)
                 versions=$(echo "$yaml" | yq '.tracks[] | .applicableGameVersion')
