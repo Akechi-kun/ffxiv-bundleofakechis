@@ -112,6 +112,8 @@ public class Plugin : IDalamudPlugin
                 case "stop":
                     Service.Automation.Stop();
                     Service.TaskManager.Abort();
+                    foreach (var t in Tweaks.OfType<ARTweak>())
+                        t.AutoRetainer.FinishCharacterPostProcess();
                     break;
             }
         }
