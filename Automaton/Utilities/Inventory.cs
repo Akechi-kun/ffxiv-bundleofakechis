@@ -121,4 +121,7 @@ public class Inventory
             return count;
         }
     }
+
+    public static unsafe Item? GetItemInSlot(InventoryType inv, int slot)
+        => GetRow<Item>(InventoryManager.Instance()->GetInventoryContainer(inv)->GetInventorySlot(slot)->ItemId).Value;
 }

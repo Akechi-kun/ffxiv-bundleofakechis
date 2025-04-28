@@ -38,6 +38,7 @@ public unsafe class Memory
         internal const string WorldTravelSetupInfo = "48 8B CB E8 ?? ?? ?? ?? 48 8D 8B ?? ?? ?? ?? E8 ?? ?? ?? ?? 4C 8B 05 ?? ?? ?? ??";
         internal const string FreeCompanyDialogPacketReceive = "48 89 5C 24 ?? 48 89 74 24 ?? 57 48 81 EC ?? ?? ?? ?? 48 8B 05 ?? ?? ?? ?? 48 33 C4 48 89 84 24 ?? ?? ?? ?? 0F B6 42 31"; // xan
         internal const string RetrieveMateria = "E8 ?? ?? ?? ?? EB 27 48 8B 01"; // Client::UI::Agent::AgentMaterialize.ReceiveEvent	call    sub_140B209C0
+        internal const string ProcessPacketUpdateClassInfo = "48 89 5C 24 ?? 57 48 83 EC 20 48 8B DA 48 8D 0D ?? ?? ?? ??";
     }
 
     public static class Delegates
@@ -59,6 +60,7 @@ public unsafe class Memory
         internal delegate void RidePillionDelegate(BattleChara* target, int seatIndex);
         internal delegate void SalvageItemDelegate(AgentSalvage* thisPtr, InventoryItem* item, int addonId, byte a4);
         internal delegate nint WorldTravelSetupInfoDelegate(nint worldTravel, ushort currentWorld, ushort targetWorld);
+        internal delegate void ProcessPacketUpdateClassInfoDelegate(InfoProxyInterface* ptr, byte* packetData);
     }
 
     internal Delegates.RidePillionDelegate? RidePillion = EzDelegate.Get<Delegates.RidePillionDelegate>(Signatures.RidePillion);
@@ -278,6 +280,20 @@ public unsafe class Memory
             LastPacketTimestamp = DateTime.Now;
             Svc.Log.Info($"{nameof(FreeCompanyDialogPacketReceiveDetour)}: Packet received at {LastPacketTimestamp}");
             FreeCompanyDialogPacketReceiveHook.Original(ptr, packetData);
+        }
+    }
+
+    public class ClassJobInfoSetupIPCReceive : Hook
+    {
+        [EzHook(Signatures.ProcessPacketUpdateClassInfo, false)]
+        internal readonly EzHook<Delegates.ProcessPacketUpdateClassInfoDelegate> ProcessPacketUpdateClassInfoHook = null!;
+
+        internal DateTime LastPacketTimestamp = DateTime.MinValue;
+        private void ProcessPacketUpdateClassInfoDetour(InfoProxyInterface* ptr, byte* packetData)
+        {
+            LastPacketTimestamp = DateTime.Now;
+            Svc.Log.Info($"{nameof(ProcessPacketUpdateClassInfoDetour)}: Packet received at {LastPacketTimestamp}");
+            ProcessPacketUpdateClassInfoHook.Original(ptr, packetData);
         }
     }
     #endregion
