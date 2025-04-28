@@ -6,7 +6,7 @@ namespace Automaton.Features;
 
 public class ARQuestingConfiguration
 {
-    [BoolConfig] public bool EnableReturnHome = true;
+    [BoolConfig] public bool ReturnHome = true;
 }
 
 [Tweak]
@@ -29,5 +29,5 @@ internal class ARQuesting : ARTweak<ARQuestingConfiguration>
             Log("Skipping post process for character: no seasonal quests available.");
     }
 
-    public override void OnCharacterReadyToPostProcess() => Service.Automation.Start(new DoQuests(_quests, Config.EnableReturnHome), AutoRetainer.FinishCharacterPostProcess);
+    public override void OnCharacterReadyToPostProcess() => Service.Automation.Start(new DoQuests(_quests, Config.ReturnHome), AutoRetainer.FinishCharacterPostProcess);
 }
