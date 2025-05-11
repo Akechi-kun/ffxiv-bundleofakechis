@@ -53,5 +53,5 @@ internal class ARTurnIn : ARTweak<ARTurnInConfiguration>
         }
     }
 
-    public override void OnCharacterReadyToPostProcess() => Service.Automation.Start(new AutoDeliveroo(Config), AutoRetainer.FinishCharacterPostProcess);
+    public override void OnCharacterReadyToPostProcess() => Service.Automation.Start(new AutoDeliveroo(Config.EquipGearsetterRecs), AutoRetainer.FinishCharacterPostProcess);
 }
