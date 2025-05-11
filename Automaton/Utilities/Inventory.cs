@@ -1,10 +1,11 @@
 ﻿using FFXIVClientStructs.FFXIV.Client.Game;
+using FFXIVClientStructs.FFXIV.Client.UI.Misc;
 using FFXIVClientStructs.Interop;
 using Lumina.Excel.Sheets;
 
 namespace Automaton.Utilities;
-#nullable disable
-public class Inventory
+
+public unsafe class Inventory
 {
     public static readonly InventoryType[] PlayerInventory =
     [
@@ -104,6 +105,7 @@ public class Inventory
         return items;
     }
 
+    public static unsafe uint GetEmptySlots(InventoryType inv) => GetEmptySlots([inv]);
     public static unsafe uint GetEmptySlots(IEnumerable<InventoryType> inventories = null)
     {
         if (inventories == null)
@@ -124,4 +126,51 @@ public class Inventory
 
     public static unsafe Item? GetItemInSlot(InventoryType inv, int slot)
         => GetRow<Item>(InventoryManager.Instance()->GetInventoryContainer(inv)->GetInventorySlot(slot)->ItemId).Value;
+
+    public static unsafe InventoryItem* GetFirstEmptySlot(InventoryType? inv = null)
+    {
+        if (inv is null)
+        {
+            foreach (var i in PlayerInventory)
+            {
+                if (i == InventoryType.KeyItems) continue;
+                var cont = InventoryManager.Instance()->GetInventoryContainer(i);
+                for (var j = 0; j < cont->Size; ++j)
+                    if (cont->GetInventorySlot(j)->ItemId == 0)
+                        return cont->GetInventorySlot(j);
+            }
+        }
+        else
+        {
+            var cont = InventoryManager.Instance()->GetInventoryContainer(inv.Value);
+            for (var i = 0; i < cont->Size; ++i)
+                if (cont->GetInventorySlot(i)->ItemId == 0)
+                    return cont->GetInventorySlot(i);
+        }
+        return null;
+    }
+
+    public static List<uint>? GetGearsetItemIds()
+    {
+        var gm = RaptureGearsetModule.Instance();
+        List<uint> itemIds = [];
+        for (byte i = 0; i < 100; ++i)
+        {
+            if (!gm->IsValidGearset(i)) continue;
+            var gearset = gm->GetGearset(i);
+            if (gearset != null && gearset->Flags.HasFlag(RaptureGearsetModule.GearsetFlag.Exists) && GetRow<ClassJob>(gearset->ClassJob)?.Unknown8 != 0)
+                itemIds.AddRange(gearset->Items.ToArray().Where(x => x.ItemId != 0).Select(x => x.ItemId));
+        }
+        return itemIds.Count == 0 ? null : itemIds;
+    }
+
+    public static unsafe InventoryItem* GetFirstNonGearsetItem(InventoryType inv)
+    {
+        var cont = InventoryManager.Instance()->GetInventoryContainer(inv);
+        var gearsetItems = GetGearsetItemIds();
+        for (var i = 0; i < cont->Size; ++i)
+            if (gearsetItems?.Contains(cont->GetInventorySlot(i)->ItemId) == false)
+                return cont->GetInventorySlot(i);
+        return null;
+    }
 }

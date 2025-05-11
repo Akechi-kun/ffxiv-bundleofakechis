@@ -1,5 +1,4 @@
 ﻿using Automaton.Features;
-using Dalamud.Game.ClientState.Objects.SubKinds;
 using Dalamud.Plugin.Ipc.Exceptions;
 using FFXIVClientStructs.FFXIV.Client.Game;
 using FFXIVClientStructs.FFXIV.Client.UI;
@@ -7,22 +6,20 @@ using FFXIVClientStructs.FFXIV.Client.UI.Misc;
 using FFXIVClientStructs.FFXIV.Component.GUI;
 using Lumina.Excel.Sheets;
 using System.Threading.Tasks;
-using static FFXIVClientStructs.FFXIV.Client.UI.Agent.AgentChatLog.Delegates;
 using ValueType = FFXIVClientStructs.FFXIV.Component.GUI.ValueType;
 
 namespace Automaton.Tasks;
 public sealed class AutoDeliveroo(ARTurnInConfiguration? Config = null) : CommonTasks
 {
-    private readonly Memory.ClassJobInfoSetupIPCReceive ipc = new();
     protected override async Task Execute()
     {
         Status = "Going to GC";
         await GoToGC();
-        //if (Config is { EquipGearsetterRecs: true })
-        //{
-        //    Status = "Updating Gearsets";
-        //    await EquipGearsetterUpgrades();
-        //}
+        if (Config is { EquipGearsetterRecs: true })
+        {
+            Status = "Updating Gearsets";
+            await EquipGearsetterUpgrades();
+        }
         Status = "Turning in Gear";
         await TurnIn();
         Status = "Going Home";
@@ -102,14 +99,13 @@ public sealed class AutoDeliveroo(ARTurnInConfiguration? Config = null) : Common
 
         foreach (var gearset in GetValidGearsets())
         {
-            if (TryEquipGearset(gearset))
+            if (GetGearsetRecommendations(gearset) is { Count: > 0 } recs)
             {
-                Log($"Equipped gearset #{gearset} {GetGearsetName(gearset)}");
-                await WaitUntil(() => Player.JobId == GetGearsetClassJob(gearset), "WaitForJobChange");
-                if (GetGearsetRecommendations() is { Count: > 0 } recs)
+                if (TryEquipGearset(gearset))
                 {
-                    await NextFrame();
-                    foreach ((var itemId, var sourceInventoryType, var sourceInventorySlot, var targetEquipSlot) in GetGearsetRecommendations())
+                    Log($"Equipped gearset #{gearset} {GetGearsetName(gearset)}");
+                    await WaitUntil(() => Player.JobId == GetGearsetClassJob(gearset), "WaitForJobChange");
+                    foreach ((var itemId, var sourceInventoryType, var sourceInventorySlot, var targetEquipSlot) in GetGearsetRecommendations(gearset))
                     {
                         if (sourceInventoryType is { } cont && sourceInventorySlot is { } slot)
                             await EquipItem(GetRow<Item>(itemId) ?? throw new Exception($"Item #{itemId} not found"), cont, slot, (uint)targetEquipSlot);
@@ -118,10 +114,10 @@ public sealed class AutoDeliveroo(ARTurnInConfiguration? Config = null) : Common
                     }
                     UpdateCurrentGearset();
                 }
-                else Log($"Skipping gearset #{gearset} {GetGearsetName}: no recommendations.");
+                else
+                    Error($"Failed to equip gearset #{gearset}");
             }
-            else
-                Error($"Failed to equip gearset #{gearset}");
+            else Log($"Skipping gearset #{gearset} {GetGearsetName(gearset)}: no recommendations.");
         }
     }
 
@@ -131,7 +127,6 @@ public sealed class AutoDeliveroo(ARTurnInConfiguration? Config = null) : Common
         Log($"Equipping [#{item.RowId} {item.Name}] from {cont}:{slot} [{Inventory.GetItemInSlot(cont, slot)?.Name}] to {targetSlot} [{Inventory.GetItemInSlot(InventoryType.EquippedItems, (int)targetSlot)?.Name}]");
         if (FindAndEquip(item, cont, targetSlot))
             await WaitUntil(() => ItemIsEquipped(item.RowId, (int)targetSlot), $"WaitingForEquipped_#{item.RowId}");
-        //MoveItem(item, cont, slot, targetSlot); // TODO: needs checking if armoury container has free space
     }
 
     private async Task TurnIn()
@@ -153,34 +148,72 @@ public sealed class AutoDeliveroo(ARTurnInConfiguration? Config = null) : Common
     private unsafe bool TryEquipGearset(byte id)
         => RaptureGearsetModule.Instance()->CurrentGearsetIndex == id || RaptureGearsetModule.Instance()->EquipGearset(id) == 0;
 
-    private unsafe List<(uint itemId, InventoryType? inventoryType, byte? sourceInventorySlot, RaptureGearsetModule.GearsetItemIndex targetSlot)> GetGearsetRecommendations()
-        => Service.Gearsetter.GetRecommendationsForGearset((byte)RaptureGearsetModule.Instance()->CurrentGearsetIndex);
+    private unsafe List<(uint itemId, InventoryType? inventoryType, byte? sourceInventorySlot, RaptureGearsetModule.GearsetItemIndex targetSlot)> GetGearsetRecommendations(byte? index = null)
+        => Service.Gearsetter.GetRecommendationsForGearset(index ?? (byte)RaptureGearsetModule.Instance()->CurrentGearsetIndex);
     private unsafe bool FindAndEquip(Item item, InventoryType inventoryType, uint equipSlot) => FindAndEquip(item, inventoryType, equipSlot, GetItemSorter(item.EquipSlotCategory.Value));
     private unsafe bool FindAndEquip(Item item, InventoryType inventoryType, uint equipSlot, ItemOrderModuleSorter* sorter)
     {
+        // TODO: fix redundancies
         var inventoryManager = InventoryManager.Instance();
-        for (var i = 0U; i < sorter->Items.LongCount; i++)
+        //for (var i = 0U; i < sorter->Items.LongCount; i++)
+        //{
+        //    var entry = sorter->Items[i].Value;
+        //    var invItem = inventoryManager->GetInventorySlot(inventoryType + entry->Page, entry->Slot);
+        //    if (invItem->ItemId == item.RowId)
+        //    {
+        //        var page = (uint)(i / sorter->ItemsPerPage);
+        //        var slot = (uint)(i % sorter->ItemsPerPage);
+        //        Log($"#{item.RowId} [{(uint)inventoryType} -> {page} | {slot}]");
+        //        MoveItem(inventoryType + page, slot, equipSlot);
+        //        return true;
+        //    }
+        //}
+
+        foreach (var inv in Inventory.Equippable)
         {
-            var entry = sorter->Items[i].Value;
-            var invItem = inventoryManager->GetInventorySlot(inventoryType + entry->Page, entry->Slot);
-            if (invItem->ItemId == item.RowId)
+            var cont = inventoryManager->GetInventoryContainer(inv);
+            for (var i = 0; i < cont->Size; ++i)
             {
-                var page = (uint)(i / sorter->ItemsPerPage);
-                var slot = (uint)(i % sorter->ItemsPerPage);
-                Log($"#{item.RowId} [{(uint)inventoryType} -> {page} | {slot}]");
-                MoveItem(inventoryType + page, slot, equipSlot);
-                return true;
+                var invItem = cont->GetInventorySlot(i);
+                if (invItem->ItemId == item.RowId)
+                {
+                    // it target item's armoury container is full, move a non-gearset item out, if it can't be done, skip and log a warning
+                    var discardInv = GetItemArmouryContainer(item);
+                    if (Inventory.GetEmptySlots(discardInv) == 0)
+                    {
+                        var emptySlot = Inventory.GetFirstEmptySlot();
+                        if (emptySlot is null)
+                        {
+                            Svc.Log.Warning($"Source item's armoury container is full. No room in inventory to move non-gearset item out.");
+                            return false;
+                        }
+
+                        var nonGearsetItem = Inventory.GetFirstNonGearsetItem(discardInv);
+                        if (nonGearsetItem is null)
+                        {
+                            Svc.Log.Warning($"Source item's armoury container is full. No non-gearset item to move out.");
+                            return false;
+                        }
+
+                        var discardContainer = inventoryManager->GetInventoryContainer(discardInv);
+                        Log($"Upgrade item requires free armoury slot to equip. Moving #{nonGearsetItem->ItemId} [{(uint)discardInv} -> {emptySlot->Slot}].");
+                        MoveItem(discardInv, (uint)nonGearsetItem->Slot, (uint)emptySlot->Slot, emptySlot->Container);
+                    }
+
+                    // equip item
+                    Log($"#{item.RowId} [{(uint)inv} -> 0 | {i}]");
+                    MoveItem(inv, (uint)i, equipSlot);
+                    return true;
+                }
             }
         }
-
-        if (inventoryType != InventoryType.Inventory1) return FindAndEquip(item, InventoryType.Inventory1, equipSlot, ItemOrderModule.Instance()->InventorySorter);
         return false;
     }
-    private unsafe void MoveItem(InventoryType sourceInventory, uint sourceSlot, uint equipSlot)
+    private unsafe void MoveItem(InventoryType sourceInventory, uint sourceSlot, uint equipSlot, InventoryType? destInventory = null)
     {
         // from simpletweaks
         var sourceContainerId = GetContainerId(sourceInventory);
-        var destinationContainerId = GetContainerId(InventoryType.EquippedItems);
+        var destinationContainerId = GetContainerId(destInventory ?? InventoryType.EquippedItems);
         if (sourceContainerId != 0 && destinationContainerId != 0)
         {
             var eis = stackalloc AtkValue[4];
@@ -235,6 +268,23 @@ public sealed class AutoDeliveroo(ARTurnInConfiguration? Config = null) : Common
         InventoryType.ArmorySoulCrystal => 68,
         InventoryType.EquippedItems => 4,
         _ => 0
+    };
+
+    private unsafe InventoryType GetItemArmouryContainer(Item item) => item.EquipSlotCategory.Value switch
+    {
+        { MainHand: 1 } => InventoryType.ArmoryMainHand,
+        { OffHand: 1 } => InventoryType.ArmoryOffHand,
+        { Head: 1 } => InventoryType.ArmoryHead,
+        { Body: 1 } => InventoryType.ArmoryBody,
+        { Gloves: 1 } => InventoryType.ArmoryHands,
+        { Legs: 1 } => InventoryType.ArmoryLegs,
+        { Feet: 1 } => InventoryType.ArmoryFeets,
+        { Ears: 1 } => InventoryType.ArmoryEar,
+        { Neck: 1 } => InventoryType.ArmoryNeck,
+        { Wrists: 1 } => InventoryType.ArmoryWrist,
+        { FingerL: 1 } => InventoryType.ArmoryRings,
+        { FingerR: 1 } => InventoryType.ArmoryRings,
+        _ => throw new ArgumentOutOfRangeException(nameof(item), item, null)
     };
 
     private unsafe ItemOrderModuleSorter* GetItemSorter(EquipSlotCategory esc) => esc switch
