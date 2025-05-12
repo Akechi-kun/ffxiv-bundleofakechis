@@ -1,4 +1,6 @@
-﻿using Dalamud.Plugin.Ipc.Exceptions;
+﻿using Dalamud.Game.Inventory;
+using Dalamud.Game.Inventory.InventoryEventArgTypes;
+using Dalamud.Plugin.Ipc.Exceptions;
 using FFXIVClientStructs.FFXIV.Client.Game;
 using FFXIVClientStructs.FFXIV.Client.UI;
 using FFXIVClientStructs.FFXIV.Client.UI.Misc;
@@ -12,17 +14,17 @@ public sealed class AutoDeliveroo(bool equipRecommendations) : CommonTasks()
 {
     protected override async Task Execute()
     {
-        //Status = "Going to GC";
-        //await GoToGC();
-        if (equipRecommendations)
-        {
-            Status = "Updating Gearsets";
-            await EquipGearsetterUpgrades();
-        }
-        //Status = "Turning in Gear";
-        //await TurnIn();
-        //Status = "Going Home";
-        //await GoHome();
+        Status = "Going to GC";
+        await GoToGC();
+        //if (equipRecommendations)
+        //{
+        //    Status = "Updating Gearsets";
+        //    await EquipGearsetterUpgrades();
+        //}
+        Status = "Turning in Gear";
+        await TurnIn();
+        Status = "Going Home";
+        await GoHome();
     }
 
     private async Task GoToGC()
@@ -118,12 +120,16 @@ public sealed class AutoDeliveroo(bool equipRecommendations) : CommonTasks()
             await HandleDiscardFirst(discardItem);
 
         var dest = new Inventory.InventoryContainerWrapper(InventoryType.EquippedItems);
-        if (equipItem is { Location.Container: var cont, Location.Slot: var slot })
+        if (equipItem.LocationODR is { Page: var page, Slot: var slot })
         {
             // TODO: why is sourceX different from Location.X?
             Log($"Equipping {equipItem}");
-            MoveItem(sourceContainer, sourceSlot, targetSlot);
-            await WaitUntil(() => ItemIsEquipped(item.RowId, (int)targetSlot), $"WaitingForEquipped_#{item.RowId}");
+            // MoveItem(sourceContainer + page, slot, targetSlot); // no error, nothing happens
+            //MoveItem(equipItem.Location.Value.Container, (uint)equipItem.Location.Value.Slot, targetSlot); // insuffcient space
+            //MoveItem(equipItem.Type + page, slot, targetSlot); // no error, nothing happens
+            IMMoveItem(equipItem.Type + page, slot, targetSlot);
+            await InventoryChange();
+            //await WaitUntil(() => ItemIsEquipped(item.RowId, (int)targetSlot), $"WaitingForEquipped_#{item.RowId}");
         }
     }
 
@@ -131,7 +137,7 @@ public sealed class AutoDeliveroo(bool equipRecommendations) : CommonTasks()
     {
         using var scope = BeginScope("HandleDiscard");
         Log($"Upgrade item requires free armoury slot to equip");
-        if (item.LocationODR is { Page: var page, Slot: var slot})
+        if (item.LocationODR is { Page: var page, Slot: var slot })
         {
             foreach (var cont in Inventory.PlayerInventoryNoKeyItems)
             {
@@ -139,12 +145,33 @@ public sealed class AutoDeliveroo(bool equipRecommendations) : CommonTasks()
                 {
                     Log($"Moving {item} [{item.Container} -> {dest}]");
                     MoveItem(item.Type + page, slot, destSlot, dest.Type);
-                    await WaitUntil(() => item.Container.Contains(item) && dest.EmptySlots > 0, $"WaitingForSpaceIn{item.Container.Type}");
-                    await NextFrame();
+                    await InventoryChange();
+                    //await WaitUntil(() => item.Container.Contains(item) && dest.EmptySlots > 0, $"WaitingForSpaceIn{item.Container.Type}");
                     return;
                 }
             }
             Error($"Failed to find free inventory slot to move {item}");
+        }
+    }
+
+    private async Task InventoryChange()
+    {
+        using var scope = BeginScope("InventoryChange");
+        var tcs = new TaskCompletionSource();
+        void OnItemMoved(GameInventoryEvent type, InventoryEventArgs data)
+        {
+            Log($"Inventory changed: {type} {data}");
+            tcs.TrySetResult();
+        }
+
+        Svc.GameInventory.ItemMoved += OnItemMoved;
+        try
+        {
+            await tcs.Task;
+        }
+        finally
+        {
+            Svc.GameInventory.ItemMoved -= OnItemMoved;
         }
     }
 
@@ -169,7 +196,9 @@ public sealed class AutoDeliveroo(bool equipRecommendations) : CommonTasks()
         return wrapper;
     }
 
-    private void MoveItem(InventoryType sourceInventory, uint sourceSlot, uint equipSlot, InventoryType? destInventory = null)
+    private unsafe void IMMoveItem(InventoryType sourceInventory, uint sourceSlot, uint equipSlot, InventoryType? destInventory = null)
+        => InventoryManager.Instance()->MoveItemSlot(sourceInventory, (ushort)sourceSlot, destInventory ?? InventoryType.EquippedItems, (ushort)equipSlot, 1);
+    private unsafe void MoveItem(InventoryType sourceInventory, uint sourceSlot, uint equipSlot, InventoryType? destInventory = null)
     {
         var sourceContainerId = GetContainerId(sourceInventory);
         var destinationContainerId = GetContainerId(destInventory ?? InventoryType.EquippedItems);
