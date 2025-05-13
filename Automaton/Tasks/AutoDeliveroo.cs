@@ -124,7 +124,7 @@ public sealed class AutoDeliveroo(bool equipRecommendations) : CommonTasks()
         {
             Log($"Equipping {equipItem} to slot #{targetSlot}");
             // TODO: look into this
-            MoveItem(equipItem.Type + page, slot, targetSlot); // no error, nothing happens
+            MoveItem(equipItem.Type + page, slot, targetSlot);
             await InventoryChange();
             //IMMoveItem(sourceContainer, sourceSlot, targetSlot); // works but doesn't trigger an inventorychange
             //await WaitUntil(() => ItemIsEquipped(item.RowId, (int)targetSlot), $"WaitingForEquipped_#{item.RowId}");
