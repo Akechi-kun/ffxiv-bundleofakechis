@@ -15,7 +15,7 @@ public sealed class GatherLeve : CommonTasks
         // repeat from 3 if no nearby nodes
         if (LeveNode is { } node)
         {
-            await MoveTo(node.Position, 3);
+            await MoveTo(node.Position, MovementConfig.Everything);
             await InteractWith(node);
         }
     }

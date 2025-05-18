@@ -214,7 +214,7 @@ public class DateWithDestiny : Tweak<DateWithDestinyConfiguration>
 
         if (Service.Navmesh.IsRunning())
         {
-            if (DistanceToTarget() < 2 || (Svc.Targets.Target != null && DistanceToHitboxEdge(Svc.Targets.Target.HitboxRadius) <= (Config.StayInMeleeRange ? 0 : 15)))
+            if (DistanceToTarget() < 2 || Svc.Targets.Target != null && DistanceToHitboxEdge(Svc.Targets.Target.HitboxRadius) <= (Config.StayInMeleeRange ? 0 : 15))
                 Service.Navmesh.Stop();
             else
                 return;
@@ -345,7 +345,7 @@ public class DateWithDestiny : Tweak<DateWithDestinyConfiguration>
         && x.IsHostile()
         && x.ObjectKind == ObjectKind.BattleNpc
         && x.SubKind == (byte)BattleNpcSubKind.Enemy
-        && (x.Struct() != null && x.Struct()->FateId == FateID) && Math.Sqrt(Math.Pow(x.Position.X - CurrentFate->Location.X, 2) + Math.Pow(x.Position.Z - CurrentFate->Location.Z, 2)) < CurrentFate->Radius)
+        && x.Struct() != null && x.Struct()->FateId == FateID && Math.Sqrt(Math.Pow(x.Position.X - CurrentFate->Location.X, 2) + Math.Pow(x.Position.Z - CurrentFate->Location.Z, 2)) < CurrentFate->Radius)
         // Prioritize Forlorns if configured
         .OrderByDescending(x => Config.PrioritizeForlorns && ForlornIDs.Contains(x.DataId))
         // Prioritize enemies targeting us

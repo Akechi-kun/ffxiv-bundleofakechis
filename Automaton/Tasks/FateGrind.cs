@@ -111,7 +111,7 @@ public sealed class FateGrind(DateWithDestinyConfiguration config) : CommonTasks
             {
                 NextFate = nextFate;
                 await WaitWhile(() => Player.IsBusy, "WaitingForNotBusy");
-                await MoveTo(GetRandomPointInFate(NextFate), 5, true, true);
+                await MoveTo(GetRandomPointInFate(NextFate), MovementConfig.Everything);
             }
 
             if (!AvailableFates.Any())
@@ -142,7 +142,7 @@ public sealed class FateGrind(DateWithDestinyConfiguration config) : CommonTasks
         if (FateActivationNpc is { } npc)
         {
             Status = "Activating fate";
-            await MoveTo(npc.Position, 3, dismount: true);
+            await MoveTo(npc.Position, new MovementConfig { Tolerance = 3, Mount = true, Dismount = true });
             await InteractWith(npc, () => NextFate!.State == FateState.Running, skipTalk: true, skipYesNo: true);
         }
     }
@@ -155,7 +155,7 @@ public sealed class FateGrind(DateWithDestinyConfiguration config) : CommonTasks
         {
             await WaitWhile(() => PlayerEx.HatersWithFullAggro > 0, "WaitingForHatersToDie");
             Service.BossMod.ClearActive();
-            await MoveTo(npc.Position, 3);
+            await MoveTo(npc.Position, MovementConfig.InteractRange);
             if (PlayerEx.HatersWithFullAggro > 0)
             {
                 Service.BossMod.SetActive("AI");
@@ -183,7 +183,7 @@ public sealed class FateGrind(DateWithDestinyConfiguration config) : CommonTasks
             return CurrentFate.Position + direction * (CurrentFate.Radius * new Random().NextFloat(1.1f, 1.4f)) + new Vector3(0, new Random().Next(10, 30), 0);
         }
         // TODO: this might generate a point inside a mountain or something
-        await MoveTo(RandomCoordOutsideFate(AvailableFates.FirstOrDefault()), 5, true, true);
+        await MoveTo(RandomCoordOutsideFate(AvailableFates.FirstOrDefault()), MovementConfig.Everything);
     }
 
     private async Task Resurrect()

@@ -1,5 +1,6 @@
 ﻿using Automaton.Tasks;
 using Dalamud.Interface.Utility.Raii;
+using FFXIVClientStructs.FFXIV.Client.Game.UI;
 using ImGuiNET;
 
 namespace Automaton.UI.Debug.Tabs;
@@ -15,6 +16,9 @@ internal unsafe class TasksTab : DebugTab
         if (ImGui.Button("deliveroo"))
             Service.Automation.Start(new AutoDeliveroo(C.Tweaks.ARTurnIn.EquipGearsetterRecs));
 
+        if (ImGui.Button("transmute"))
+            Service.Automation.Start(new MateriaTransmutation());
+
         if (ImGui.Button($"dwd"))
         {
             Service.Automation.Start(new FateGrind(C.Tweaks.DateWithDestiny));
@@ -27,5 +31,12 @@ internal unsafe class TasksTab : DebugTab
                 fate.Print();
             }
         }
+
+        var mt = UIState.Instance()->MateriaTrade;
+        ImGui.TextUnformatted($"Materia 1: {mt.MateriaId1}-{mt.Quantity1}");
+        ImGui.TextUnformatted($"Materia 2: {mt.MateriaId2}-{mt.Quantity2}");
+        ImGui.TextUnformatted($"Materia 3: {mt.MateriaId3}-{mt.Quantity3}");
+        ImGui.TextUnformatted($"Materia 4: {mt.MateriaId4}-{mt.Quantity4}");
+        ImGui.TextUnformatted($"Materia 5: {mt.MateriaId5}-{mt.Quantity5}");
     }
 }

@@ -6,25 +6,58 @@ using System.Threading.Tasks;
 using Achievement = FFXIVClientStructs.FFXIV.Client.Game.UI.Achievement;
 
 namespace Automaton.Tasks;
+
+public class MovementConfig
+{
+    public float? Tolerance { get; set; }
+    public bool Mount { get; set; }
+    public bool Fly { get; set; }
+    public bool Dismount { get; set; }
+
+    public static MovementConfig Default => new()
+    {
+        Tolerance = null,
+        Mount = false,
+        Fly = false,
+        Dismount = false
+    };
+
+    public static MovementConfig Everything => new()
+    {
+        Tolerance = null,
+        Mount = true,
+        Fly = true,
+        Dismount = true
+    };
+
+    public static MovementConfig InteractRange => new()
+    {
+        Tolerance = 3,
+        Mount = false,
+        Fly = false,
+        Dismount = false
+    };
+}
+
 public abstract class CommonTasks : AutoTask
 {
     private readonly OverrideMovement movement = new();
     private readonly Memory.AchievementProgress achv = new();
 
-    protected async Task MoveTo(FlagMapMarker flag, float tolerance, bool mount = false, bool fly = false)
+    protected async Task MoveTo(FlagMapMarker flag, MovementConfig config)
     {
         using var scope = BeginScope("MoveToFlag");
         Status = "Waiting for Navmesh";
         await WaitWhile(() => Service.Navmesh.BuildProgress() >= 0, "BuildMesh");
         ErrorIf(!Service.Navmesh.IsReady(), "Failed to build navmesh for the zone");
         var pof = Service.Navmesh.PointOnFloor(Coords.FlagToWorld(flag), false, 5) ?? throw new Exception("Failed to find point on floor");
-        await MoveTo(pof, tolerance, mount, fly);
+        await MoveTo(pof, config);
     }
 
-    protected async Task MoveTo(Vector3 dest, float tolerance, bool mount = false, bool fly = false, bool dismount = false)
+    protected async Task MoveTo(Vector3 dest, MovementConfig config)
     {
         using var scope = BeginScope("MoveTo");
-        if (Player.DistanceTo(dest) < tolerance)
+        if (Player.DistanceTo(dest) < (config.Tolerance ?? Service.Navmesh.GetTolerance()))
             return; // already in range
 
         if (Coords.IsTeleportingFaster(dest))
@@ -33,18 +66,18 @@ public abstract class CommonTasks : AutoTask
             await TeleportTo(Player.Territory, dest, allowSameZoneTeleport: true);
         }
 
-        if (mount || fly)
+        if (config.Mount || config.Fly)
             await Mount();
 
         // ensure navmesh is ready
         Status = "Waiting for Navmesh";
         await WaitWhile(() => Service.Navmesh.BuildProgress() >= 0, "BuildMesh");
         ErrorIf(!Service.Navmesh.IsReady(), "Failed to build navmesh for the zone");
-        ErrorIf(!Service.Navmesh.PathfindAndMoveTo(dest, fly), "Failed to start pathfinding to destination");
+        ErrorIf(!Service.Navmesh.PathfindAndMoveTo(dest, config.Fly), "Failed to start pathfinding to destination");
         Status = $"Moving to {dest}";
         using var stop = new OnDispose(Service.Navmesh.Stop);
-        await WaitWhile(() => !(Player.DistanceTo(dest) < tolerance), "Navigate"); // TODO: investigate rare null here
-        if (dismount)
+        await WaitWhile(() => !(Player.DistanceTo(dest) < (config.Tolerance ?? Service.Navmesh.GetTolerance())), "Navigate");
+        if (config.Dismount)
             await Dismount();
     }
 
@@ -83,7 +116,7 @@ public abstract class CommonTasks : AutoTask
         {
             Status = $"Interacting with aethernet to get to [{territoryId}]";
             var (aetheryteId, aetherytePos) = Coords.FindAetheryte(teleportAetheryteId);
-            await MoveTo(aetherytePos, 10);
+            await MoveTo(aetherytePos, new MovementConfig { Tolerance = 10 });
             ErrorIf(!PlayerEx.InteractWith(aetheryteId), "Failed to interact with aetheryte");
             await WaitUntilSkipping(() => Game.AddonActive("SelectString"), "WaitSelectAethernet", skipTalk: true);
             Game.TeleportToAethernet(teleportAetheryteId, closestAetheryteId);
@@ -96,7 +129,7 @@ public abstract class CommonTasks : AutoTask
             // firmament special case
             Status = $"Interacting with aetheryte to get to the Firmament";
             var (aetheryteId, aetherytePos) = Coords.FindAetheryte(teleportAetheryteId);
-            await MoveTo(aetherytePos, 10);
+            await MoveTo(aetherytePos, new MovementConfig { Tolerance = 10 });
             ErrorIf(!PlayerEx.InteractWith(aetheryteId), "Failed to interact with aetheryte");
             await WaitUntilSkipping(() => Game.AddonActive("SelectString"), "WaitSelectFirmament", skipTalk: true);
             Game.TeleportToFirmament(teleportAetheryteId);
@@ -118,7 +151,7 @@ public abstract class CommonTasks : AutoTask
         ErrorIf(!Player.Mounted, "Failed to mount");
     }
 
-    private async Task Dismount()
+    protected async Task Dismount()
     {
         using var scope = BeginScope("Dismount");
         if (!Player.Mounted) return;

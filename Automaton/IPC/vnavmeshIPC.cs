@@ -22,6 +22,7 @@ public class NavmeshIPC : BaseIPC
 
     [EzIPC("Path.%m")] public readonly Action Stop;
     [EzIPC("Path.%m")] public readonly Func<bool> IsRunning;
+    [EzIPC("Path.%m")] public readonly Func<float> GetTolerance;
 
     /// <summary> Vector3 p, float halfExtentXZ, float halfExtentY </summary>
     [EzIPC("Query.Mesh.%m")] public readonly Func<Vector3, float, float, Vector3?> NearestPoint;

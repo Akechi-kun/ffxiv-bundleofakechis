@@ -41,7 +41,7 @@ public sealed class BuyCeruleumTanks : CommonTasks
         await WaitUntilThenFalse(() => Service.Lifestream.IsBusy(), $"LifestreamWaitForFinish");
         if (EstateHallDoor is { } door)
         {
-            await MoveTo(door.Position, 3);
+            await MoveTo(door.Position, MovementConfig.InteractRange);
             await InteractWith(door, () => Player.TerritoryIntendedUse == TerritoryIntendedUseEnum.Housing_Instances, skipYesNo: true);
             await WaitWhile(() => !Game.IsTerritoryLoaded(), "WaitingForTerritoryToLoad");
             await EnterWorkshop();
@@ -56,7 +56,7 @@ public sealed class BuyCeruleumTanks : CommonTasks
         ErrorIf(Player.TerritoryIntendedUse != TerritoryIntendedUseEnum.Housing_Instances, "Not in a house");
         if (WorkshopDoor is { } door)
         {
-            await MoveTo(door.Position, 3);
+            await MoveTo(door.Position, MovementConfig.InteractRange);
             await InteractWith(door, () => GetRow<TerritoryType>(Player.Territory) is { } t && t.BGM.RowId == 328, 0);
             await WaitUntil(Game.IsTerritoryLoaded, "WaitingForTerritoryToLoad");
         }

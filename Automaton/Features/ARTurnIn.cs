@@ -46,7 +46,7 @@ internal class ARTurnIn : ARTweak<ARTurnInConfiguration>
             Log("Skipping post process turn in for character: character excluded.");
         else
         {
-            if (Service.AutoRetainerIPC.GetInventoryFreeSlotCount() <= Config.InventoryFreeSlotThreshold || (Inventory.GetItemCount(21072, false) is { } v && v > 0 && v <= Config.VenturesRemaining))
+            if (Service.AutoRetainerIPC.GetInventoryFreeSlotCount() <= Config.InventoryFreeSlotThreshold || Inventory.GetItemCount(21072, false) is { } v && v > 0 && v <= Config.VenturesRemaining)
                 AutoRetainer.RequestCharacterPostprocess();
             else
                 Log("Skipping post process for character: inventory and ventures above threshold.");

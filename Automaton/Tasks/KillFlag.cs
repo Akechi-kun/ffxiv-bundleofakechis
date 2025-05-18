@@ -1,8 +1,10 @@
 ﻿using Automaton.Features;
 using Dalamud.Game.ClientState.Objects.Types;
 using ECommons.Automation;
+using FFXIVClientStructs.FFXIV.Common.Component.BGCollision;
 using Lumina.Excel.Sheets;
 using System.Threading.Tasks;
+using System.Numerics;
 
 namespace Automaton.Tasks;
 public sealed class KillFlag(string world) : CommonTasks
@@ -21,7 +23,7 @@ public sealed class KillFlag(string world) : CommonTasks
             await WaitUntil(() => !Player.IsBusy, "WaitForAvailable");
         }
         await TeleportTo(PlayerEx.MapFlag.TerritoryId, Coords.FlagToWorld(PlayerEx.MapFlag));
-        await MoveTo(PlayerEx.MapFlag, 5, true, PlayerEx.MapFlag.TerritoryId != 180); // just don't ever fly in outer la noscea until navmesh is better
+        await MoveTo(PlayerEx.MapFlag, new MovementConfig { Mount = true, Fly = PlayerEx.MapFlag.TerritoryId != 180 }); // just don't ever fly in outer la noscea until navmesh is better
         using var stop = new OnDispose(() => Service.BossMod.ClearActive());
         await Kill();
     }
@@ -38,6 +40,8 @@ public sealed class KillFlag(string world) : CommonTasks
             .FirstOrDefault();
         if (GetHunt() is { } target)
         {
+            await Dismount();
+            await MoveIfNoLoS(target);
             Svc.Targets.Target = target;
             Service.BossMod.SetActiveList(["VBM Default", "VBM AI"]);
             Status = $"Waiting for {target.Name} to die";
@@ -45,6 +49,31 @@ public sealed class KillFlag(string world) : CommonTasks
             Service.BossMod.ClearActive();
         }
     }
+
+    private async Task MoveIfNoLoS(DGameObject target)
+    {
+        if (!IsInLineOfSight(Player.Position, target.Position))
+        {
+            // Try positions in a circle around the target
+            const float searchRadius = 5.0f;
+            const int numPositions = 8;
+
+            for (var i = 0; i < numPositions; i++)
+            {
+                var angle = (float)(i * 2 * Math.PI / numPositions);
+                var searchPos = new Vector3(target.Position.X + searchRadius * (float)Math.Cos(angle), target.Position.Y, target.Position.Z + searchRadius * (float)Math.Sin(angle));
+                if (Service.Navmesh.PointOnFloor(searchPos, false, 1) is { } point && IsInLineOfSight(point, target.Position))
+                {
+                    await MoveTo(searchPos, MovementConfig.Default);
+                    return;
+                }
+            }
+        }
+    }
+
+    private Vector3 losOffset = new(0, 2, 0);
+    private bool IsInLineOfSight(Vector3 source, Vector3 target)
+        => !BGCollisionModule.RaycastMaterialFilter(source + losOffset, Vector3.Normalize((target + losOffset) - (source + losOffset)), out _, Vector3.Distance(source + losOffset, target + losOffset));
 
     private async Task TargetDead(DGameObject target)
     {
