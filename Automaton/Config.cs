@@ -24,6 +24,7 @@ public class TweakConfigs
     public AddresBookDebugConfiguration AddresBookDebug { get; init; } = new();
     public ARTurnInConfiguration ARTurnIn { get; init; } = new();
     public AutoFollowConfiguration AutoFollow { get; init; } = new();
+    public AutoInviteConfiguration AutoInvite { get; init; } = new();
     public ClickToMoveConfiguration ClickToMove { get; init; } = new();
     public CommandsConfiguration Commands { get; init; } = new();
     public DateWithDestinyConfiguration DateWithDestiny { get; init; } = new();
