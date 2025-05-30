@@ -108,8 +108,8 @@ public abstract class CommonTasks : AutoTask
         {
             Status = $"Teleporting to {row.Value.PlaceName.Value.Name}";
             ErrorIf(!Coords.ExecuteTeleport(teleportAetheryteId), $"Failed to teleport to {teleportAetheryteId}");
-            await WaitWhile(() => !Player.IsBusy, "TeleportStart");
-            await WaitWhile(() => Player.IsBusy || !Game.IsTerritoryLoaded(), "TeleportFinish");
+            await WaitUntil(Game.IsCastingTeleport, "TeleportStart");
+            await WaitUntil(() => Player.Territory == GetRow<Aetheryte>(teleportAetheryteId)?.Territory.RowId && Game.IsTerritoryLoaded(), "TeleportFinish");
         }
 
         if (teleportAetheryteId != closestAetheryteId)
@@ -120,8 +120,8 @@ public abstract class CommonTasks : AutoTask
             ErrorIf(!PlayerEx.InteractWith(aetheryteId), "Failed to interact with aetheryte");
             await WaitUntilSkipping(() => Game.AddonActive("SelectString"), "WaitSelectAethernet", skipTalk: true);
             Game.TeleportToAethernet(teleportAetheryteId, closestAetheryteId);
-            await WaitWhile(() => !Player.IsBusy, "TeleportAethernetStart");
-            await WaitWhile(() => Player.IsBusy || !Game.IsTerritoryLoaded(), "TeleportAethernetFinish");
+            await WaitUntil(() => Player.IsBusy, "TeleportStart");
+            await WaitUntil(() => Player.Territory == territoryId && Game.IsTerritoryLoaded(), "TeleportFinish");
         }
 
         if (territoryId == 886)
@@ -133,8 +133,8 @@ public abstract class CommonTasks : AutoTask
             ErrorIf(!PlayerEx.InteractWith(aetheryteId), "Failed to interact with aetheryte");
             await WaitUntilSkipping(() => Game.AddonActive("SelectString"), "WaitSelectFirmament", skipTalk: true);
             Game.TeleportToFirmament(teleportAetheryteId);
-            await WaitWhile(() => !Player.IsBusy, "TeleportFirmamentStart");
-            await WaitWhile(() => Player.IsBusy || !Game.IsTerritoryLoaded(), "TeleportFirmamentFinish");
+            await WaitUntil(() => Player.IsBusy, "TeleportStart");
+            await WaitUntil(() => Player.Territory == territoryId && Game.IsTerritoryLoaded(), "TeleportFinish");
         }
 
         // I think this check gives more problems than it solves

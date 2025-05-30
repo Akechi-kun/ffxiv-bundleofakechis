@@ -363,4 +363,10 @@ public unsafe class Game
     public static bool IsQuestComplete(uint questId) => QuestManager.IsQuestComplete(questId);
 
     public static bool IsTerritoryLoaded() => GameMain.Instance()->TerritoryLoadState == 2;
+
+    public static bool IsCastingTeleport()
+    {
+        var info = Player.Character->GetCastInfo();
+        return info is not null && info->IsCasting != 0 && info->ActionType == ActionType.Action && info->ActionId == 5;
+    }
 }
