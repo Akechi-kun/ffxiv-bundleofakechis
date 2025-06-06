@@ -14,4 +14,6 @@ public static unsafe class ObjectExtensions
 
     public static FFXIVClientStructs.FFXIV.Client.Game.Event.EventHandlerInfo? EventInfo(this DGameObject obj)
         => obj == null || obj.Struct() == null || obj.Struct()->EventHandler == null ? null : obj.Struct()->EventHandler->Info;
+
+    public static float DistanceTo(this DGameObject obj, Vector3 position) => Vector3.Distance(obj.Position, position);
 }

@@ -22,7 +22,7 @@ public sealed class KillFlag(string world) : CommonTasks
             await WaitUntil(() => !Player.IsBusy, "WaitForAvailable");
         }
         await TeleportTo(PlayerEx.MapFlag.TerritoryId, Coords.FlagToWorld(PlayerEx.MapFlag));
-        await MoveTo(PlayerEx.MapFlag, new MovementConfig { Mount = true, Fly = PlayerEx.MapFlag.TerritoryId != 180 }); // just don't ever fly in outer la noscea until navmesh is better
+        await MoveTo(PlayerEx.MapFlag, new MovementConfig { Mount = true, Fly = PlayerEx.MapFlag.TerritoryId != 180 }, true); // just don't ever fly in outer la noscea until navmesh is better
         using var stop = new OnDispose(() => Service.BossMod.ClearActive());
         await Kill();
     }

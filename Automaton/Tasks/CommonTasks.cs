@@ -1,4 +1,5 @@
 ﻿using Automaton.Utilities.Movement;
+using Dalamud.Game.ClientState.Objects.Types;
 using FFXIVClientStructs.FFXIV.Client.UI.Agent;
 using Lumina.Excel.Sheets;
 using System.Threading.Tasks;
@@ -53,9 +54,20 @@ public abstract class CommonTasks : AutoTask
         await MoveTo(pof, config);
     }
 
+    protected async Task MoveTo(FlagMapMarker flag, MovementConfig config, bool anyHuntMob)
+    {
+        using var scope = BeginScope("MoveToFlag");
+        Status = "Waiting for Navmesh";
+        await WaitWhile(() => Service.Navmesh.BuildProgress() >= 0, "BuildMesh");
+        ErrorIf(!Service.Navmesh.IsReady(), "Failed to build navmesh for the zone");
+        var pof = Service.Navmesh.PointOnFloor(Coords.FlagToWorld(flag), false, 5) ?? throw new Exception("Failed to find point on floor");
+        await MoveTo(pof, config, anyHuntMob);
+    }
+
     protected async Task MoveTo(Vector3 dest, MovementConfig config)
     {
         using var scope = BeginScope("MoveTo");
+        await WaitUntil(() => Player.Available, "WaitingForPlayer"); // this is needed for some reason
         if (Player.DistanceTo(dest) < (config.Tolerance ?? Service.Navmesh.GetTolerance()))
             return; // already in range
 
@@ -93,6 +105,39 @@ public abstract class CommonTasks : AutoTask
         await WaitWhile(() => !(Player.DistanceTo(dest) < tolerance), "DirectNavigate");
     }
 
+    protected async Task MoveTo(Vector3 dest, MovementConfig config, bool anyHuntMob)
+    {
+        using var scope = BeginScope("MoveTo");
+        await WaitUntil(() => Player.Available, "WaitingForPlayer"); // this is needed for some reason
+        if (Player.DistanceTo(dest) < (config.Tolerance ?? Service.Navmesh.GetTolerance()))
+            return; // already in range
+
+        if (Coords.IsTeleportingFaster(dest))
+        {
+            Log("Teleporting faster");
+            await TeleportTo(Player.Territory, dest, allowSameZoneTeleport: true);
+        }
+
+        if (config.Mount || config.Fly)
+            await Mount();
+
+        // ensure navmesh is ready
+        Status = "Waiting for Navmesh";
+        await WaitWhile(() => Service.Navmesh.BuildProgress() >= 0, "BuildMesh");
+        ErrorIf(!Service.Navmesh.IsReady(), "Failed to build navmesh for the zone");
+        ErrorIf(!Service.Navmesh.PathfindAndMoveTo(dest, config.Fly), "Failed to start pathfinding to destination");
+        Status = $"Moving to {dest}";
+        using var stop = new OnDispose(Service.Navmesh.Stop);
+        IBattleNpc? GetHuntNearby() => Svc.Objects.OfType<IBattleNpc>().OrderBy(o => o.DistanceTo(dest)).FirstOrDefault(o => o.NameId > 0 && FindRow<NotoriousMonster>(x => o.DataId == x.BNpcBase.RowId)?.Rank > 1);
+        await WaitWhile(() => !(Player.DistanceTo(dest) < (config.Tolerance ?? Service.Navmesh.GetTolerance()) || anyHuntMob && GetHuntNearby() is not null), "Navigate");
+
+        if (anyHuntMob && GetHuntNearby() is { } target)
+            await MoveTo(target.Position, config);
+
+        if (config.Dismount)
+            await Dismount();
+    }
+
     protected async Task TeleportTo(uint territoryId, Vector3 destination, bool allowSameZoneTeleport = false)
     {
         using var scope = BeginScope("Teleport");
@@ -108,7 +153,7 @@ public abstract class CommonTasks : AutoTask
             Status = $"Teleporting to {row.Value.PlaceName.Value.Name}";
             ErrorIf(!Coords.ExecuteTeleport(teleportAetheryteId), $"Failed to teleport to {teleportAetheryteId}");
             await WaitUntil(Game.IsCastingTeleport, "TeleportStart");
-            await WaitUntil(() => Player.Territory == GetRow<Aetheryte>(teleportAetheryteId)?.Territory.RowId && Game.IsTerritoryLoaded(), "TeleportFinish");
+            await WaitUntil(() => Player.Territory == GetRow<Aetheryte>(teleportAetheryteId)?.Territory.RowId && Game.IsTerritoryLoaded() && Player.Interactable, "TeleportFinish");
         }
 
         if (teleportAetheryteId != closestAetheryteId)
@@ -120,7 +165,7 @@ public abstract class CommonTasks : AutoTask
             await WaitUntilSkipping(() => Game.AddonActive("SelectString"), "WaitSelectAethernet", skipTalk: true);
             Game.TeleportToAethernet(teleportAetheryteId, closestAetheryteId);
             await WaitUntil(() => Player.IsBusy, "TeleportStart");
-            await WaitUntil(() => Player.Territory == territoryId && Game.IsTerritoryLoaded(), "TeleportFinish");
+            await WaitUntil(() => Player.Territory == territoryId && Game.IsTerritoryLoaded() && Player.Interactable, "TeleportFinish");
         }
 
         if (territoryId == 886)
@@ -133,7 +178,7 @@ public abstract class CommonTasks : AutoTask
             await WaitUntilSkipping(() => Game.AddonActive("SelectString"), "WaitSelectFirmament", skipTalk: true);
             Game.TeleportToFirmament(teleportAetheryteId);
             await WaitUntil(() => Player.IsBusy, "TeleportStart");
-            await WaitUntil(() => Player.Territory == territoryId && Game.IsTerritoryLoaded(), "TeleportFinish");
+            await WaitUntil(() => Player.Territory == territoryId && Game.IsTerritoryLoaded() && Player.Interactable, "TeleportFinish");
         }
 
         // I think this check gives more problems than it solves

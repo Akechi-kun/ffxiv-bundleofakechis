@@ -9,15 +9,18 @@ namespace Automaton.Features;
 public class EnhancedDutyStartEndConfiguration
 {
     [NetworkWarning]
+    [StringConfig]
     public string StartMsg = string.Empty;
+    [StringListConfig]
     public HashSet<string> Players = [];
-    public bool CheckForAll;
-    public bool CheckForAny;
+    [BoolConfig] public bool CheckForAll;
+    [BoolConfig] public bool CheckForAny;
 
     [NetworkWarning]
+    [StringConfig]
     public string EndMsg = string.Empty;
-    public bool AutoLeaveOnEnd;
-    public int TimeToWait;
+    [BoolConfig] public bool AutoLeaveOnEnd;
+    [IntConfig] public int TimeToWait;
 }
 
 [Tweak]

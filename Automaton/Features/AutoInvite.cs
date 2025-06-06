@@ -17,6 +17,7 @@ public class AutoInviteConfiguration
     [StringConfig(IsRegex = nameof(IsRegex))] public string Pattern = string.Empty;
     [BoolConfig] public bool IsRegex = false;
     [BoolConfig] public bool TurnOffOnceFull = true;
+    [IntConfig] public int DelayMs = 250;
     [ChatChannelConfig(Mode = ChatChannelConfigAttribute.ChatChannelMode.PlayerChat)] public List<XivChatType> Channels = [];
 }
 
@@ -54,6 +55,8 @@ public class AutoInvite : Tweak<AutoInviteConfiguration>
 
     private unsafe void Detour(RaptureLogModule* thisPtr, ulong contentId, ulong accountId, int messageIndex, ushort worldId, ushort chatType)
     {
+        Hook?.Original(thisPtr, contentId, accountId, messageIndex, worldId, chatType);
+
         if (!On) return;
 
         if (Config.Pattern.IsNullOrEmpty())
@@ -119,13 +122,18 @@ public class AutoInvite : Tweak<AutoInviteConfiguration>
                 if (InInvitableInstance())
                 {
                     Log($"Inviting {playerPayload.PlayerName} to instanced party.");
-                    InfoProxyPartyInvite.Instance()->InviteToPartyInInstanceByContentId(contentId);
+                    TaskManager.EnqueueDelay(Config.DelayMs);
+                    TaskManager.Enqueue(() => InfoProxyPartyInvite.Instance()->InviteToPartyInInstanceByContentId(contentId));
                 }
                 else
                 {
                     Log($"Inviting {playerPayload.PlayerName} to non-instanced party.");
-                    fixed (byte* namePtr = ToTerminatedBytes(playerPayload.PlayerName))
-                        InfoProxyPartyInvite.Instance()->InviteToParty(contentId, namePtr, (ushort)playerPayload.World.RowId);
+                    TaskManager.EnqueueDelay(Config.DelayMs);
+                    TaskManager.Enqueue(() =>
+                    {
+                        fixed (byte* namePtr = ToTerminatedBytes(playerPayload.PlayerName))
+                            InfoProxyPartyInvite.Instance()->InviteToParty(contentId, namePtr, (ushort)playerPayload.World.RowId);
+                    });
                 }
 
                 if (_attempts > 0)
