@@ -14,7 +14,7 @@ public sealed class KillFlag(string world) : CommonTasks
         {
             if (C.EnabledTweaks.Contains(nameof(InstantReturn)) && Player.Territory != Player.HomeAetheryteTerritory)
             {
-                Chat.Instance.SendMessage("/return");
+                Chat.SendMessage("/return");
                 await WaitUntilTerritory(Player.HomeAetheryteTerritory);
             }
             Service.Lifestream.ExecuteCommand($"{world}");
@@ -47,12 +47,15 @@ public sealed class KillFlag(string world) : CommonTasks
             await TargetDead(target);
             Service.BossMod.ClearActive();
         }
+        else
+            Log($"No hunt found.");
     }
 
     private async Task MoveIfNoLoS(DGameObject target)
     {
         if (!IsInLineOfSight(Player.Position, target.Position))
         {
+            Log($"No line of sight to {target.Name}, moving...");
             // Try positions in a circle around the target
             const float searchRadius = 5.0f;
             const int numPositions = 8;
