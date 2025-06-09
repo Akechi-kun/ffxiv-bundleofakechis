@@ -179,9 +179,9 @@ internal class WondrousTailsClickToOpen : Tweak
                             // Rival Wings
                             case 67:
                                 if (ImGuiEx.Ctrl)
-                                    QueueDuty([791], false); // Hidden Gorge
+                                    QueueDuty([599], false); // Hidden Gorge
                                 else
-                                    OpenDuty([791], false);
+                                    OpenDuty([599], false);
                                 break;
                         }
                         return [];
