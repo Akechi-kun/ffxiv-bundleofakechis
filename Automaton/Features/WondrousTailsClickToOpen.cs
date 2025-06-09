@@ -48,20 +48,28 @@ internal class WondrousTailsClickToOpen : Tweak
         if (duties.Count == 0) return;
         if (QueueInfo->QueueState is Pending or Queued) QueueInfo->CancelQueue();
 
-        if (GetRow<ContentFinderCondition>(duties.First())?.ClassJobLevelRequired < PlayerState.Instance()->MaxLevel - 20)
+        if (roulette)
         {
-            ContentsFinder.Instance()->IsUnrestrictedParty = true;
-            var d = duties.First();
-            QueueInfo->QueueDuties(&d, 1);
+            ContentsFinder.Instance()->ResetFlags();
+            QueueInfo->QueueRoulette((byte)duties.First());
         }
         else
         {
-            ContentsFinder.Instance()->ResetFlags();
-            var array = stackalloc uint[duties.Count];
-            for (var i = 0; i < duties.Count; i++)
-                array[i] = duties[i];
-            Log($"Queueing [{string.Join(", ", duties)}] [{string.Join(", ", new Span<uint>(array, duties.Count).ToArray())}]");
-            QueueInfo->QueueDuties(array, duties.Count);
+            if (GetRow<ContentFinderCondition>(duties.First())?.ClassJobLevelRequired < PlayerState.Instance()->MaxLevel - 20)
+            {
+                ContentsFinder.Instance()->IsUnrestrictedParty = true;
+                var d = duties.First();
+                QueueInfo->QueueDuties(&d, 1);
+            }
+            else
+            {
+                ContentsFinder.Instance()->ResetFlags();
+                var array = stackalloc uint[duties.Count];
+                for (var i = 0; i < duties.Count; i++)
+                    array[i] = duties[i];
+                Log($"Queueing [{string.Join(", ", duties)}] [{string.Join(", ", new Span<uint>(array, duties.Count).ToArray())}]");
+                QueueInfo->QueueDuties(array, duties.Count);
+            }
         }
     }
 
@@ -171,9 +179,9 @@ internal class WondrousTailsClickToOpen : Tweak
                             // Rival Wings
                             case 67:
                                 if (ImGuiEx.Ctrl)
-                                    QueueDuty([599], true); // Hidden Gorge
+                                    QueueDuty([791], false); // Hidden Gorge
                                 else
-                                    OpenDuty([599], true);
+                                    OpenDuty([791], false);
                                 break;
                         }
                         return [];
