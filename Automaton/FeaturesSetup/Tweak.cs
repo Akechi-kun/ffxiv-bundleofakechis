@@ -173,6 +173,8 @@ public abstract partial class Tweak // Internal
         Enabled = true;
     }
 
+    public bool CanBeEnabled() => Ready && !Outdated && !Disabled && Requirements.All(r => r.IsLoaded);
+
     internal virtual void DisableInternal(bool isDisposing = false)
     {
         if (!Enabled) return;

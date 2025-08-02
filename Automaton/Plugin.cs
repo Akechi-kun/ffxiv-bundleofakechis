@@ -5,6 +5,7 @@ using ECommons;
 using ECommons.Configuration;
 using ECommons.SimpleGui;
 using ECommons.Singletons;
+using ECommons.Reflection;
 using System.Collections.Specialized;
 using System.Reflection;
 
@@ -57,6 +58,7 @@ public class Plugin : IDalamudPlugin
         Svc.Framework.RunOnFrameworkThread(InitializeTweaks);
         C.EnabledTweaks.CollectionChanged += OnChange;
         Svc.ClientState.EnterPvP += Events.OnEnteredPvPInstance;
+        DalamudReflector.RegisterOnInstalledPluginsChangedEvents(OnPluginsChanged);
     }
 
     public static void OnChange(object? sender, NotifyCollectionChangedEventArgs e)
@@ -68,6 +70,19 @@ public class Plugin : IDalamudPlugin
             else if (!C.EnabledTweaks.Contains(t.InternalName) && t.Enabled || t.Enabled && t.IsDebug && !C.ShowDebug)
                 t.DisableInternal();
             EzConfig.Save();
+        }
+    }
+
+    private static void OnPluginsChanged()
+    {
+        foreach (var tweak in Tweaks)
+        {
+            if (C.EnabledTweaks.Contains(tweak.InternalName) && !tweak.Enabled && !tweak.Outdated && !tweak.Disabled)
+                if (tweak.CanBeEnabled())
+                    TryExecute(tweak.EnableInternal);
+
+            if (tweak.Enabled && !tweak.CanBeEnabled())
+                TryExecute(() => tweak.DisableInternal());
         }
     }
 
@@ -86,7 +101,7 @@ public class Plugin : IDalamudPlugin
     private void OnCommand(string command, string args)
     {
         if (args.Length == 0)
-            EzConfigGui.Window.Toggle();
+            EzConfigGui.Window?.Toggle();
         else
         {
             var arguments = args.Split(' ');
