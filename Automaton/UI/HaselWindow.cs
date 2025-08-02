@@ -1,7 +1,6 @@
 using Dalamud.Interface.Utility.Raii;
 using Dalamud.Interface.Windowing;
 using ECommons.ImGuiMethods;
-using ECommons.SimpleGui;
 using ImGuiNET;
 using System.Drawing;
 using System.Reflection;

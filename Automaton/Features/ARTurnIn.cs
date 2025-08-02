@@ -10,8 +10,8 @@ public class ARTurnInConfiguration
     [IntConfig(DefaultValue = 50, Min = 1, Max = 65000)]
     public int VenturesRemaining = 50;
 
-    [BoolConfig]
-    public bool EquipGearsetterRecs = false;
+    //[BoolConfig]
+    //public bool EquipGearsetterRecs = false;
 
     [CharacterBlacklistConfig]
     public List<ulong> ExcludedCharacters = [];
@@ -37,5 +37,5 @@ internal class ARTurnIn : ARTweak<ARTurnInConfiguration>
         }
     }
 
-    public override void OnCharacterReadyToPostProcess() => Service.Automation.Start(new AutoDeliveroo(Config.EquipGearsetterRecs), AutoRetainer.FinishCharacterPostProcess);
+    public override void OnCharacterReadyToPostProcess() => Service.Automation.Start(new AutoDeliveroo(false), AutoRetainer.FinishCharacterPostProcess);
 }

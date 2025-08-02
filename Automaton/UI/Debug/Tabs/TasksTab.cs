@@ -14,7 +14,7 @@ internal unsafe class TasksTab : DebugTab
         ImGui.TextUnformatted($"{Service.Automation.Name}: {Service.Automation.Status}");
 
         if (ImGui.Button("deliveroo"))
-            Service.Automation.Start(new AutoDeliveroo(C.Tweaks.ARTurnIn.EquipGearsetterRecs));
+            Service.Automation.Start(new AutoDeliveroo(false));
 
         if (ImGui.Button("transmute"))
             Service.Automation.Start(new MateriaTransmutation());

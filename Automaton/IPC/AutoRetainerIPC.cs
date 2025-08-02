@@ -15,4 +15,5 @@ public class AutoRetainerIPC : BaseIPC
     [EzIPC] public readonly Action<bool> SetMultiModeEnabled;
     [EzIPC] public readonly Func<bool> GetSuppressed;
     [EzIPC] public readonly Action<bool> SetSuppressed;
+    [EzIPC("GC.%m")] public readonly Action EnqueueInitiation;
 }

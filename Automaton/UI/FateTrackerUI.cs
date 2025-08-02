@@ -4,6 +4,8 @@ using Dalamud.Interface.Components;
 using Dalamud.Interface.Utility.Raii;
 using Dalamud.Interface.Windowing;
 using ECommons.ImGuiMethods;
+using FFXIVClientStructs.FFXIV.Client.Game.InstanceContent;
+using FFXIVClientStructs.FFXIV.Client.Game.WKS;
 using FFXIVClientStructs.FFXIV.Client.UI.Agent;
 using ImGuiNET;
 
@@ -80,5 +82,58 @@ internal class FateTrackerUI(DateWithDestiny tweak) : Window($"Fate Tracker##{na
                 _tweak.Config.blacklist.Remove(fate.FateId);
             }
         }
+    }
+
+    private unsafe List<FateWrapper> GetFates()
+    {
+        return Player.Territory switch
+        {
+            1237 => WKSManager.Instance()->MechaEventModule->Events.ToArray().Select(x => new FateWrapper()
+            {
+                FateType = FateType.MechaEvent,
+                Id = x.WKSMechaEventDataRowId,
+                Progress = x.EventProgress,
+                StartTime = x.EventStartTimestamp,
+                Duration = x.EventEndTimestamp - x.EventStartTimestamp,
+            }).ToList(),
+            1252 => DynamicEventContainer.GetInstance()->Events.ToArray().Select(x => new FateWrapper()
+            {
+                FateType = FateType.DynamicEvent,
+                Id = x.DynamicEventId,
+                StartTime = x.StartTimestamp,
+                Duration = (int)x.SecondsDuration,
+                TimeLeft = x.SecondsLeft,
+                Progress = x.Progress,
+            }).ToList(),
+            _ => Svc.Fates.OrderBy(x => Vector3.Distance(Player.Position, x.Position))
+                .Select(x => new FateWrapper()
+                {
+                    FateType = FateType.Normal,
+                    Id = x.FateId,
+                    Location = x.Position,
+                    StartTime = x.StartTimeEpoch,
+                    Duration = x.Duration,
+                    TimeLeft = x.TimeRemaining,
+                    Progress = x.Progress
+                }).ToList(),
+        };
+    }
+
+    private class FateWrapper
+    {
+        public FateType FateType { get; set; }
+        public uint Id { get; set; }
+        public Vector3 Location { get; set; }
+        public int StartTime { get; set; }
+        public int Duration { get; set; }
+        public float TimeLeft { get; set; }
+        public int Progress { get; set; }
+    }
+
+    private enum FateType
+    {
+        Normal,
+        MechaEvent, // cosmic exploration
+        DynamicEvent, // occult crescent
     }
 }
