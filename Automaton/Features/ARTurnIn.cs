@@ -17,7 +17,7 @@ public class ARTurnInConfiguration
     public List<ulong> ExcludedCharacters = [];
 }
 
-[Tweak]
+[Tweak(outdated: true, disabledReason: "Deliveroo deprecated")]
 internal class ARTurnIn : ARTweak<ARTurnInConfiguration>
 {
     public override string Name => "AutoRetainer x Deliveroo";
