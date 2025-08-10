@@ -19,7 +19,7 @@ public unsafe class Memory
     {
         internal const string AgentReturnReceiveEvent = "48 8B CE E8 ?? ?? ?? ?? 66 0F 1F 84 00 ?? ?? ?? ??";
         internal const string BewitchProc = "40 53 48 83 EC 50 45 33 C0";
-        internal const string EnqueueSnipeTask = "48 89 5C 24 ?? 48 89 6C 24 ?? 48 89 74 24 ?? 57 48 83 EC 50 48 8B F1 48 8D 4C 24 ?? E8 ?? ?? ?? ?? 48 8B 4C 24 ??"; // xan
+        internal const string EnqueueSnipeTask = "48 89 5C 24 ?? 48 89 6C 24 ?? 48 89 74 24 ?? 57 48 83 EC 50 48 8B F9 48 8D 4C 24 ??"; // xan
         internal const string FollowQuestRecast = "F3 0F 11 7C 24 ?? E8 ?? ?? ?? ?? 48 8B 9C 24 ?? ?? ?? ??"; // atmo
         internal const string ExecuteCommand = "E8 ?? ?? ?? ?? 8D 46 0A"; // st
         internal const string ExecuteCommandComplexLocation = "E8 ?? ?? ?? ?? 48 8B 7B 08 45 33 C0";
