@@ -17,7 +17,7 @@ public unsafe class Memory
 {
     public static class Signatures
     {
-        internal const string AgentReturnReceiveEvent = "48 8B CE E8 ?? ?? ?? ?? 66 0F 1F 84 00 ?? ?? ?? ??";
+        internal const string AgentReturnReceiveEvent = "E8 ?? ?? ?? ?? 66 0F 1F 84 ?? 00 00 00 00 48 83 EF";
         internal const string BewitchProc = "40 53 48 83 EC 50 45 33 C0";
         internal const string EnqueueSnipeTask = "48 89 5C 24 ?? 48 89 6C 24 ?? 48 89 74 24 ?? 57 48 83 EC 50 48 8B F9 48 8D 4C 24 ??"; // xan
         internal const string FollowQuestRecast = "F3 0F 11 7C 24 ?? E8 ?? ?? ?? ?? 48 8B 9C 24 ?? ?? ?? ??"; // atmo
@@ -178,8 +178,12 @@ public unsafe class Memory
         private readonly ExecuteCommands ExecuteCommands = new();
         private byte ReturnDetour(AgentInterface* agent)
         {
+            Svc.Log.Info("return called");
             if (ActionManager.Instance()->GetActionStatus(ActionType.GeneralAction, 6) != 0 || Player.IsInPvP)
+            {
+                Svc.Log.Info("return blocked");
                 return ReturnHook.Original(agent);
+            }
 
             if (Svc.Party.Length > 1)
             {
@@ -189,6 +193,7 @@ public unsafe class Memory
                     Chat.SendMessage("/leave");
             }
 
+            Svc.Log.Info("returning");
             ExecuteCommands.ExecuteCommand(ExecuteCommandFlag.InstantReturn);
             return 1;
         }
