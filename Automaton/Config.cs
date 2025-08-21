@@ -32,6 +32,7 @@ public class TweakConfigs
     public EnhancedDutyStartEndConfiguration EnhancedDutyStartEnd { get; init; } = new();
     public EnhancedLoginLogoutConfig EnhancedLoginLogout { get; init; } = new();
     public GettingTooAttachedConfiguration GettingTooAttached { get; init; } = new();
+    public GlamourSetsTrackerConfiguration GlamourSets { get; init; } = new();
     public GMAlertConfiguration GMAlert { get; init; } = new();
     public HuntRelayHelperConfiguration HuntRelayHelper { get; init; } = new();
     public SimpleCurrencyAlertConfig SimpleCurrencyAlertConfig { get; init; } = new();
