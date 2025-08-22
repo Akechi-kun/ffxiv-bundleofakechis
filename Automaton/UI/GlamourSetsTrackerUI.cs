@@ -128,7 +128,6 @@ public unsafe class GlamourSetsTrackerUI : Window
             DrawTab("Allied Societies", ownedSets, ESetType.AlliedSociety);
             DrawSpecialtyTab(ownedSets);
             DrawTab("Unobtainable", ownedSets, ESetType.Unobtainable);
-
         }
     }
 
