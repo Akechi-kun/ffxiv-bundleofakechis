@@ -1,6 +1,7 @@
 ﻿using Dalamud.Game.Text.SeStringHandling;
 using Dalamud.Game.Text.SeStringHandling.Payloads;
 using Lumina.Excel.Sheets;
+using System.Collections.Generic;
 using System.IO;
 
 namespace Automaton.Utilities;
@@ -85,4 +86,14 @@ public sealed class RelayPayload(MapLinkPayload mapLink, uint worldId, uint? ins
         result.DecodeImpl(reader, /* unused */ default);
         return result;
     }
+
+    public override bool Equals(object obj)
+    {
+        if (obj is null) return false;
+        if (ReferenceEquals(this, obj)) return true;
+        if (obj.GetType() != GetType()) return false;
+        return Equals((RelayPayload)obj);
+    }
+
+    public override int GetHashCode() => HashCode.Combine(MapLink, World.RowId, Instance, RelayType);
 }

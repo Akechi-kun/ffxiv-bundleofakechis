@@ -156,8 +156,10 @@ public class HuntRelayHelper : Tweak<HuntRelayHelperConfiguration>
         }
         ImGui.Unindent();
 
-        //ImGui.Checkbox("Dry run", ref Config.DryRun);
-        //ImGuiComponents.HelpMarker("Enabling this will print the messages to chat without actually sending them to the server. This is just for testing.");
+#if DEBUG
+        ImGui.Checkbox("Dry run", ref Config.DryRun);
+        ImGuiComponents.HelpMarker("Enabling this will print the messages to chat without actually sending them to the server. This is just for testing.");
+#endif
 
         ImGuiX.DrawSection("Chat Message Pattern");
         ImGui.InputText($"##{nameof(Config.ChatMessagePattern)}", ref Config.ChatMessagePattern, 64);
@@ -249,13 +251,20 @@ public class HuntRelayHelper : Tweak<HuntRelayHelperConfiguration>
             if (channelName.StartsWith("Linkshell") && Player.CurrentWorld != Player.HomeWorld) continue; // don't send to linkshells when off homeworld
             if (Config.OnlySendLocalHuntsToLocalChannels && islocal && !channelName.StartsWith("Novice") && Player.HomeWorldId != payload.World.RowId) continue; // don't send to non-novice local channels when off homeworld
             if (channelName.StartsWith("Novice") && Player.Object.CurrentWorld.Value.RowId != payload.World.RowId) continue; // don't send offworld relays to NN
-            if (channelName.StartsWith("Novice") && InfoProxyNoviceNetwork.Instance()->Flags != 1) // 1 = joined
+            if (channelName.StartsWith("Novice") && InfoProxyNoviceNetwork.Instance()->Flags != 1) continue; // 1 = joined
+
+            if (Config.DryRun)
+            {
+                Svc.Chat.Print(new() { Type = channel, MessageBytes = [.. Encoding.UTF8.GetBytes($"[DRYRUN] "), .. channelName.StartsWith("Novice") ? nnRelay.ToArray() : relay.ToArray()] });
+                continue;
+            }
 
 #pragma warning disable CS0618 // Type or member is obsolete
-                TaskManager.Enqueue(() =>
+            TaskManager.Enqueue(() =>
             {
                 if (Player.Available) // messages can't be sent when travelling between zones where your player goes null
                 {
+                    Svc.Log.Info("sending message");
                     Chat.SendMessageUnsafe([.. Encoding.UTF8.GetBytes($"/{command} "), .. channelName.StartsWith("Novice") ? nnRelay.ToArray() : relay.ToArray()]);
                     return true;
                 }
