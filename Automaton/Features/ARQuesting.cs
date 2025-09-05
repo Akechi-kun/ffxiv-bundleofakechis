@@ -27,5 +27,5 @@ internal class ARQuesting : ARTweak<ARQuestingConfiguration>
             Log("Skipping post process for character: no seasonal quests available.");
     }
 
-    public override void OnCharacterReadyToPostProcess() => Service.Automation.Start(new DoQuests(_quests, Config.ReturnHome), AutoRetainer.FinishCharacterPostProcess);
+    public override void OnCharacterReadyToPostProcess() => Service.Automation.Start(new RunQuestionable(_quests, Config.ReturnHome), AutoRetainer.FinishCharacterPostProcess);
 }

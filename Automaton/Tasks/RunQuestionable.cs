@@ -2,7 +2,7 @@
 using System.Threading.Tasks;
 
 namespace Automaton.Tasks;
-public sealed class DoQuests(List<string> questIds, bool returnHome) : CommonTasks
+public sealed class RunQuestionable(List<string> questIds, bool returnHome) : CommonTasks
 {
     protected override async Task Execute()
     {
