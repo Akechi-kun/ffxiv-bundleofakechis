@@ -98,7 +98,7 @@ public unsafe class AutoFollow : Tweak<AutoFollowConfiguration>
     private void Follow(IFramework framework)
     {
         if (!Player.Available || TaskManager.IsBusy) return;
-        if (_masterId == null && Config.AutoFollowName.IsNullOrEmpty() && string.IsNullOrEmpty(_masterName)) return; // always try to follow if temp or permanent name is set
+        if (_masterId == null && Config.AutoFollowName.IsNullOrEmpty() && string.IsNullOrEmpty(_masterName)) { movement.Enabled = false; return; } // always try to follow if temp or permanent name is set
 
         var master = Svc.Objects.FirstOrDefault(x => x.EntityId == _masterId
             || (!Config.AutoFollowName.IsNullOrEmpty() && x.Name.TextValue.Equals(Config.AutoFollowName, StringComparison.InvariantCultureIgnoreCase))
