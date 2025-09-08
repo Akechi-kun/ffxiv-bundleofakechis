@@ -10,7 +10,7 @@ namespace Automaton.Features;
 
 public class AutoFollowConfiguration
 {
-    [EnumConfig] public MovementType MovementType;
+    //[EnumConfig] public MovementType MovementType;
 
     [IntConfig(DefaultValue = 3)] public int DistanceToKeep = 3;
     [IntConfig] public int DisableIfFurtherThan;
