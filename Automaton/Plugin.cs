@@ -113,7 +113,8 @@ public class Plugin : IDalamudPlugin
                     EzConfigGui.GetWindow<DebugWindow>()!.Toggle();
                     break;
                 case "enable":
-                    C.EnabledTweaks.Add(@params[0]);
+                    if (Tweaks.FirstOrDefault(t => t.InternalName == @params[0]) is { } tweak && !C.EnabledTweaks.Contains(tweak.InternalName) && (!tweak.IsDebug || C.ShowDebug))
+                        C.EnabledTweaks.Add(tweak.InternalName);
                     break;
                 case "disable":
                     C.EnabledTweaks.Remove(@params[0]);
