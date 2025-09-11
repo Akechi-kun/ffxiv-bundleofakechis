@@ -1,13 +1,17 @@
 ﻿using Automaton.UI;
+using Dalamud.Bindings.ImGui;
 using Dalamud.Game.ClientState.Keys;
 using Dalamud.Game.Gui.Toast;
 using ECommons;
 using ECommons.Interop;
 using ECommons.SimpleGui;
 using FFXIVClientStructs.FFXIV.Client.Game;
+using FFXIVClientStructs.FFXIV.Client.Game.Event;
 using FFXIVClientStructs.FFXIV.Client.Game.UI;
 using FFXIVClientStructs.FFXIV.Client.System.Framework;
-using Dalamud.Bindings.ImGui;
+using FFXIVClientStructs.FFXIV.Client.UI.Agent;
+using FFXIVClientStructs.FFXIV.Component.GUI;
+using FFXIVClientStructs.Interop;
 using Lumina.Excel.Sheets;
 
 namespace Automaton.Features;
@@ -52,8 +56,14 @@ public class DebugTools : Tweak<DebugToolsConfiguration>
     private unsafe void OnSetup(AddonEvent type, AddonArgs args)
     {
         if (!Config.AutoVoidIslandRest) return;
-        if (Utils.AgentData->RestCycles.ToHex() != 8321u)
-            Utils.SetRestCycles(8321u);
+        if (AgentMJICraftSchedule.Instance()->Data->RestCycles.ToHex() != 8321u)
+        {
+            Svc.Log.Debug($"Setting rest: {8321u:X}");
+            AgentMJICraftSchedule.Instance()->Data->NewRestCycles = 8321u;
+            var eventData = stackalloc int[] { 0, 0, 0 };
+            var atkvalues = new Span<AtkValue>([new() { Type = AtkValueType.Int, Int = 0 }]);
+            AgentMJICraftSchedule.Instance()->AgentInterface.ReceiveEvent((AtkValue*)eventData, atkvalues.GetPointer(0), (uint)atkvalues.Length, 5); // 5 = eventKind
+        }
     }
 
     [CommandHandler("/tpclick", "Teleport to your mouse location on click while CTRL is held.", nameof(Config.EnableTPClick))]

@@ -369,4 +369,6 @@ public unsafe class Game
         var info = Player.Character->GetCastInfo();
         return info is not null && info->IsCasting && info->ActionType == ActionType.Action && info->ActionId == 5;
     }
+
+    public static bool IsAdventureComplete(uint rowId) => PlayerState.Instance()->IsAdventureComplete(rowId);
 }
