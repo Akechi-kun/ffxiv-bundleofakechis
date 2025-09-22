@@ -43,6 +43,17 @@ public static class LuminaExtensions
     public static unsafe bool IsHeld(this ConfigKey key) => key.TryGetInputId(out var inputId) && UIInputData.Instance()->IsInputIdHeld(inputId);
     public static unsafe bool IsPressed(this ConfigKey key) => key.TryGetInputId(out var inputId) && UIInputData.Instance()->IsInputIdPressed(inputId);
     public static unsafe bool IsReleased(this ConfigKey key) => key.TryGetInputId(out var inputId) && UIInputData.Instance()->IsInputIdReleased(inputId);
+    public static unsafe bool IsHeldRaw(this ConfigKey key)
+    {
+        if (!key.TryGetInputId(out var inputId)) return false;
+        var keybind = UIInputData.Instance()->GetKeybind(inputId);
+        foreach (var ks in keybind->KeySettings)
+        {
+            if (!Svc.KeyState.IsVirtualKeyValid((VirtualKey)ks.Key)) continue;
+            if (Svc.KeyState.GetRawValue((VirtualKey)ks.Key) != 0) return true;
+        }
+        return false;
+    }
     public static unsafe void ResetKeyState(this ConfigKey key)
     {
         if (key.TryGetInputId(out var inputId))
@@ -51,13 +62,13 @@ public static class LuminaExtensions
             foreach (var ks in keybind->KeySettings)
             {
                 if (!Svc.KeyState.IsVirtualKeyValid((VirtualKey)ks.Key)) continue;
-                Svc.KeyState[(VirtualKey)ks.Key] = false;
+                Svc.KeyState.SetRawValue((VirtualKey)ks.Key, 0);
                 if (ks.KeyModifier == KeyModifierFlag.Ctrl)
-                    Svc.KeyState[VirtualKey.CONTROL] = false;
+                    Svc.KeyState.SetRawValue(VirtualKey.CONTROL, 0);
                 if (ks.KeyModifier == KeyModifierFlag.Shift)
-                    Svc.KeyState[VirtualKey.SHIFT] = false;
+                    Svc.KeyState.SetRawValue(VirtualKey.LSHIFT, 0);
                 if (ks.KeyModifier == KeyModifierFlag.Alt)
-                    Svc.KeyState[VirtualKey.MENU] = false;
+                    Svc.KeyState.SetRawValue(VirtualKey.MENU, 0);
             }
         }
     }

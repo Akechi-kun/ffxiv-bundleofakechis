@@ -145,42 +145,18 @@ public class DebugTools : Tweak<DebugToolsConfiguration>
 
         if (Config.EnableNoClip && ncActive && !Framework.Instance()->WindowInactive)
         {
-            if (_keys["JUMP"].IsHeld())
-            {
-                _keys["JUMP"].ResetKeyState();
+            if (_keys["JUMP"].IsHeldRaw())
                 PlayerEx.Position = (Player.Object.Position.X, Player.Object.Position.Y + Config.NoClipSpeed, Player.Object.Position.Z).ToVector3();
-            }
             if (Svc.KeyState.GetRawValue(VirtualKey.LSHIFT) != 0 || IsKeyPressed(LimitedKeys.LeftShiftKey))
-            {
-                Svc.KeyState.SetRawValue(VirtualKey.LSHIFT, 0);
                 PlayerEx.Position = (Player.Object.Position.X, Player.Object.Position.Y - Config.NoClipSpeed, Player.Object.Position.Z).ToVector3();
-            }
-            if (_keys["MOVE_FORE"].IsHeld())
-            {
-                var newPoint = Utils.RotatePoint(Player.Object.Position.X, Player.Object.Position.Z, MathF.PI - PlayerEx.Camera->DirH, Player.Object.Position + new Vector3(0, 0, Config.NoClipSpeed));
-                _keys["MOVE_FORE"].ResetKeyState();
-                PlayerEx.Position = newPoint;
-            }
-            if (_keys["MOVE_BACK"].IsHeld())
-            {
-                var newPoint = Utils.RotatePoint(Player.Object.Position.X, Player.Object.Position.Z, MathF.PI - PlayerEx.Camera->DirH, Player.Object.Position + new Vector3(0, 0, -Config.NoClipSpeed));
-                _keys["MOVE_BACK"].ResetKeyState();
-                PlayerEx.Position = newPoint;
-            }
-            if (_keys["MOVE_LEFT"].IsHeld() || _keys["MOVE_STRIFE_L"].IsHeld())
-            {
-                var newPoint = Utils.RotatePoint(Player.Object.Position.X, Player.Object.Position.Z, MathF.PI - PlayerEx.Camera->DirH, Player.Object.Position + new Vector3(Config.NoClipSpeed, 0, 0));
-                _keys["MOVE_LEFT"].ResetKeyState();
-                _keys["MOVE_STRIFE_L"].ResetKeyState();
-                PlayerEx.Position = newPoint;
-            }
-            if (_keys["MOVE_RIGHT"].IsHeld() || _keys["MOVE_STRIFE_R"].IsHeld())
-            {
-                var newPoint = Utils.RotatePoint(Player.Object.Position.X, Player.Object.Position.Z, MathF.PI - PlayerEx.Camera->DirH, Player.Object.Position + new Vector3(-Config.NoClipSpeed, 0, 0));
-                _keys["MOVE_RIGHT"].ResetKeyState();
-                _keys["MOVE_STRIFE_R"].ResetKeyState();
-                PlayerEx.Position = newPoint;
-            }
+            if (_keys["MOVE_FORE"].IsHeldRaw())
+                PlayerEx.Position = Utils.RotatePoint(Player.Object.Position.X, Player.Object.Position.Z, MathF.PI - PlayerEx.Camera->DirH, Player.Object.Position + new Vector3(0, 0, Config.NoClipSpeed));
+            if (_keys["MOVE_BACK"].IsHeldRaw())
+                PlayerEx.Position = Utils.RotatePoint(Player.Object.Position.X, Player.Object.Position.Z, MathF.PI - PlayerEx.Camera->DirH, Player.Object.Position + new Vector3(0, 0, -Config.NoClipSpeed));
+            if (_keys["MOVE_LEFT"].IsHeldRaw() || _keys["MOVE_STRIFE_L"].IsHeldRaw())
+                PlayerEx.Position = Utils.RotatePoint(Player.Object.Position.X, Player.Object.Position.Z, MathF.PI - PlayerEx.Camera->DirH, Player.Object.Position + new Vector3(Config.NoClipSpeed, 0, 0));
+            if (_keys["MOVE_RIGHT"].IsHeldRaw() || _keys["MOVE_STRIFE_R"].IsHeldRaw())
+                PlayerEx.Position = Utils.RotatePoint(Player.Object.Position.X, Player.Object.Position.Z, MathF.PI - PlayerEx.Camera->DirH, Player.Object.Position + new Vector3(-Config.NoClipSpeed, 0, 0));
         }
     }
 
