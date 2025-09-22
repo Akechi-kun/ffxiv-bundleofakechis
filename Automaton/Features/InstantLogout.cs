@@ -37,13 +37,15 @@ public class InstantLogout : Tweak
 
     private unsafe void SentChatDetour(ShellCommandModule* commandModule, Utf8String* rawMessage, UIModule* uiModule)
     {
-        if (string.IsNullOrEmpty(rawMessage->ToString()) || !rawMessage->ToString().StartsWith('/'))
+        var msg = (*rawMessage).ToString();
+        if (msg is null or { Length: 0 } || !msg.StartsWith('/'))
         {
             SentChatHook!.Original(commandModule, rawMessage, uiModule);
             return;
         }
 
-        if (GetRow<TextCommand>(172) is { Command: var cmd, Alias: var alias } && (cmd == rawMessage->ToString() || alias == rawMessage->ToString()) && ShouldLogout())
+        // ToString is needed so that the implicit equals doesn't try to turn msg into a ROSSSS (which will crash with payloads like translate)
+        if (GetRow<TextCommand>(172) is { Command: var cmd, Alias: var alias } && (cmd.ToString() == msg || alias.ToString() == msg) && ShouldLogout())
             Logout();
 
         SentChatHook!.Original(commandModule, rawMessage, uiModule);
