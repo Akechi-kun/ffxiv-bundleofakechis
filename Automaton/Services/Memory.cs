@@ -62,7 +62,7 @@ public unsafe class Memory
         internal delegate void ProcessPacketUpdateClassInfoDelegate(InfoProxyInterface* ptr, byte* packetData);
         internal delegate bool SystemMenuExecutionDelegate(AgentHUD* @this, int a2, int a3, int a4, byte* a5);
         internal delegate nint SendLogoutDelegate();
-        internal delegate bool HasPermissionDelegate(uint permissionId, int excludedCondition1 = 0, int excludedCondition2 = 0);
+        internal delegate bool HasPermissionDelegate(Conditions* @this, uint permissionId, int excludedCondition1 = 0, int excludedCondition2 = 0);
     }
 
     internal Delegates.RidePillionDelegate? RidePillion = EzDelegate.Get<Delegates.RidePillionDelegate>(Signatures.RidePillion);

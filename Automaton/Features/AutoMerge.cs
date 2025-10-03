@@ -1,5 +1,6 @@
 using FFXIVClientStructs.FFXIV.Client.Game;
 using Lumina.Excel.Sheets;
+using System.Linq;
 
 namespace Automaton.Features;
 
@@ -35,7 +36,7 @@ public class AutoMerge : Tweak
         public bool ItemHQ { get; set; }
     }
 
-    private bool CanMoveItems => Service.Memory.HasPermission is { } func && func(134) && func(136) && func(137); // it at least checks these in MoveItemSlot
+    private unsafe bool CanMoveItems => Service.Memory.HasPermission is { } func && new uint[] { 134, 136, 137 }.All(x => func(Conditions.Instance(), x)); // it at least checks these in MoveItemSlot
 
     private unsafe void OnSetup(string addonName)
     {
