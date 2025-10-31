@@ -5,6 +5,7 @@ using FFXIVClientStructs.FFXIV.Client.UI.Agent;
 using FFXIVClientStructs.FFXIV.Component.GUI;
 using FFXIVClientStructs.Interop;
 using Lumina.Excel.Sheets;
+using System.Threading.Tasks;
 using ValueType = FFXIVClientStructs.FFXIV.Component.GUI.ValueType;
 
 namespace Automaton.Features;
@@ -27,6 +28,9 @@ public class CommandsConfiguration
 
     [BoolConfig(Label = "/killflag")]
     public bool EnableKillFlag = false;
+
+    [BoolConfig(Label = "/gotoflag")]
+    public bool EnableGoToFlag = false;
 }
 
 [Tweak]
@@ -131,6 +135,16 @@ public partial class Commands : Tweak<CommandsConfiguration>
     #region Kill Flag
     [CommandHandler(["/killflag", "/kf"], "Goes to flag, kills hunt mob at destination. Requires VBM.", nameof(Config.EnableKillFlag))]
     internal unsafe void OnCommandKillFlag(string command, string arguments) => Service.Automation.Start(new KillFlag(arguments));
+    #endregion
+
+    #region Go to flag
+    [CommandHandler(["/gotoflag", "/gtf"], "Goes to flag location", nameof(Config.EnableGoToFlag))]
+    internal void OnGoToFlagCommand() => Service.Automation.Start(new GoToFlagTask());
+
+    private class GoToFlagTask : CommonTasks
+    {
+        protected override async Task Execute() => await MoveTo(PlayerEx.MapFlag, MovementConfig.Everything);
+    }
     #endregion
 
 }
