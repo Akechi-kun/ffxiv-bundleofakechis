@@ -42,19 +42,39 @@ public abstract class AutoTask
     private readonly CancellationTokenSource _cts = new();
     private readonly List<string> _debugContext = [];
 
-    public void Cancel() => _cts.Cancel();
+    private readonly List<IDisposable> _disposables = [];
+    private static readonly AsyncLocal<AutoTask?> _activeTask = new();
+
+    internal static AutoTask? ActiveTask => _activeTask.Value;
+    internal void RegisterCleanup(IDisposable disposable) => _disposables.Add(disposable);
+
+    private void InvokeDisposables()
+    {
+        for (var i = _disposables.Count - 1; i >= 0; --i)
+            _disposables[i].Dispose();
+        _disposables.Clear();
+    }
+
+    public void Cancel()
+    {
+        _cts.Cancel();
+        InvokeDisposables();
+    }
 
     public void Run(Action completed, Action? OnCompleted = null)
     {
         Svc.Framework.Run(async () =>
         {
+            _activeTask.Value = this;
             var task = Execute();
             await task.ConfigureAwait(ConfigureAwaitOptions.SuppressThrowing); // we don't really care about cancelation...
             if (task.IsFaulted)
                 PluginLog.Warning($"Task ended with error: {task.Exception}");
+            InvokeDisposables();
             completed();
             OnCompleted?.Invoke();
             _cts.Dispose();
+            _activeTask.Value = null;
         }, _cts.Token);
     }
 
@@ -189,7 +209,6 @@ public sealed class Automation : IDisposable
     {
         CurrentTask?.Cancel();
         CurrentTask = null;
-        Service.Navmesh.Stop(); // I don't know why OnDispose methods aren't called from a cancel
     }
 
     // if any other task is running, it's cancelled
@@ -206,7 +225,27 @@ public sealed class Automation : IDisposable
     }
 }
 
-public readonly record struct OnDispose(Action A) : IDisposable
+public sealed class OnDispose : IDisposable
 {
-    public void Dispose() => A();
+    private sealed class CleanupHandle(Action action) : IDisposable
+    {
+        private int _ran;
+
+        public void Dispose()
+        {
+            if (Interlocked.Exchange(ref _ran, 1) == 0)
+                action();
+        }
+    }
+
+    private readonly CleanupHandle _handle;
+
+    public OnDispose(Action action)
+    {
+        var handle = new CleanupHandle(action);
+        _handle = handle;
+        AutoTask.ActiveTask?.RegisterCleanup(handle);
+    }
+
+    public void Dispose() => _handle.Dispose();
 }

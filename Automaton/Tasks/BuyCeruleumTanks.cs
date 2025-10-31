@@ -42,7 +42,7 @@ public sealed class BuyCeruleumTanks : CommonTasks
         if (EstateHallDoor is { } door)
         {
             await MoveTo(door.Position, MovementConfig.InteractRange);
-            await InteractWith(door, () => Player.TerritoryIntendedUse == TerritoryIntendedUseEnum.Housing_Instances, skipYesNo: true);
+            await InteractWith(door, () => Player.TerritoryIntendedUse == TerritoryIntendedUseEnum.Housing_Instances, null, UiSkipOptions.YesNo);
             await WaitWhile(() => !Game.IsTerritoryLoaded(), "WaitingForTerritoryToLoad");
             await EnterWorkshop();
         }
@@ -57,7 +57,7 @@ public sealed class BuyCeruleumTanks : CommonTasks
         if (WorkshopDoor is { } door)
         {
             await MoveTo(door.Position, MovementConfig.InteractRange);
-            await InteractWith(door, () => GetRow<TerritoryType>(Player.Territory) is { } t && t.BGM.RowId == 328, 0);
+            await InteractWith(door, () => GetRow<TerritoryType>(Player.Territory) is { BGM.RowId: 328 }, 0);
             await WaitUntil(Game.IsTerritoryLoaded, "WaitingForTerritoryToLoad");
         }
         else
@@ -85,7 +85,7 @@ public sealed class BuyCeruleumTanks : CommonTasks
                 Status = $"Buying x{count} ceruleum tanks";
                 tanks.Buy(Math.Min(count, tanks.MaxPurchaseSize));
                 count -= tanks.MaxPurchaseSize;
-                await WaitUntilSkipping(() => GetAddonTankCount() != Inventory.GetItemCount(tanks.ItemId, false), "WaitingForPurchase", skipYesNo: true);
+                await WaitUntilSkipping(() => GetAddonTankCount() != Inventory.GetItemCount(tanks.ItemId, false), "WaitingForPurchase", UiSkipOptions.YesNo);
                 Status = "Waiting for purchase to go through";
                 // I could just wait until the atkvalue equals the real inventory count again but this was a fun experiment.
                 using var stop = new OnDispose(ipc.FreeCompanyDialogPacketReceiveHook.Disable);

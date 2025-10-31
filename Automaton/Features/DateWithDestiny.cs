@@ -348,7 +348,7 @@ public class DateWithDestiny : Tweak<DateWithDestinyConfiguration>
         && x.SubKind == (byte)BattleNpcSubKind.Enemy
         && x.Struct() != null && x.Struct()->FateId == FateID && Math.Sqrt(Math.Pow(x.Position.X - CurrentFate->Location.X, 2) + Math.Pow(x.Position.Z - CurrentFate->Location.Z, 2)) < CurrentFate->Radius)
         // Prioritize Forlorns if configured
-        .OrderByDescending(x => Config.PrioritizeForlorns && ForlornIDs.Contains(x.DataId))
+        .OrderByDescending(x => Config.PrioritizeForlorns && ForlornIDs.Contains(x.BaseId))
         // Prioritize enemies targeting us
         .ThenByDescending(x => x.IsTargetingPlayer())
         // Deprioritize mobs in combat with other players (hopefully avoid botlike pingpong behavior in trash fates)

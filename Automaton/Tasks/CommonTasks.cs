@@ -1,5 +1,4 @@
 ﻿using Automaton.Utilities.Movement;
-using Dalamud.Game.ClientState.Objects.Types;
 using FFXIVClientStructs.FFXIV.Client.UI.Agent;
 using Lumina.Excel.Sheets;
 using System.Threading.Tasks;
@@ -7,36 +6,41 @@ using Achievement = FFXIVClientStructs.FFXIV.Client.Game.UI.Achievement;
 
 namespace Automaton.Tasks;
 
-public class MovementConfig
+[Flags]
+public enum MovementOptions
 {
-    public float? Tolerance { get; set; }
-    public bool Mount { get; set; }
-    public bool Fly { get; set; }
-    public bool Dismount { get; set; }
+    None = 0,
+    Mount = 1 << 0,
+    Fly = 1 << 1,
+    Dismount = 1 << 2,
+}
 
-    public static MovementConfig Default => new()
-    {
-        Tolerance = null,
-        Mount = false,
-        Fly = false,
-        Dismount = false
-    };
+public enum PathingStrategy
+{
+    Auto = 0,
+    Navmesh = 1,
+    Direct = 2,
+}
 
-    public static MovementConfig Everything => new()
-    {
-        Tolerance = null,
-        Mount = true,
-        Fly = true,
-        Dismount = true
-    };
+public readonly record struct MovementConfig(float? Tolerance, MovementOptions Options, PathingStrategy Strategy)
+{
+    public static MovementConfig Default => new(null, MovementOptions.None, PathingStrategy.Auto);
+    public static MovementConfig Everything => new(null, MovementOptions.Mount | MovementOptions.Fly | MovementOptions.Dismount, PathingStrategy.Auto);
+    public static MovementConfig GroundMove => new(null, MovementOptions.Mount | MovementOptions.Dismount, PathingStrategy.Auto);
+    public static MovementConfig InteractRange => new(3, MovementOptions.None, PathingStrategy.Auto);
 
-    public static MovementConfig InteractRange => new()
-    {
-        Tolerance = 3,
-        Mount = false,
-        Fly = false,
-        Dismount = false
-    };
+    public MovementConfig WithTolerance(float? tolerance) => this with { Tolerance = tolerance };
+    public MovementConfig WithOptions(MovementOptions options) => this with { Options = options };
+    public MovementConfig WithStrategy(PathingStrategy strategy) => this with { Strategy = strategy };
+}
+
+[Flags]
+public enum UiSkipOptions
+{
+    None = 0,
+    Talk = 1 << 0,
+    YesNo = 1 << 1,
+    Request = 1 << 2,
 }
 
 public abstract class CommonTasks : AutoTask
@@ -44,32 +48,28 @@ public abstract class CommonTasks : AutoTask
     private readonly OverrideMovement movement = new();
     private readonly Memory.AchievementProgress achv = new();
 
-    protected async Task MoveTo(FlagMapMarker flag, MovementConfig config)
+    private async Task NavmeshReady()
     {
-        using var scope = BeginScope("MoveToFlag");
+        using var scope = BeginScope("WaitingForNavmesh");
         Status = "Waiting for Navmesh";
         await WaitWhile(() => Service.Navmesh.BuildProgress() >= 0, "BuildMesh");
         ErrorIf(!Service.Navmesh.IsReady(), "Failed to build navmesh for the zone");
-        var pof = Service.Navmesh.PointOnFloor(Coords.FlagToWorld(flag), false, 5) ?? throw new Exception("Failed to find point on floor");
-        await MoveTo(pof, config);
     }
 
-    protected async Task MoveTo(FlagMapMarker flag, MovementConfig config, bool anyHuntMob)
+    protected async Task MoveTo(FlagMapMarker flag, MovementConfig config, Func<bool>? stopCondition = null, Func<Task>? onStopReached = null)
     {
         using var scope = BeginScope("MoveToFlag");
-        Status = "Waiting for Navmesh";
-        await WaitWhile(() => Service.Navmesh.BuildProgress() >= 0, "BuildMesh");
-        ErrorIf(!Service.Navmesh.IsReady(), "Failed to build navmesh for the zone");
-        var pof = Service.Navmesh.PointOnFloor(Coords.FlagToWorld(flag), false, 5) ?? throw new Exception("Failed to find point on floor");
-        await MoveTo(pof, config, anyHuntMob);
+        await TeleportTo(flag.TerritoryId, flag.ToVector3());
+        await MoveTo(flag.ToVector3(), config, stopCondition, onStopReached);
     }
 
-    protected async Task MoveTo(Vector3 dest, MovementConfig config)
+    protected async Task MoveTo(Vector3 dest, MovementConfig config, Func<bool>? stopCondition = null, Func<Task>? onStopReached = null)
     {
         using var scope = BeginScope("MoveTo");
-        await WaitUntil(() => Player.Available, "WaitingForPlayer"); // this is needed for some reason
-        if (Player.DistanceTo(dest) < (config.Tolerance ?? Service.Navmesh.GetTolerance()))
-            return; // already in range
+        await WaitUntil(() => Player.Available, "WaitingForPlayer");
+        var tolerance = config.Tolerance ?? Service.Navmesh.GetTolerance();
+        if (Player.DistanceTo(dest) < tolerance)
+            return;
 
         if (Coords.IsTeleportingFaster(dest))
         {
@@ -77,65 +77,49 @@ public abstract class CommonTasks : AutoTask
             await TeleportTo(Player.Territory, dest, allowSameZoneTeleport: true);
         }
 
-        if (config.Mount || config.Fly)
+        if (config.Options.HasFlag(MovementOptions.Mount) || config.Options.HasFlag(MovementOptions.Fly))
             await Mount();
 
-        // ensure navmesh is ready
-        Status = "Waiting for Navmesh";
-        await WaitWhile(() => Service.Navmesh.BuildProgress() >= 0, "BuildMesh");
-        ErrorIf(!Service.Navmesh.IsReady(), "Failed to build navmesh for the zone");
-        ErrorIf(!Service.Navmesh.PathfindAndMoveTo(dest, config.Fly), "Failed to start pathfinding to destination");
-        Status = $"Moving to {dest}";
-        using var stop = new OnDispose(Service.Navmesh.Stop);
-        await WaitWhile(() => !(Player.DistanceTo(dest) < (config.Tolerance ?? Service.Navmesh.GetTolerance())), "Navigate");
-        if (config.Dismount)
+        if (config.Strategy == PathingStrategy.Direct)
+            await MoveToDirectly(dest, tolerance);
+        else
+        {
+            await NavmeshReady();
+            ErrorIf(!Service.Navmesh.PathfindAndMoveTo(dest, config.Options.HasFlag(MovementOptions.Fly)), "Failed to start pathfinding to destination");
+            Status = $"Moving to {dest}";
+            using var stop = new OnDispose(Service.Navmesh.Stop);
+
+            if (stopCondition is null)
+                await WaitWhile(() => !(Player.DistanceTo(dest) < tolerance), "Navigate");
+            else
+            {
+                await WaitWhile(() => !(Player.DistanceTo(dest) < tolerance || stopCondition()), "Navigate");
+                if (stopCondition() && onStopReached is not null)
+                    await onStopReached();
+            }
+        }
+
+        if (config.Options.HasFlag(MovementOptions.Dismount))
             await Dismount();
     }
 
-    protected async Task MoveToDirectly(Vector3 dest, float tolerance)
+    protected async Task MoveToDirectly(Vector3 dest, Func<bool> stopCondition)
     {
-        using var scope = BeginScope("MoveToDirectly");
-        if (Player.DistanceTo(dest) < tolerance)
+        using var scope = BeginScope("MoveDirectly");
+        if (stopCondition())
             return;
 
         Status = $"Moving to {dest}";
         movement.DesiredPosition = dest;
         movement.Enabled = true;
         using var stop = new OnDispose(() => movement.Enabled = false);
-        await WaitWhile(() => !(Player.DistanceTo(dest) < tolerance), "DirectNavigate");
+        await WaitUntil(stopCondition, "WaitForCondition");
     }
 
-    protected async Task MoveTo(Vector3 dest, MovementConfig config, bool anyHuntMob)
+    protected async Task MoveToDirectly(Vector3 dest, float tolerance)
     {
-        using var scope = BeginScope("MoveTo");
-        await WaitUntil(() => Player.Available, "WaitingForPlayer"); // this is needed for some reason
-        if (Player.DistanceTo(dest) < (config.Tolerance ?? Service.Navmesh.GetTolerance()))
-            return; // already in range
-
-        if (Coords.IsTeleportingFaster(dest))
-        {
-            Log("Teleporting faster");
-            await TeleportTo(Player.Territory, dest, allowSameZoneTeleport: true);
-        }
-
-        if (config.Mount || config.Fly)
-            await Mount();
-
-        // ensure navmesh is ready
-        Status = "Waiting for Navmesh";
-        await WaitWhile(() => Service.Navmesh.BuildProgress() >= 0, "BuildMesh");
-        ErrorIf(!Service.Navmesh.IsReady(), "Failed to build navmesh for the zone");
-        ErrorIf(!Service.Navmesh.PathfindAndMoveTo(dest, config.Fly), "Failed to start pathfinding to destination");
-        Status = $"Moving to {dest}";
-        using var stop = new OnDispose(Service.Navmesh.Stop);
-        IBattleNpc? GetHuntNearby() => Svc.Objects.OfType<IBattleNpc>().OrderBy(o => o.DistanceTo(dest)).FirstOrDefault(o => o.NameId > 0 && FindRow<NotoriousMonster>(x => o.DataId == x.BNpcBase.RowId)?.Rank > 1);
-        await WaitWhile(() => !(Player.DistanceTo(dest) < (config.Tolerance ?? Service.Navmesh.GetTolerance()) || anyHuntMob && GetHuntNearby() is not null), "Navigate");
-
-        if (anyHuntMob && GetHuntNearby() is { } target)
-            await MoveTo(target.Position, config);
-
-        if (config.Dismount)
-            await Dismount();
+        using var scope = BeginScope("MoveDirectlyWithTolerance");
+        await MoveToDirectly(dest, () => !(Player.DistanceTo(dest) < tolerance));
     }
 
     protected async Task TeleportTo(uint territoryId, Vector3 destination, bool allowSameZoneTeleport = false)
@@ -160,9 +144,9 @@ public abstract class CommonTasks : AutoTask
         {
             Status = $"Interacting with aethernet to get to [{territoryId}]";
             var (aetheryteId, aetherytePos) = Coords.FindAetheryte(teleportAetheryteId);
-            await MoveTo(aetherytePos, new MovementConfig { Tolerance = 10 });
+            await MoveTo(aetherytePos, MovementConfig.Default.WithTolerance(10));
             ErrorIf(!PlayerEx.InteractWith(aetheryteId), "Failed to interact with aetheryte");
-            await WaitUntilSkipping(() => Game.AddonActive("SelectString"), "WaitSelectAethernet", skipTalk: true);
+            await WaitUntilSkipping(() => Game.AddonActive("SelectString"), "WaitSelectAethernet", UiSkipOptions.Talk);
             Game.TeleportToAethernet(teleportAetheryteId, closestAetheryteId);
             await WaitUntil(() => Player.IsBusy, "TeleportStart");
             await WaitUntil(() => Player.Territory == territoryId && Game.IsTerritoryLoaded() && Player.Interactable, "TeleportFinish");
@@ -173,9 +157,9 @@ public abstract class CommonTasks : AutoTask
             // firmament special case
             Status = $"Interacting with aetheryte to get to the Firmament";
             var (aetheryteId, aetherytePos) = Coords.FindAetheryte(teleportAetheryteId);
-            await MoveTo(aetherytePos, new MovementConfig { Tolerance = 10 });
+            await MoveTo(aetherytePos, MovementConfig.Default.WithTolerance(10));
             ErrorIf(!PlayerEx.InteractWith(aetheryteId), "Failed to interact with aetheryte");
-            await WaitUntilSkipping(() => Game.AddonActive("SelectString"), "WaitSelectFirmament", skipTalk: true);
+            await WaitUntilSkipping(() => Game.AddonActive("SelectString"), "WaitSelectFirmament", UiSkipOptions.Talk);
             Game.TeleportToFirmament(teleportAetheryteId);
             await WaitUntil(() => Player.IsBusy, "TeleportStart");
             await WaitUntil(() => Player.Territory == territoryId && Game.IsTerritoryLoaded() && Player.Interactable, "TeleportFinish");
@@ -213,34 +197,25 @@ public abstract class CommonTasks : AutoTask
         ErrorIf(Player.Mounted, "Failed to dismount");
     }
 
-    protected async Task WaitUntilSkipping(Func<bool> condition, string scopeName, bool skipTalk = false, bool skipYesNo = false, bool skipRequest = false)
+    protected async Task WaitUntilSkipping(Func<bool> condition, string scopeName, UiSkipOptions skip)
     {
         using var scope = BeginScope(scopeName);
         while (!condition())
         {
-            if (skipTalk)
+            if (skip.HasFlag(UiSkipOptions.Talk) && Game.AddonActive("Talk"))
             {
-                if (Game.AddonActive("Talk"))
-                {
-                    Log("progressing talk...");
-                    Game.ProgressTalk();
-                }
+                Log("progressing talk...");
+                Game.ProgressTalk();
             }
-            if (skipYesNo)
+            if (skip.HasFlag(UiSkipOptions.YesNo) && Game.AddonActive("SelectYesno"))
             {
-                if (Game.AddonActive("SelectYesno"))
-                {
-                    Log("progressing yes/no...");
-                    Game.SelectYes();
-                }
+                Log("progressing yes/no...");
+                Game.SelectYes();
             }
-            if (skipRequest)
+            if (skip.HasFlag(UiSkipOptions.Request) && Game.AddonActive("Request"))
             {
-                if (Game.AddonActive("Request"))
-                {
-                    Log("progressing request...");
-                    Game.TurnInRequests();
-                }
+                Log("progressing request...");
+                Game.TurnInRequests();
             }
             Log("waiting...");
             await NextFrame();
@@ -286,9 +261,16 @@ public abstract class CommonTasks : AutoTask
         await NextFrame();
     }
 
-    protected async Task InteractWith(DGameObject obj, Func<bool>? waitUntil = null, int? selectStringIndex = null, bool skipTalk = false, bool skipYesNo = false, bool skipRequest = false)
+    protected async Task InteractWith(DGameObject obj, Func<bool>? waitUntil = null, int? selectStringIndex = null, UiSkipOptions skip = UiSkipOptions.None)
     {
         using var scope = BeginScope("InteractWith");
+
+        if (!Game.InInteractRange(obj))
+        {
+            Log("Not in interact range, moving closer");
+            await MoveToDirectly(obj.Position, () => Game.InInteractRange(obj));
+        }
+
         Status = $"Interacting with {obj.GameObjectId}";
         await WaitWhile(() => Player.IsJumping, "WaitForAbleToInteract");
         const int maxAttempts = 5;
@@ -303,7 +285,7 @@ public abstract class CommonTasks : AutoTask
                 }
                 if (waitUntil is { } condition)
                 {
-                    await WaitUntilSkipping(condition, "WaitingForNpcInteractionToFinish", skipTalk: skipTalk, skipYesNo: skipYesNo, skipRequest: skipRequest);
+                    await WaitUntilSkipping(condition, "WaitingForNpcInteractionToFinish", skip);
                     return;
                 }
                 else return;

@@ -140,8 +140,8 @@ public sealed class FateGrind(DateWithDestinyConfiguration config) : CommonTasks
             Status = "Waiting for Haters to die";
             await WaitWhile(() => PlayerEx.HatersWithFullAggro > 0, "WaitingForHatersToDie");
             Status = "Turning in EventItems";
-            await InteractWith(npc, () => CurrentFate!.EventItemInventoryCount() == 0, skipTalk: true, skipRequest: true);
-            await WaitUntilSkipping(() => !Player.IsBusy, "WaitingForExitNpc", skipTalk: true); // might need to rethink. This is a general combat check vs hater check
+            await InteractWith(npc, () => CurrentFate!.EventItemInventoryCount() == 0, null, UiSkipOptions.Talk | UiSkipOptions.Request);
+            await WaitUntilSkipping(() => !Player.IsBusy, "WaitingForExitNpc", UiSkipOptions.Talk); // might need to rethink. This is a general combat check vs hater check
             Service.BossMod.ClearTransientPresetStrategies("AI");
         }
     }
@@ -204,8 +204,8 @@ public sealed class FateGrind(DateWithDestinyConfiguration config) : CommonTasks
         using var scope = BeginScope("ActivateFate");
         if (FateActivationNpc is { } npc)
         {
-            await MoveTo(npc.Position, new MovementConfig { Tolerance = 3, Mount = true, Dismount = true });
-            await InteractWith(npc, () => NextFate!.State == FateState.Running, skipTalk: true, skipYesNo: true);
+            await MoveTo(npc.Position, MovementConfig.GroundMove.WithTolerance(3));
+            await InteractWith(npc, () => NextFate!.State == FateState.Running, null, UiSkipOptions.Talk | UiSkipOptions.YesNo);
         }
     }
 
