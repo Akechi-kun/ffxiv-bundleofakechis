@@ -85,7 +85,7 @@ public abstract class CommonTasks : AutoTask
         else
         {
             await NavmeshReady();
-            ErrorIf(!Service.Navmesh.PathfindAndMoveTo(dest, config.Movement.HasFlag(MovementOptions.Fly)), "Failed to start pathfinding to destination");
+            ErrorIf(!Service.Navmesh.PathfindAndMoveTo(dest, config.Movement.HasFlag(MovementOptions.Fly) && Player.CanFly), "Failed to start pathfinding to destination");
             Status = $"Moving to {dest}";
             using var stop = new OnDispose(Service.Navmesh.Stop);
 
