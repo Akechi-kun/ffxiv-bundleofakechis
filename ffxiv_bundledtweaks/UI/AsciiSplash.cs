@@ -7,9 +7,10 @@ using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
 using SixLabors.ImageSharp.Processing;
 using System.IO;
+using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
-using TerraFX.Interop.Windows;
 
 namespace ComplexTweaks.UI;
 
@@ -39,6 +40,28 @@ public static class AsciiSplash
     private static volatile int _cols;
     private static volatile int _rows;
     private static readonly float _fontScale = 0.5f; // Smaller font for higher resolution
+    private static ref readonly Guid GUID_ContainerFormatPng // straight from terrafx
+    {
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        get
+        {
+            ReadOnlySpan<byte> data = [
+                0xF4, 0xFA, 0x7C, 0x1B,
+                0x3F, 0x71,
+                0x3C, 0x47,
+                0xBB,
+                0xCD,
+                0x61,
+                0x37,
+                0x42,
+                0x5F,
+                0xAE,
+                0xAF
+            ];
+
+            return ref Unsafe.As<byte, Guid>(ref MemoryMarshal.GetReference(data));
+        }
+    }
 
     public static void Draw(int maxWidthChars = 80)
     {
@@ -177,7 +200,7 @@ public static class AsciiSplash
         try
         {
             using var ms = new MemoryStream();
-            await TextureReadbackProvider.SaveToStreamAsync(wrap, GUID.GUID_ContainerFormatPng, ms, props: null, leaveWrapOpen: true, leaveStreamOpen: true).ConfigureAwait(false);
+            await TextureReadbackProvider.SaveToStreamAsync(wrap, GUID_ContainerFormatPng, ms, props: null, leaveWrapOpen: true, leaveStreamOpen: true).ConfigureAwait(false);
             ms.Position = 0;
             return Image.Load<Rgba32>(ms);
         }
