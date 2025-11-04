@@ -27,6 +27,7 @@ public partial class HaselWindow : Window
     public override void OnClose()
     {
         _splashText = null;
+        AsciiSplash.Reset();
     }
 
     public override void Draw()
@@ -119,7 +120,7 @@ public partial class HaselWindow : Window
         var tweak = SelectedTweak;
         if (tweak == null)
         {
-            DrawAsciiSplash();
+            DrawSplash();
             DrawBottomBar();
             return;
         }
@@ -264,13 +265,13 @@ public partial class HaselWindow : Window
         "100% vegan",
     ];
 
-    private void DrawAsciiSplash()
+    private void DrawSplash()
     {
         _splashText ??= SplashTexts[Random.Shared.Next(SplashTexts.Length)];
         ImGui.SetCursorPosX(ImGui.GetCursorPosX() + ImGui.GetColumnWidth() * 0.5f - ImGui.CalcTextSize(_splashText).X * 0.5f);
         ImGuiX.FlashText(_splashText, Colors.Gold, ImGui.GetStyle().Colors[(int)ImGuiCol.WindowBg], 2);
 
-        // ascii art here
+        AsciiSplash.Draw(80);
     }
 
     private void DrawBottomBar()

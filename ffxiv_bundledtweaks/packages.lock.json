@@ -37,6 +37,12 @@
         "resolved": "3.1.12",
         "contentHash": "iAg6zifihXEFS/t7fiHhZBGAdCp3FavsF4i2ZIDp0JfeYeDVzvmlbY1CNhhIKimaIzrzSi5M/NBFcWvZT2rB/A=="
       },
+      "TerraFX.Interop.Windows": {
+        "type": "Direct",
+        "requested": "(, )",
+        "resolved": "10.0.20348",
+        "contentHash": "I6+8GNRS68DEW4gk0TajpYeKEU13H/Tu8cnZ7fMB37qURoiZkuhvhJpWytg57u8m/d4nRQlYzS+mo6D8/FCfpQ=="
+      },
       "YamlDotNet": {
         "type": "Direct",
         "requested": "[16.3.0, )",

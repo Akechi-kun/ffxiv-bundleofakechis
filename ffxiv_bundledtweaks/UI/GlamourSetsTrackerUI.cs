@@ -161,11 +161,11 @@ public unsafe class GlamourSetsTrackerUI : Window
         var ownedItems = GetOwnedItems();
         DrawMissingItemHeader(glamourSets, ESetType.Special, ownedSets, ownedItems);
         if (ImGui.CollapsingHeader("Eternal Bonding"))
-            DrawSetRange(glamourSets.Where(x => EternalBondingSets.Contains(x.ItemId)).ToList(), ownedSets, ownedItems);
+            DrawSetRange([.. glamourSets.Where(x => EternalBondingSets.Contains(x.ItemId))], ownedSets, ownedItems);
         if (ImGui.CollapsingHeader("Makai Sets (MGP)"))
-            DrawSetRange(glamourSets.Where(x => MgpMakaiSets.Contains(x.ItemId)).ToList(), ownedSets, ownedItems);
+            DrawSetRange([.. glamourSets.Where(x => MgpMakaiSets.Contains(x.ItemId))], ownedSets, ownedItems);
         if (ImGui.CollapsingHeader("Rathalos Sets (undyed)"))
-            DrawSetRange(glamourSets.Where(x => UndyedRathalosSets.Contains(x.ItemId)).ToList(), ownedSets, ownedItems);
+            DrawSetRange([.. glamourSets.Where(x => UndyedRathalosSets.Contains(x.ItemId))], ownedSets, ownedItems);
     }
 
     private void DrawMissingItemHeader(List<GlamourSet> glamourSets, ESetType setType, List<GlamourSet> ownedSets,

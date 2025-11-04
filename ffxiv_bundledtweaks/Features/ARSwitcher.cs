@@ -56,7 +56,7 @@ public class ARSwitcher : Tweak
             var characterIdsOnHomeWorld = characterIds
                 .Where(x => Service.AutoRetainerApi.GetOfflineCharacterData(x)?.World == homeWorld).ToList();
 
-            SeIconChar seIconChar = SeIconChar.Instance1 + characterIdsOnHomeWorld.IndexOf(Svc.ClientState.LocalContentId);
+            var seIconChar = SeIconChar.Instance1 + characterIdsOnHomeWorld.IndexOf(Svc.ClientState.LocalContentId);
             if (currentWorld == homeWorld)
             {
                 _dtrBarEntry.Text = seIconChar.ToIconString();

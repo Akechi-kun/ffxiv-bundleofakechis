@@ -35,7 +35,7 @@ public static class Coords
             return 70; // Ishgard
         if (territoryTypeId == 478) // Hinterlands
             return 75; // Idyllshire
-        List<Sheets.Aetheryte> aetherytes = [.. GetSheet<Sheets.Aetheryte>()?.Where(a => a.Territory.RowId == territoryTypeId && (includeAethernet || a.IsAetheryte))];
+        List<Sheets.Aetheryte> aetherytes = [.. GetSheet<Sheets.Aetheryte>()?.Where(a => a.Territory.RowId == territoryTypeId && (includeAethernet || a.IsAetheryte)) ?? []];
         // aetherytes tend to not have a Y whereas gates do. Maps are mostly flat so just equalise and ignore Y
         return aetherytes.Count > 0 ? aetherytes.MinBy(a => (worldPos.ToVector2() - AetherytePosition(a).ToVector2()).LengthSquared()).RowId : null;
     }
