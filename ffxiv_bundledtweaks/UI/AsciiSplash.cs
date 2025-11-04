@@ -154,7 +154,7 @@ public static class AsciiSplash
                     BuildColoredAscii(image, Math.Clamp(_cachedWidth, 32, 200), out var colored, out var lines);
                     _cachedColored = colored;
                     _cachedLines = lines; // fallback plain
-                    Svc.Log.Info($"AsciiSplash chose icon ID: {_iconId}");
+                    Svc.Log.Debug($"[{nameof(AsciiSplash)}] Chosen icon: #{_iconId}");
                     return lines;
                 }
                 catch
@@ -251,9 +251,10 @@ public static class AsciiSplash
                     var gamma = Math.Pow(brightness, 0.5);
                     var ch = Img2Ascii.MapBrightnessToAscii(gamma, detailed: true);
                     lineChars[x] = ch;
-                    colors[x * 3 + 0] = r;
-                    colors[x * 3 + 1] = g;
-                    colors[x * 3 + 2] = b;
+                    const float brightnessBoost = 1.4f;
+                    colors[x * 3 + 0] = (byte)Math.Min(255, (int)(r * brightnessBoost));
+                    colors[x * 3 + 1] = (byte)Math.Min(255, (int)(g * brightnessBoost));
+                    colors[x * 3 + 2] = (byte)Math.Min(255, (int)(b * brightnessBoost));
                 }
                 outColored.Add((lineChars, colors));
                 lines.Add(new string(lineChars));

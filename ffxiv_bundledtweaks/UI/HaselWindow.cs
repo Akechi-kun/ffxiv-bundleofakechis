@@ -263,6 +263,17 @@ public partial class HaselWindow : Window
     [
         "Some animals were harmed in the making of this plugin.",
         "100% vegan",
+        "Welcome to croizat's bundled tweaks",
+        "Thanks for using complex bundled tweaks",
+        "My favourite feature is the hunt relayer",
+        "Does anyone actually know what CBT stands for?",
+        "Also try Silksong!",
+        "I can just put any message in here",
+        "It's like those other tweak plugins, but worse!",
+        "Made with love. Love is an alternative name for MSG",
+        "Now in Technicolor!",
+        "~~Blue text~~",
+        "Interrobang!",
     ];
 
     private void DrawSplash()
