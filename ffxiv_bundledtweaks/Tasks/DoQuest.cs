@@ -32,6 +32,7 @@ public sealed class DoQuest(Quest row) : CommonTasks
                     break;
             }
         }
+        await NextFrame();
     }
 
     private enum ScriptInstruction

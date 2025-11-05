@@ -199,7 +199,7 @@ public static class AsciiSplash
         try
         {
             using var ms = new MemoryStream();
-            await TextureReadbackProvider.SaveToStreamAsync(wrap, GUID_ContainerFormatPng, ms, props: null, leaveWrapOpen: true, leaveStreamOpen: true).ConfigureAwait(false);
+            await Svc.TextureReadback.SaveToStreamAsync(wrap, GUID_ContainerFormatPng, ms, props: null, leaveWrapOpen: true, leaveStreamOpen: true).ConfigureAwait(false);
             ms.Position = 0;
             return Image.Load<Rgba32>(ms);
         }
@@ -208,7 +208,7 @@ public static class AsciiSplash
             Svc.Log.Warning($"AsciiSplash PNG save failed; falling back to raw. {ex.Message}");
         }
 
-        var tuple = await TextureReadbackProvider.GetRawImageAsync(wrap, default, leaveWrapOpen: true).ConfigureAwait(false);
+        var tuple = await Svc.TextureReadback.GetRawImageAsync(wrap, default, leaveWrapOpen: true).ConfigureAwait(false);
         var specs = tuple.Specification;
         var bytes = tuple.RawData;
 

@@ -22,8 +22,6 @@ public class Plugin : IDalamudPlugin
 
     public static readonly HashSet<Tweak> Tweaks = [];
 
-    [PluginService] public static ITextureReadbackProvider TextureReadbackProvider { get; private set; } = null!;
-
     public Plugin(IDalamudPluginInterface pluginInterface)
     {
         P = this;
