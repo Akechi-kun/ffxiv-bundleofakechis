@@ -37,6 +37,15 @@
         "resolved": "3.1.12",
         "contentHash": "iAg6zifihXEFS/t7fiHhZBGAdCp3FavsF4i2ZIDp0JfeYeDVzvmlbY1CNhhIKimaIzrzSi5M/NBFcWvZT2rB/A=="
       },
+      "TimeZoneNames": {
+        "type": "Direct",
+        "requested": "[7.0.0, )",
+        "resolved": "7.0.0",
+        "contentHash": "zc1sIJZMDH7pPO1Gqte9yjMEFSILShTRNuxVxnNdiZP4NGGSi3ZGe2OSrW2phjzM/QKe3pKOwUXfQmJMjDBOKQ==",
+        "dependencies": {
+          "TimeZoneConverter": "7.0.0"
+        }
+      },
       "YamlDotNet": {
         "type": "Direct",
         "requested": "[16.3.0, )",
@@ -60,6 +69,11 @@
         "type": "Transitive",
         "resolved": "13.0.3",
         "contentHash": "HrC5BXdl00IP9zeV+0Z848QWPAoCr9P3bDEZguI+gkLcBKAOxix/tLEAAHC+UvDNPv4a2d18lOReHMOagPa+zQ=="
+      },
+      "TimeZoneConverter": {
+        "type": "Transitive",
+        "resolved": "7.0.0",
+        "contentHash": "sFbY65N/5GdsHx7nkdHFHUG+5Ar4W0w6Aks7Y2X+Q4NOTw6XyX2Il7jm+4tPkc//4mA3nG0RdxI8gKgoJitdLw=="
       },
       "autoretainerapi": {
         "type": "Project",
