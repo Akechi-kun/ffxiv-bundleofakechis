@@ -21,14 +21,14 @@ public class TimezoneTranslator : Tweak
         { ClientLanguage.Japanese, new LanguageConfig(
             new Func<CultureInfo>(() => {
                 var c = (CultureInfo)new CultureInfo("ja-JP").Clone();
-                c.DateTimeFormat.FullDateTimePattern = "MMMdd'日''（'ddd'）'HH:mm";
+                c.DateTimeFormat.FullDateTimePattern = "MMMdd'日''（'ddd'）'HH:mm"; // 11月27日（木）23:59まで
                 return c;
             })(),
             "Asia/Tokyo") },
         { ClientLanguage.English, new LanguageConfig(
             new Func<CultureInfo>(() => {
                 var c = (CultureInfo)new CultureInfo("en-US").Clone();
-                c.DateTimeFormat.FullDateTimePattern = "MMM. dd, yyyy %h:mm tt";
+                c.DateTimeFormat.FullDateTimePattern = "MMM. dd, yyyy %h:mm tt"; // Nov. 27, 2025 6:59 a.m. (PST)
                 c.DateTimeFormat.AMDesignator = "a.m.";
                 c.DateTimeFormat.PMDesignator = "p.m.";
                 return c;
@@ -37,14 +37,14 @@ public class TimezoneTranslator : Tweak
         { ClientLanguage.German, new LanguageConfig(
             new Func<CultureInfo>(() => {
                 var c = (CultureInfo)new CultureInfo("de-DE").Clone();
-                c.DateTimeFormat.FullDateTimePattern = "dd. MMM yyyy 'um' HH:mm 'Uhr'";
+                c.DateTimeFormat.FullDateTimePattern = "dd. MMM yyyy 'um' HH:mm 'Uhr'"; // 27. Nov. 2025 um 15:59 Uhr (MEZ)
                 return c;
             })(),
             "Europe/Berlin") },
         { ClientLanguage.French, new LanguageConfig(
             new Func<CultureInfo>(() => {
                 var c = (CultureInfo)new CultureInfo("en-US").Clone();
-                c.DateTimeFormat.FullDateTimePattern = "dd MMMM yyyy 'à' HH'h'mm";
+                c.DateTimeFormat.FullDateTimePattern = "dd MMMM yyyy 'à' HH'h'mm"; // 27 novembre 2025 à 15h59 (heure de Paris)
                 return c;
             })(),
             "Europe/Paris") },
@@ -65,15 +65,25 @@ public class TimezoneTranslator : Tweak
             Log($"Detected timestamp [{match.Value}] in message {message.TextValue}");
             if (DateTime.TryParse(match.Value, conf.Culture, out var serverTime))
             {
+                if (message.Payloads.OfType<TextPayload>().Count() != 1)
+                {
+                    Error($"Something is really wrong with this message.");
+                    return;
+                }
+
                 var localTime = TimeZoneInfo.ConvertTimeBySystemTimeZoneId(serverTime, conf.ServerTimeZone, TimeZoneInfo.Local.Id).ToString(conf.Culture.DateTimeFormat.FullDateTimePattern, conf.Culture);
                 var sb = new SeStringBuilder();
                 foreach (var item in message.Payloads)
                 {
                     if (item is TextPayload tp)
                     {
-                        var text = string.Concat(tp.Text.AsSpan(0, match.Index), localTime, tp.Text.AsSpan(match.Index + match.Length));
-                        var abbrPattern = $@"\({Regex.Escape(_kvp.FindKeysByValue(conf).First() is ClientLanguage.French ? conf.LongName : conf.Abbreviation)}\)";
-                        text = Regex.Replace(text, abbrPattern, $"({LocalTzAbbreviation})", RegexOptions.IgnoreCase);
+                        string text, original = text = string.Concat(tp.Text.AsSpan(0, match.Index), localTime, tp.Text.AsSpan(match.Index + match.Length));
+                        var serverTz = Svc.ClientState.ClientLanguage == ClientLanguage.French ? conf.LongName : conf.Abbreviation; // french has to be special as always
+                        text = Regex.Replace(text, $@"\({Regex.Escape(serverTz)}\)", $"({LocalTzAbbreviation})", RegexOptions.IgnoreCase);
+                        if (text == original)
+                            text += $" ({LocalTzAbbreviation})"; // if any original string (jp) doesn't have a timezone to replace, append
+
+                        Log($"Replaced [{match.Value} ({serverTz})] with [{localTime} ({LocalTzAbbreviation})]");
                         sb.Add(new TextPayload(text));
                     }
                     else
@@ -81,6 +91,8 @@ public class TimezoneTranslator : Tweak
                 }
                 message = sb.Build();
             }
+            else
+                Error($"Failed to parse a {nameof(DateTime)} from [{match.Value}] with culture [{conf.Culture.Name}]");
         }
     }
 
@@ -100,7 +112,7 @@ public class TimezoneTranslator : Tweak
                 : TZNames.GetAbbreviationsForTimeZone(tz.Id, Culture.Name).Standard ?? "null"
             : "null";
 
-        public string LongName
+        public string LongName // yes this is pointlessly complicated
         {
             get
             {
