@@ -1,6 +1,7 @@
 ﻿using Dalamud.Game.ClientState.Keys;
 using FFXIVClientStructs.FFXIV.Client.System.Input;
 using FFXIVClientStructs.FFXIV.Client.UI;
+using Lumina.Excel;
 using Lumina.Excel.Sheets;
 
 namespace ComplexTweaks.Utilities.Extensions;
@@ -74,4 +75,6 @@ public static class LuminaExtensions
     }
 
     public static Vector3 ToVector3(this Level row) => new(row.X, row.Y, row.Z);
+
+    public static bool NotDuty(this RowRef<TerritoryIntendedUse> row) => ((FFXIVClientStructs.FFXIV.Client.Enums.TerritoryIntendedUse)row.RowId).NotDuty();
 }

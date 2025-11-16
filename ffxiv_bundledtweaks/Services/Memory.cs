@@ -80,6 +80,20 @@ public unsafe class Memory
 
     public void Dispose() { }
 
+    public class HasPermissionChecker : Hook
+    {
+        [EzHook(Signatures.HasPermission, false)]
+        internal EzHook<Delegates.HasPermissionDelegate> HasPermissionHook = null!;
+
+        private readonly uint[] _blacklist = [1, 4, 31, 32, 96, 97, 98, 99, 104, 105, 106, 142, 144, 1005, 1006, 1007, 1008]; // these are checked every frame
+        private bool HasPermissionDetour(Conditions* @this, uint permissionId, int excludedCondition1 = 0, int excludedCondition2 = 0)
+        {
+            if (!_blacklist.Contains(permissionId))
+                Svc.Log.Info($"Checking permission: {permissionId} [{excludedCondition1}, {excludedCondition2}]");
+            return HasPermissionHook.Original.Invoke(@this, permissionId, excludedCondition1, excludedCondition2);
+        }
+    }
+
     #region Bewitch
     public class BewitchProc : Hook
     {

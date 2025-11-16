@@ -18,6 +18,7 @@ public static unsafe class PlayerEx
     {
         public static float Speed { get => Controller->MoveControllerWalk.BaseMovementSpeed; set => Memory.SetSpeed(6 * value); }
         public static bool HasPenalty => FFXIVClientStructs.FFXIV.Client.Game.UI.InstanceContent.Instance()->GetPenaltyRemainingInMinutes(0) > 0;
+        public static bool ReadyAndLoaded => !Player.IsBusy && Game.IsTerritoryLoaded();
     }
     public static Character* Character => (Character*)Svc.ClientState.LocalPlayer.Address;
     public static BattleChara* BattleChara => (BattleChara*)Svc.ClientState.LocalPlayer.Address;
