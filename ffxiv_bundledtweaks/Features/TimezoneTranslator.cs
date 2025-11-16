@@ -65,17 +65,11 @@ public class TimezoneTranslator : Tweak
             Log($"Detected timestamp [{match.Value}] in message {message.TextValue}");
             if (DateTime.TryParse(match.Value, conf.Culture, out var serverTime))
             {
-                if (message.Payloads.OfType<TextPayload>().Count() != 1)
-                {
-                    Error($"Something is really wrong with this message.");
-                    return;
-                }
-
                 var localTime = TimeZoneInfo.ConvertTimeBySystemTimeZoneId(serverTime, conf.ServerTimeZone, TimeZoneInfo.Local.Id).ToString(conf.Culture.DateTimeFormat.FullDateTimePattern, conf.Culture);
                 var sb = new SeStringBuilder();
                 foreach (var item in message.Payloads)
                 {
-                    if (item is TextPayload tp)
+                    if (item is TextPayload tp && (tp.Text?.Contains(match.Value) ?? false)) // there might be multiple text payloads (like if ST clickable chat links is enabled)
                     {
                         string text, original = text = string.Concat(tp.Text.AsSpan(0, match.Index), localTime, tp.Text.AsSpan(match.Index + match.Length));
                         var serverTz = Svc.ClientState.ClientLanguage == ClientLanguage.French ? conf.LongName : conf.Abbreviation; // french has to be special as always
