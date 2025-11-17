@@ -280,7 +280,7 @@ public class DateWithDestiny : Tweak<DateWithDestinyConfiguration>
                 return;
             }
 
-            if ((Config.FullAuto || Config.AutoFly) && Svc.Condition[ConditionFlag.Mounted] && !Svc.Condition[ConditionFlag.InFlight] && PlayerEx.InFlightAllowedTerritory)
+            if ((Config.FullAuto || Config.AutoFly) && Svc.Condition[ConditionFlag.Mounted] && !Svc.Condition[ConditionFlag.InFlight] && Player.InFlightAllowedTerritory)
             {
                 ExecuteJump();
                 return;

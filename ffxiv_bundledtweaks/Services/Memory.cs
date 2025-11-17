@@ -38,6 +38,7 @@ public unsafe class Memory
         internal const string SystemMenuExecution = "E8 ?? ?? ?? ?? 40 B5 ?? 41 B9";
         internal const string SendLogout = "40 53 48 83 EC 20 48 8B 0D ?? ?? ?? ?? E8 ?? ?? ?? ?? 48 8B D8 48 85 C0 74 3C 48 8B 0D ?? ?? ?? ??";
         internal const string HasPermission = "E8 ?? ?? ?? ?? 84 C0 75 ?? 8B FB";
+        internal const string UpdateOnlineStatus = "48 89 5C 24 ?? 57 48 83 EC 20 4C 8B 49 28 48 8B D9";
     }
 
     public static class Delegates
@@ -63,6 +64,7 @@ public unsafe class Memory
         internal delegate bool SystemMenuExecutionDelegate(AgentHUD* @this, int a2, int a3, int a4, byte* a5);
         internal delegate nint SendLogoutDelegate();
         internal delegate bool HasPermissionDelegate(Conditions* @this, uint permissionId, int excludedCondition1 = 0, int excludedCondition2 = 0);
+        internal delegate void UpdateOnlineStatusDelegate(InfoProxyDetail* @this);
     }
 
     internal Delegates.RidePillionDelegate? RidePillion = EzDelegate.Get<Delegates.RidePillionDelegate>(Signatures.RidePillion);
@@ -70,6 +72,7 @@ public unsafe class Memory
     internal Delegates.MoveItem? MoveItem = EzDelegate.Get<Delegates.MoveItem>(Signatures.MoveItem);
     internal Delegates.SendLogoutDelegate? SendLogout = EzDelegate.Get<Delegates.SendLogoutDelegate>(Signatures.SendLogout);
     internal Delegates.HasPermissionDelegate? HasPermission = EzDelegate.Get<Delegates.HasPermissionDelegate>(Signatures.HasPermission);
+    internal Delegates.UpdateOnlineStatusDelegate? ClearAfkStatus = EzDelegate.Get<Delegates.UpdateOnlineStatusDelegate>(Signatures.UpdateOnlineStatus);
 
     public Memory() => EzSignatureHelper.Initialize(this);
 
@@ -79,20 +82,6 @@ public unsafe class Memory
     }
 
     public void Dispose() { }
-
-    public class HasPermissionChecker : Hook
-    {
-        [EzHook(Signatures.HasPermission, false)]
-        internal EzHook<Delegates.HasPermissionDelegate> HasPermissionHook = null!;
-
-        private readonly uint[] _blacklist = [1, 4, 31, 32, 96, 97, 98, 99, 104, 105, 106, 142, 144, 1005, 1006, 1007, 1008]; // these are checked every frame
-        private bool HasPermissionDetour(Conditions* @this, uint permissionId, int excludedCondition1 = 0, int excludedCondition2 = 0)
-        {
-            if (!_blacklist.Contains(permissionId))
-                Svc.Log.Info($"Checking permission: {permissionId} [{excludedCondition1}, {excludedCondition2}]");
-            return HasPermissionHook.Original.Invoke(@this, permissionId, excludedCondition1, excludedCondition2);
-        }
-    }
 
     #region Bewitch
     public class BewitchProc : Hook

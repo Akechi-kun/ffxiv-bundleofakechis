@@ -19,10 +19,10 @@ public sealed class KillFlag(string world) : CommonTasks
         if (!world.IsNullOrEmpty())
             await HandleWorldTravel();
 
-        await TeleportTo(PlayerEx.MapFlag.TerritoryId, PlayerEx.MapFlag.ToVector3());
+        await TeleportTo(Player.MapFlag.TerritoryId, Player.MapFlag.ToVector3());
         await MoveTo(
-            PlayerEx.MapFlag.ToVector3(),
-            MovementConfig.Default.WithOptions(MovementOptions.Mount | (PlayerEx.MapFlag.TerritoryId != 180 ? MovementOptions.Fly : MovementOptions.None)),
+            Player.MapFlag.ToVector3(),
+            MovementConfig.Default.WithOptions(MovementOptions.Mount | (Player.MapFlag.TerritoryId != 180 ? MovementOptions.Fly : MovementOptions.None)),
             stopCondition: () => FindHuntTarget() is not null,
             onStopReached: async () =>
             {

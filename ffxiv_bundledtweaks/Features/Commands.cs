@@ -43,7 +43,7 @@ public partial class Commands : Tweak<CommandsConfiguration>
     [CommandHandler(["/tpf", "/tpflag"], "Teleport to the aetheryte nearest your flag", nameof(Config.EnableTPFlag))]
     internal void OnCommmandTeleportFlag(string command, string arguments)
     {
-        if (Coords.FindClosestAetheryte(PlayerEx.MapFlag, false) is { } aetheryte)
+        if (Coords.FindClosestAetheryte(Player.MapFlag, false) is { } aetheryte)
             Coords.ExecuteTeleport(aetheryte);
     }
     #endregion
@@ -145,7 +145,7 @@ public partial class Commands : Tweak<CommandsConfiguration>
 
     private class GoToFlagTask : CommonTasks
     {
-        protected override async Task Execute() => await MoveTo(PlayerEx.MapFlag, MovementConfig.Everything);
+        protected override async Task Execute() => await MoveTo(Player.MapFlag, MovementConfig.Everything);
     }
     #endregion
 

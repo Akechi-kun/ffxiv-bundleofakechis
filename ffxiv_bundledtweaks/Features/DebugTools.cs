@@ -150,13 +150,13 @@ public class DebugTools : Tweak<DebugToolsConfiguration>
             if (Svc.KeyState.GetRawValue(VirtualKey.LSHIFT) != 0 || IsKeyPressed(LimitedKeys.LeftShiftKey))
                 PlayerEx.Position = (Player.Object.Position.X, Player.Object.Position.Y - Config.NoClipSpeed, Player.Object.Position.Z).ToVector3();
             if (_keys["MOVE_FORE"].IsHeldRaw())
-                PlayerEx.Position = Utils.RotatePoint(Player.Object.Position.X, Player.Object.Position.Z, MathF.PI - PlayerEx.Camera->DirH, Player.Object.Position + new Vector3(0, 0, Config.NoClipSpeed));
+                PlayerEx.Position = Utils.RotatePoint(Player.Object.Position.X, Player.Object.Position.Z, MathF.PI - Player.Camera->DirH, Player.Object.Position + new Vector3(0, 0, Config.NoClipSpeed));
             if (_keys["MOVE_BACK"].IsHeldRaw())
-                PlayerEx.Position = Utils.RotatePoint(Player.Object.Position.X, Player.Object.Position.Z, MathF.PI - PlayerEx.Camera->DirH, Player.Object.Position + new Vector3(0, 0, -Config.NoClipSpeed));
+                PlayerEx.Position = Utils.RotatePoint(Player.Object.Position.X, Player.Object.Position.Z, MathF.PI - Player.Camera->DirH, Player.Object.Position + new Vector3(0, 0, -Config.NoClipSpeed));
             if (_keys["MOVE_LEFT"].IsHeldRaw() || _keys["MOVE_STRIFE_L"].IsHeldRaw())
-                PlayerEx.Position = Utils.RotatePoint(Player.Object.Position.X, Player.Object.Position.Z, MathF.PI - PlayerEx.Camera->DirH, Player.Object.Position + new Vector3(Config.NoClipSpeed, 0, 0));
+                PlayerEx.Position = Utils.RotatePoint(Player.Object.Position.X, Player.Object.Position.Z, MathF.PI - Player.Camera->DirH, Player.Object.Position + new Vector3(Config.NoClipSpeed, 0, 0));
             if (_keys["MOVE_RIGHT"].IsHeldRaw() || _keys["MOVE_STRIFE_R"].IsHeldRaw())
-                PlayerEx.Position = Utils.RotatePoint(Player.Object.Position.X, Player.Object.Position.Z, MathF.PI - PlayerEx.Camera->DirH, Player.Object.Position + new Vector3(-Config.NoClipSpeed, 0, 0));
+                PlayerEx.Position = Utils.RotatePoint(Player.Object.Position.X, Player.Object.Position.Z, MathF.PI - Player.Camera->DirH, Player.Object.Position + new Vector3(-Config.NoClipSpeed, 0, 0));
         }
     }
 

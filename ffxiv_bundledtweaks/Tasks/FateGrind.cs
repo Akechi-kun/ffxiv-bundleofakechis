@@ -101,7 +101,7 @@ public sealed class FateGrind(DateWithDestinyConfiguration config) : CommonTasks
         if (fate.HandInCount >= TurnInMinimumForGold && fate.Progress == 100)
         {
             // We've already turned in enough for gold, just leave
-            await WaitWhile(() => PlayerEx.HatersWithFullAggro > 0, "WaitingForHatersToDie");
+            await WaitWhile(() => Player.HatersWithFullAggro > 0, "WaitingForHatersToDie");
             await LeaveFate();
         }
         else
@@ -129,16 +129,16 @@ public sealed class FateGrind(DateWithDestinyConfiguration config) : CommonTasks
         using var scope = BeginScope("TurnIn");
         if (FateTurnInNpc is { } npc)
         {
-            await WaitWhile(() => PlayerEx.HatersWithFullAggro > 0, "WaitingForHatersToDie");
+            await WaitWhile(() => Player.HatersWithFullAggro > 0, "WaitingForHatersToDie");
             Service.BossMod.ClearActive();
             await MoveTo(npc.Position, MovementConfig.InteractRange);
-            if (PlayerEx.HatersWithFullAggro > 0)
+            if (Player.HatersWithFullAggro > 0)
             {
                 Service.BossMod.SetActive("AI");
                 Service.BossMod.AddTransientStrategy("AI", BossModIPC.Modules.AutoFarm, "General", "FightBack");
             }
             Status = "Waiting for Haters to die";
-            await WaitWhile(() => PlayerEx.HatersWithFullAggro > 0, "WaitingForHatersToDie");
+            await WaitWhile(() => Player.HatersWithFullAggro > 0, "WaitingForHatersToDie");
             Status = "Turning in EventItems";
             await InteractWith(npc, () => CurrentFate!.EventItemInventoryCount() == 0, null, UiSkipOptions.Talk | UiSkipOptions.Request);
             await WaitUntilSkipping(() => !Player.IsBusy, "WaitingForExitNpc", UiSkipOptions.Talk); // might need to rethink. This is a general combat check vs hater check
@@ -151,14 +151,14 @@ public sealed class FateGrind(DateWithDestinyConfiguration config) : CommonTasks
         Status = "Waiting for combat to end";
 
         // Remove when vbm module supports it
-        if (PlayerEx.Haters.Length < 3)
+        if (Player.Haters.Length < 3)
         {
-            Log($"Not enough haters [{PlayerEx.Haters.Length}], setting AI to aggressive");
+            Log($"Not enough haters [{Player.Haters.Length}], setting AI to aggressive");
             Service.BossMod.AddTransientStrategy("AI", BossModIPC.Modules.AutoFarm, "General", "Aggressive");
         }
         else
         {
-            Log($"Too many haters [{PlayerEx.Haters.Length}], resetting AI aggression");
+            Log($"Too many haters [{Player.Haters.Length}], resetting AI aggression");
             Service.BossMod.ClearTransientStrategy("AI", BossModIPC.Modules.AutoFarm, "General");
         }
 

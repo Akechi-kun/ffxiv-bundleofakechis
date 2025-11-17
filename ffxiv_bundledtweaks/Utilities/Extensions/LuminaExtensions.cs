@@ -77,4 +77,6 @@ public static class LuminaExtensions
     public static Vector3 ToVector3(this Level row) => new(row.X, row.Y, row.Z);
 
     public static bool NotDuty(this RowRef<TerritoryIntendedUse> row) => ((FFXIVClientStructs.FFXIV.Client.Enums.TerritoryIntendedUse)row.RowId).NotDuty();
+
+    public static bool AllowsFlight(this RowRef<TerritoryType> row) => row.Value.AetherCurrentCompFlgSet.RowId != 0;
 }
