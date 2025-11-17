@@ -74,9 +74,7 @@ public class EnhancedLoginLogout : Tweak<EnhancedLoginLogoutConfig>
     }
 
     public override void Enable() => ProperOnLogin.RegisterInteractable(RunCommands);
-#pragma warning disable CS0618 // Type or member is obsolete
     public override void Disable() => ProperOnLogin.Unregister(RunCommands);
-#pragma warning restore CS0618 // Type or member is obsolete
 
     private string ConvertToCommand(string cmd) => cmd.StartsWith('/') ? cmd : $"/{cmd}";
     private void RunCommands()

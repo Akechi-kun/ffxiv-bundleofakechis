@@ -1,4 +1,5 @@
-﻿using Lumina.Excel.Sheets;
+﻿using FFXIVClientStructs.FFXIV.Client.Game.Character;
+using Lumina.Excel.Sheets;
 
 namespace ComplexTweaks.Features;
 
@@ -20,13 +21,18 @@ public class AutoPillion : Tweak
             return;
         }
 
-        // TODO: add a check if there are any seats left to get into
-        var target = Svc.Party.FirstOrDefault(o => o?.EntityId != Player.Object.GameObjectId && o?.GameObject?.YalmDistanceX < 3 && GetRow<Mount>(o.GameObject.Character()->Mount.MountId)!.Value.ExtraSeats > 0, null);
+        var target = Svc.Party.FirstOrDefault(o => o?.EntityId != Player.Object.GameObjectId && o?.GameObject?.YalmDistanceX < 3 && HasMountSpace(o.GameObject.Character()->Mount), null);
         if (target != null && target.GameObject != null && Service.Memory.RidePillion != null)
         {
             TaskManager.Enqueue(() => Debug("Detected mounted party member with extra seats, mounting..."));
             TaskManager.Enqueue(() => Service.Memory.RidePillion!(target.GameObject.BattleChara(), 10));
             TaskManager.Enqueue(() => Svc.Condition[ConditionFlag.Mounted]);
         }
+    }
+
+    private unsafe bool HasMountSpace(MountContainer cont)
+    {
+        var capacity = GetRow<Mount>(cont.MountId)?.ExtraSeats ?? 0;
+        return cont.MountedEntityIds[1..].ToArray().Count(x => x != 0) < capacity;
     }
 }
