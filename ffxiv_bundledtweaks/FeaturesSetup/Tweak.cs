@@ -1,10 +1,15 @@
+using Dalamud.Bindings.ImGui;
+using Dalamud.Game.Command;
 using Dalamud.Game.Text;
 using Dalamud.Game.Text.SeStringHandling;
 using Dalamud.Hooking;
+using Dalamud.Interface.Utility.Raii;
+using Dalamud.Interface.Windowing;
 using Dalamud.Utility.Signatures;
 using ECommons.Automation.NeoTaskManager;
 using ECommons.EzHookManager;
 using ECommons.Reflection;
+using ECommons.SimpleGui;
 using System.Reflection;
 
 namespace ComplexTweaks.FeaturesSetup;
@@ -81,13 +86,66 @@ public abstract partial class Tweak : ITweak
 
     protected TaskManager TaskManager = null!;
 
+    protected Type? CachedConfigType { get; set; }
+    protected Type? CachedWindowType { get; set; }
+    protected Window? _window;
+
+    protected virtual object? GetConfigObject() => null;
+
+    public TConfig? GetConfig<TConfig>() where TConfig : class
+    {
+        if (CachedConfigType == typeof(TConfig))
+        {
+            var config = GetConfigObject();
+            if (config is TConfig typedConfig)
+                return typedConfig;
+        }
+        return null;
+    }
+
+    protected TWindow? Window<TWindow>() where TWindow : Window => _window is TWindow window ? window : EzConfigGui.GetWindow<TWindow>();
+
+    protected IEnumerable<MethodInfo> CommandHandlers
+        => CachedType
+            .GetMethods(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance)
+            .Where(mi => mi.GetCustomAttribute<CommandHandlerAttribute>() != null);
+
     public virtual void SetupAddressHooks() { }
     public virtual void SetupVTableHooks() { }
 
     public virtual void Enable() { }
     public virtual void Disable() { }
     public virtual void Dispose() { }
-    public virtual void DrawConfig() { }
+    public virtual void DrawConfig()
+    {
+        var config = GetConfigObject();
+        if (CachedConfigType != null && config != null)
+        {
+            var configFields = CachedConfigType.GetFields()
+                .Select(fieldInfo => (FieldInfo: fieldInfo, Attribute: fieldInfo.GetCustomAttribute<BaseConfigAttribute>()))
+                .Where((tuple) => tuple.Attribute != null)
+                .Cast<(FieldInfo, BaseConfigAttribute)>();
+
+            if (configFields.Any())
+            {
+                ImGuiX.DrawSection("Configuration");
+
+                foreach (var (field, attr) in configFields)
+                {
+                    var hasDependency = !string.IsNullOrEmpty(attr.DependsOn);
+                    var isDisabled = hasDependency && (bool?)CachedConfigType.GetField(attr.DependsOn)?.GetValue(config) == false;
+
+                    using var id = ImRaii.PushId(field.Name);
+                    using var indent = ImGuiX.ConfigIndent(hasDependency);
+                    using var disabled = ImRaii.Disabled(isDisabled);
+
+                    attr.Draw(this, config, field);
+                }
+            }
+        }
+
+        DrawCommands();
+    }
     public virtual void OnConfigChange(string fieldName) { }
 }
 
@@ -138,6 +196,38 @@ public abstract partial class Tweak // Internal
             // TODO: append a button to re-enable
             ModuleMessage("Feature not enabled due to missing dependencies. Please install them then re-enable this feature.");
             return;
+        }
+
+        if (CachedWindowType != null && _window == null)
+        {
+            try
+            {
+                var getWindowMethod = typeof(EzConfigGui).GetMethod("GetWindow", [])?.MakeGenericMethod(CachedWindowType);
+                if (getWindowMethod?.Invoke(null, null) is Window existingWindow)
+                    _window = existingWindow;
+                else
+                {
+                    var constructor = CachedWindowType.GetConstructor([CachedType]);
+                    if (constructor != null)
+                        _window = (Window?)constructor.Invoke([this]);
+                    else
+                    {
+                        constructor = CachedWindowType.GetConstructor([]);
+                        _window = constructor != null
+                            ? (Window?)constructor.Invoke([])
+                            : throw new InvalidOperationException($"Window type {CachedWindowType.Name} must have either a parameterless constructor or a constructor that takes {CachedType.Name}.");
+                    }
+
+                    if (_window != null)
+                        EzConfigGui.WindowSystem.AddWindow(_window);
+                }
+            }
+            catch (Exception ex)
+            {
+                Error(ex, $"Failed to create window {CachedWindowType.Name}");
+                LastInternalException = ex;
+                return;
+            }
         }
 
         try
@@ -215,6 +305,19 @@ public abstract partial class Tweak // Internal
             LastInternalException = ex;
         }
 
+        if (_window != null && CachedWindowType != null)
+        {
+            try
+            {
+                EzConfigGui.WindowSystem.RemoveWindow(_window);
+                _window = null;
+            }
+            catch (Exception ex)
+            {
+                Error(ex, $"Failed to remove window {CachedWindowType.Name}");
+            }
+        }
+
         Enabled = false;
     }
 
@@ -251,6 +354,40 @@ public abstract partial class Tweak // Internal
 
     internal virtual void OnConfigChangeInternal(string fieldName)
     {
+        foreach (var methodInfo in CommandHandlers)
+        {
+            var attr = methodInfo.GetCustomAttribute<CommandHandlerAttribute>()!;
+            if (attr.ConfigFieldName != fieldName)
+                continue;
+
+            var enabled = string.IsNullOrEmpty(attr.ConfigFieldName);
+
+            if (!string.IsNullOrEmpty(attr.ConfigFieldName) && CachedConfigType != null)
+            {
+                var config = GetConfigObject();
+                if (config != null)
+                    enabled |= (CachedConfigType.GetField(attr.ConfigFieldName)?.GetValue(config) as bool?)
+                        ?? throw new InvalidOperationException($"Configuration field {attr.ConfigFieldName} in {CachedConfigType.Name} not found.");
+            }
+
+            if (enabled && methodInfo.GetCustomAttributes<RequiresAttribute>().SelectMany(r => r.Id.ToArray()).Distinct().ToArray() is { Length: > 0 } reqs)
+            {
+                if (!Service.IPC.AreAllLoaded(reqs))
+                {
+                    var missing = Service.IPC.GetMissing(reqs);
+                    Warning($"Cannot enable command(s) [{string.Join(", ", attr.Commands)}]: missing dependencies: {string.Join(", ", missing.Select(ipc => ipc.Name))}");
+                    enabled = false;
+                }
+            }
+
+            if (enabled)
+                foreach (var c in attr.Commands)
+                    EnableCommand(c, attr.HelpMessage, methodInfo, attr);
+            else
+                foreach (var c in attr.Commands)
+                    DisableCommand(c);
+        }
+
         try
         {
             OnConfigChange(fieldName);
@@ -263,8 +400,131 @@ public abstract partial class Tweak // Internal
         }
     }
 
-    protected virtual void EnableCommands() { }
-    protected virtual void DisableCommands() { }
+    protected virtual void EnableCommands()
+    {
+        foreach (var methodInfo in CommandHandlers)
+        {
+            var attr = methodInfo.GetCustomAttribute<CommandHandlerAttribute>()!;
+            var enabled = string.IsNullOrEmpty(attr.ConfigFieldName);
+
+            if (!string.IsNullOrEmpty(attr.ConfigFieldName) && CachedConfigType != null)
+            {
+                var config = GetConfigObject();
+                if (config != null)
+                    enabled |= (CachedConfigType.GetField(attr.ConfigFieldName)?.GetValue(config) as bool?)
+                        ?? throw new InvalidOperationException($"Configuration field {attr.ConfigFieldName} in {CachedConfigType.Name} not found.");
+            }
+
+            if (enabled && methodInfo.GetCustomAttributes<RequiresAttribute>().SelectMany(r => r.Id.ToArray()).Distinct().ToArray() is { Length: > 0 } reqs)
+            {
+                if (!Service.IPC.AreAllLoaded(reqs))
+                {
+                    var missing = Service.IPC.GetMissing(reqs);
+                    var missingNames = missing.Length > 0 ? string.Join(", ", missing.Select(ipc => ipc.Name)) : "one or more required IPCs are not registered";
+                    Warning($"Cannot enable command(s) [{string.Join(", ", attr.Commands)}]: missing dependencies: {missingNames}");
+                    continue;
+                }
+            }
+
+            if (enabled)
+                foreach (var c in attr.Commands)
+                    EnableCommand(c, attr.HelpMessage, methodInfo, attr);
+        }
+    }
+
+    protected virtual void DisableCommands()
+    {
+        foreach (var methodInfo in CommandHandlers)
+        {
+            var attr = methodInfo.GetCustomAttribute<CommandHandlerAttribute>()!;
+            var enabled = string.IsNullOrEmpty(attr.ConfigFieldName);
+
+            if (!string.IsNullOrEmpty(attr.ConfigFieldName) && CachedConfigType != null)
+            {
+                var config = GetConfigObject();
+                if (config != null)
+                    enabled |= (CachedConfigType.GetField(attr.ConfigFieldName)?.GetValue(config) as bool?)
+                        ?? throw new InvalidOperationException($"Configuration field {attr.ConfigFieldName} in {CachedConfigType.Name} not found.");
+            }
+
+            if (enabled)
+                foreach (var c in attr.Commands)
+                    DisableCommand(c);
+        }
+    }
+
+    protected void DrawCommands()
+    {
+        var commandHandlers = CommandHandlers
+        .Select(m => m.GetCustomAttribute<CommandHandlerAttribute>()!)
+        .Where(attr =>
+            // Show command if it has no config field dependency
+            string.IsNullOrEmpty(attr.ConfigFieldName) ||
+            // Or if the config field is enabled
+            (CachedConfigType != null && GetConfigObject() != null && (bool?)CachedConfigType.GetField(attr.ConfigFieldName)?.GetValue(GetConfigObject()) == true))
+        .Where(attr => attr.Commands.Any(cmd => Svc.Commands.Commands.ContainsKey(cmd)));
+
+        if (commandHandlers.Any())
+        {
+            ImGuiX.DrawSection("Available Commands");
+            foreach (var attr in commandHandlers)
+            {
+                foreach (var cmd in attr.Commands.Where(Svc.Commands.Commands.ContainsKey))
+                {
+                    var commandInfo = Svc.Commands.Commands[cmd];
+                    ImGui.Text($"{cmd}");
+                    if (!string.IsNullOrEmpty(commandInfo.HelpMessage))
+                    {
+                        ImGui.SameLine();
+                        ImGui.TextColoredWrapped(Colors.Grey, commandInfo.HelpMessage);
+                    }
+
+                    if (attr.SubCommands.Count != 0)
+                    {
+                        foreach (var subCmd in attr.SubCommands)
+                        {
+                            using var subIndent = ImGuiX.ConfigIndent();
+                            ImGui.Text($"{cmd} {subCmd.Subcommand}");
+                            ImGui.SameLine();
+                            ImGui.TextColoredWrapped(Colors.Grey, subCmd.HelpMessage);
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    private void EnableCommand(string command, string helpMessage, MethodInfo methodInfo, CommandHandlerAttribute attr)
+    {
+        var originalHandler = methodInfo.CreateDelegate<IReadOnlyCommandInfo.HandlerDelegate>(this);
+        void handler(string cmd, string args)
+        {
+            if (methodInfo.GetCustomAttributes<RequiresAttribute>().SelectMany(r => r.Id.ToArray()).Distinct().ToArray() is { Length: > 0 } reqs)
+            {
+                if (!Service.IPC.AreAllLoaded(reqs))
+                {
+                    var missing = Service.IPC.GetMissing(reqs);
+                    ModuleMessage($"Command {cmd} requires: {string.Join(", ", missing.Select(ipc => ipc.Name))}");
+                    return;
+                }
+            }
+
+            originalHandler(cmd, args);
+        }
+
+        if (Svc.Commands.AddHandler(command, new CommandInfo(handler) { HelpMessage = helpMessage, DisplayOrder = 1 }))
+            Log($"Added CommandHandler for {command}");
+        else
+            Warning($"Could not add CommandHandler for {command}");
+    }
+
+    private void DisableCommand(string command)
+    {
+        if (Svc.Commands.RemoveHandler(command))
+            Log($"Removed CommandHandler for {command}");
+        else
+            Warning($"Could not remove CommandHandler for {command}");
+    }
 }
 
 public abstract partial class Tweak // Logging
