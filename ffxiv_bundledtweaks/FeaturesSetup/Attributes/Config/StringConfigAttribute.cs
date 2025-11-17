@@ -40,12 +40,12 @@ public class StringConfigAttribute : BaseConfigAttribute
                 {
                     _ = new Regex(value);
                     ImGui.SameLine();
-                    ImGuiX.Icon(FontAwesomeIcon.Check, EzColor.Green, "Valid regex pattern");
+                    ImGui.Icon(FontAwesomeIcon.Check, EzColor.Green, "Valid regex pattern");
                 }
                 catch (ArgumentException)
                 {
                     ImGui.SameLine();
-                    ImGuiX.Icon(FontAwesomeIcon.Ban, EzColor.Red, "Invalid regex pattern");
+                    ImGui.Icon(FontAwesomeIcon.Ban, EzColor.Red, "Invalid regex pattern");
                 }
             }
         }

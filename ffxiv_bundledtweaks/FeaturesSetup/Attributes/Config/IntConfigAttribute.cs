@@ -21,7 +21,7 @@ public class IntConfigAttribute : BaseConfigAttribute
         ImGuiEx.TextV(fieldInfo.Name.SplitWords());
         if (SameLine) ImGui.SameLine();
 
-        using var indent = ImGuiX.ConfigIndent(!SameLine);
+        using var indent = ImGui.ConfigIndent(!SameLine);
 
         if (ImGui.DragInt("##Input", ref value, 0.01f, Min, Max))
         {

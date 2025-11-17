@@ -21,7 +21,7 @@ public class EnumConfigAttribute : BaseConfigAttribute
             ImGui.TextUnformatted(fieldInfo.Name.SplitWords());
         }
 
-        using var indent = ImGuiX.ConfigIndent(!NoLabel);
+        using var indent = ImGui.ConfigIndent(!NoLabel);
 
         var selectedValue = Convert.ToInt32(fieldInfo.GetValue(config) ?? 0);
         using var combo = ImRaii.Combo("##Input", GetOptionLabel(selectedValue));

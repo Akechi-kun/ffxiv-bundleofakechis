@@ -1,5 +1,4 @@
-﻿using Automaton.Utilities.Extensions;
-using Dalamud.Game;
+﻿using Dalamud.Game;
 using Dalamud.Game.Text;
 using Dalamud.Game.Text.SeStringHandling;
 using Dalamud.Game.Text.SeStringHandling.Payloads;
@@ -7,7 +6,7 @@ using System.Globalization;
 using System.Text.RegularExpressions;
 using TimeZoneNames;
 
-namespace Automaton.Features;
+namespace ComplexTweaks.Features;
 
 [Tweak]
 public class TimezoneTranslator : Tweak

@@ -100,7 +100,7 @@ public class HuntRelayHelper : Tweak<HuntRelayHelperConfiguration>
 
     public override void DrawConfig()
     {
-        ImGuiX.DrawSection("Chat Channels");
+        ImGui.DrawSection("Chat Channels");
         using (ImRaii.Table($"##{nameof(Config.Channels)}", 4))
         {
             foreach (var c in Config.Channels.ToList().Select((x, i) => new { Value = x, Index = i }))
@@ -126,7 +126,7 @@ public class HuntRelayHelper : Tweak<HuntRelayHelperConfiguration>
             }
         }
 
-        ImGuiX.DrawSection("Configuration");
+        ImGui.DrawSection("Configuration");
 
         ImGui.Checkbox("Don't repeat relays", ref Config.DontRepeatRelays);
         ImGuiComponents.HelpMarker("Don't send relays to the channel in which you clicked the relay payload.");
@@ -161,11 +161,11 @@ public class HuntRelayHelper : Tweak<HuntRelayHelperConfiguration>
         ImGuiComponents.HelpMarker("Enabling this will print the messages to chat without actually sending them to the server. This is just for testing.");
 #endif
 
-        ImGuiX.DrawSection("Chat Message Pattern");
+        ImGui.DrawSection("Chat Message Pattern");
         ImGui.InputText($"##{nameof(Config.ChatMessagePattern)}", ref Config.ChatMessagePattern, 64);
         ImGuiComponents.HelpMarker("Available tags: <world>, <type>, <flag>");
 
-        ImGuiX.DrawSection("Relay Type Configuration");
+        ImGui.DrawSection("Relay Type Configuration");
         foreach (var t in Config.Types.ToList().Select((x, i) => new { Value = x, Index = i }))
         {
             ImGui.TextUnformatted($"{t.Value.RelayType.ToString().SplitWords()}");

@@ -128,7 +128,7 @@ public abstract partial class Tweak : ITweak
 
             if (configFields.Any())
             {
-                ImGuiX.DrawSection("Configuration");
+                ImGui.DrawSection("Configuration");
 
                 foreach (var (field, attr) in configFields)
                 {
@@ -136,7 +136,7 @@ public abstract partial class Tweak : ITweak
                     var isDisabled = hasDependency && (bool?)CachedConfigType.GetField(attr.DependsOn)?.GetValue(config) == false;
 
                     using var id = ImRaii.PushId(field.Name);
-                    using var indent = ImGuiX.ConfigIndent(hasDependency);
+                    using var indent = ImGui.ConfigIndent(hasDependency);
                     using var disabled = ImRaii.Disabled(isDisabled);
 
                     attr.Draw(this, config, field);
@@ -466,7 +466,7 @@ public abstract partial class Tweak // Internal
 
         if (commandHandlers.Any())
         {
-            ImGuiX.DrawSection("Available Commands");
+            ImGui.DrawSection("Available Commands");
             foreach (var attr in commandHandlers)
             {
                 foreach (var cmd in attr.Commands.Where(Svc.Commands.Commands.ContainsKey))
@@ -483,7 +483,7 @@ public abstract partial class Tweak // Internal
                     {
                         foreach (var subCmd in attr.SubCommands)
                         {
-                            using var subIndent = ImGuiX.ConfigIndent();
+                            using var subIndent = ImGui.ConfigIndent();
                             ImGui.Text($"{cmd} {subCmd.Subcommand}");
                             ImGui.SameLine();
                             ImGui.TextColoredWrapped(Colors.Grey, subCmd.HelpMessage);

@@ -18,7 +18,7 @@ public class FloatConfigAttribute : BaseConfigAttribute
 
         ImGui.TextUnformatted(fieldInfo.Name.SplitWords());
 
-        using var indent = ImGuiX.ConfigIndent();
+        using var indent = ImGui.ConfigIndent();
 
         if (ImGui.DragFloat("##Input", ref value, 0.01f, Min, Max, "%.2f"))
         {

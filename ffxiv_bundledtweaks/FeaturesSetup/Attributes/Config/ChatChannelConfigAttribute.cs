@@ -54,7 +54,7 @@ public class ChatChannelConfigAttribute : BaseConfigAttribute
 
         ImGui.TextUnformatted(fieldInfo.Name.SplitWords());
 
-        using var indent = ImGuiX.ConfigIndent();
+        using var indent = ImGui.ConfigIndent();
 
         var chatTypes = Mode switch
         {

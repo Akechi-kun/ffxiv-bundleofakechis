@@ -47,7 +47,7 @@ public class EnhancedDutyStartEnd : Tweak<EnhancedDutyStartEndConfiguration>
     private string _name = string.Empty;
     public override void DrawConfig()
     {
-        ImGuiX.DrawSection("Duty Start Options");
+        ImGui.DrawSection("Duty Start Options");
 
         ImGui.InputText($"##{nameof(Config.StartMsg)}", ref Config.StartMsg, 50);
         ImGui.TextColoredWrapped(Colors.Grey, "Sends a party chat message when the duty starts.");
@@ -58,7 +58,7 @@ public class EnhancedDutyStartEnd : Tweak<EnhancedDutyStartEndConfiguration>
 
         if (Config.Players.Count > 0)
         {
-            ImGuiX.DrawSection("Players to Check For");
+            ImGui.DrawSection("Players to Check For");
             if (ImGui.Checkbox("Check for All", ref Config.CheckForAll))
                 if (Config.CheckForAll)
                     Config.CheckForAny = !Config.CheckForAll;
@@ -75,7 +75,7 @@ public class EnhancedDutyStartEnd : Tweak<EnhancedDutyStartEndConfiguration>
                 Config.Players.Remove(person);
         }
 
-        ImGuiX.DrawSection("Duty End Options");
+        ImGui.DrawSection("Duty End Options");
 
         ImGui.InputText($"##{nameof(Config.EndMsg)}", ref Config.EndMsg, 50);
         ImGui.TextColoredWrapped(Colors.Grey, "Sends a party chat message when the duty ends.");

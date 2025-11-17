@@ -1,4 +1,3 @@
-using Automaton.Utilities;
 using Dalamud.Bindings.ImGui;
 using Dalamud.Interface.Textures;
 using Dalamud.Interface.Textures.TextureWraps;

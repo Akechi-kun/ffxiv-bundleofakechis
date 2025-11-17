@@ -43,14 +43,14 @@ public class DebugTools : Tweak<DebugToolsConfiguration>
         _keys = GetSheet<ConfigKey>().Where(x => x.RowId is >= 12 and <= 18).ToDictionary(x => x.Label.ToString(), x => x);
         Svc.Framework.Update += OnUpdate;
         Svc.AddonLifecycle.RegisterListener(AddonEvent.PostSetup, "MJICraftSchedule", OnSetup);
-        Events.EnteredPvPInstance += OnEnterPvP;
+        Svc.ClientState.EnterPvP += OnEnterPvP;
     }
 
     public override void Disable()
     {
         Svc.Framework.Update -= OnUpdate;
         Svc.AddonLifecycle.UnregisterListener(OnSetup);
-        Events.EnteredPvPInstance -= OnEnterPvP;
+        Svc.ClientState.EnterPvP -= OnEnterPvP;
     }
 
     private unsafe void OnSetup(AddonEvent type, AddonArgs args)

@@ -40,7 +40,7 @@ public class GMAlert : Tweak<GMAlertConfiguration>
     private string _cmd = string.Empty;
     public override void DrawConfig()
     {
-        ImGuiX.DrawSection("Upon GM Appearance");
+        ImGui.DrawSection("Upon GM Appearance");
 
         ImGui.Checkbox("Send Toast Alert", ref Config.Toast);
         ImGui.Checkbox("Send Chat Alert", ref Config.ChatMessage);
@@ -48,22 +48,22 @@ public class GMAlert : Tweak<GMAlertConfiguration>
         if (Config.Sound)
         {
             ImGui.SameLine();
-            if (ImGuiX.IconButton(FontAwesomeIcon.Music, "##SoundPreview", "Preview Beeps"))
+            if (ImGui.IconButton(FontAwesomeIcon.Music, "##SoundPreview", "Preview Beeps"))
                 for (var i = 0; i < Config.BeepCount; i++)
                     Task.Run(() => Console.Beep(Config.BeepFrequency, Config.BeepDuration));
 
             ImGui.Indent();
             ImGui.SliderInt("Beep Count", ref Config.BeepCount, 1, 100);
             ImGui.SameLine();
-            ImGuiX.ResetButton(ref Config.BeepCount, 3);
+            ImGui.ResetButton(ref Config.BeepCount, 3);
 
             ImGui.SliderInt("Beep Duration", ref Config.BeepDuration, 1, 1000);
             ImGui.SameLine();
-            ImGuiX.ResetButton(ref Config.BeepDuration, 250);
+            ImGui.ResetButton(ref Config.BeepDuration, 250);
 
             ImGui.SliderInt("Beep Frequency", ref Config.BeepFrequency, 100, 5000);
             ImGui.SameLine();
-            ImGuiX.ResetButton(ref Config.BeepFrequency, 900);
+            ImGui.ResetButton(ref Config.BeepFrequency, 900);
             ImGui.Unindent();
         }
 

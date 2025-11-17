@@ -148,15 +148,15 @@ public partial class HaselWindow : Window
         {
             if (!string.IsNullOrEmpty(tweak.Description))
             {
-                ImGuiX.DrawPaddedSeparator();
+                ImGui.DrawPaddedSeparator();
                 ImGui.TextColoredWrapped(Colors.Grey2, tweak.Description);
             }
         }
 
         if (tweak.Requirements.Any(r => !r.IsLoaded))
         {
-            ImGuiX.DrawSection("Required Dependencies");
-            ImGuiX.Icon(60074, 24);
+            ImGui.DrawSection("Required Dependencies");
+            ImGui.Icon(60074, 24);
             ImGui.SameLine();
             ImGuiEx.TextV(Colors.Grey2, $"Missing {tweak.Requirements.Count(r => !r.IsLoaded)} of the required plugins for this feature to work:");
             foreach (var entry in tweak.Requirements.Where(r => !r.IsLoaded))
@@ -169,8 +169,8 @@ public partial class HaselWindow : Window
 
         if (tweak.IncompatibilityWarnings.Any(entry => entry.IsLoaded))
         {
-            ImGuiX.DrawSection("Incompatibility Warning");
-            ImGuiX.Icon(60073, 24);
+            ImGui.DrawSection("Incompatibility Warning");
+            ImGui.Icon(60073, 24);
             ImGui.SameLine();
             var cursorPosX = ImGui.GetCursorPosX();
 
@@ -280,7 +280,7 @@ public partial class HaselWindow : Window
     {
         _splashText ??= SplashTexts[Random.Shared.Next(SplashTexts.Length)];
         ImGui.SetCursorPosX(ImGui.GetCursorPosX() + ImGui.GetColumnWidth() * 0.5f - ImGui.CalcTextSize(_splashText).X * 0.5f);
-        ImGuiX.FlashText(_splashText, Colors.Gold, ImGui.GetStyle().Colors[(int)ImGuiCol.WindowBg], 2);
+        ImGui.FlashText(_splashText, Colors.Gold, ImGui.GetStyle().Colors[(int)ImGuiCol.WindowBg], 2);
 
         AsciiSplash.Draw(80);
     }
@@ -288,11 +288,11 @@ public partial class HaselWindow : Window
     private void DrawBottomBar()
     {
         ImGui.SetCursorPos(ImGui.GetCursorPos() + new Vector2(0, ImGui.GetContentRegionAvail().Y - ImGui.GetTextLineHeight()));
-        ImGuiX.DrawLink("GitHub", "GitHub", "https://github.com/Jaksuhn/ffxiv-bundleoftweaks");
+        ImGui.DrawLink("GitHub", "GitHub", "https://github.com/Jaksuhn/ffxiv-bundleoftweaks");
         ImGui.SameLine();
         ImGui.TextUnformatted("•");
         ImGui.SameLine();
-        ImGuiX.DrawLink("Ko-fi", "Ko-fi", "https://ko-fi.com/croizat");
+        ImGui.DrawLink("Ko-fi", "Ko-fi", "https://ko-fi.com/croizat");
 
         if (P.Version.ToString(2).Length > 1)
         {

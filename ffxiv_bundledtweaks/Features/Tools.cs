@@ -23,11 +23,11 @@ public class Tools : Tweak
                 .ToList();
             foreach (var recipe in _recipes)
             {
-                ImGuiX.Icon(recipe.ItemResult.Value!.Icon, 25);
+                ImGui.Icon(recipe.ItemResult.Value!.Icon, 25);
                 ImGui.SameLine();
                 ImGuiEx.TextV($"[{recipe.RowId}] {recipe.ItemResult.Value!.Name}");
                 ImGui.SameLine();
-                if (ImGuiX.IconButton(FontAwesomeIcon.BookOpen, $"{recipe.RowId}"))
+                if (ImGui.IconButton(FontAwesomeIcon.BookOpen, $"{recipe.RowId}"))
                     AgentRecipeNote.Instance()->OpenRecipeByRecipeId(recipe.RowId);
             }
         }
@@ -37,11 +37,11 @@ public class Tools : Tweak
             var _recipes = GetSheet<Recipe>().Where(r => r.ItemResult.Value!.RowId != 0 && r.SecretRecipeBook.Value!.RowId == 0 && r.RecipeNotebookList.Value!.RowId == 0 && !QuestManager.IsRecipeComplete(r.RowId)).ToList();
             foreach (var recipe in _recipes)
             {
-                ImGuiX.Icon(recipe.ItemResult.Value!.Icon, 25);
+                ImGui.Icon(recipe.ItemResult.Value!.Icon, 25);
                 ImGui.SameLine();
                 ImGuiEx.TextV($"[{recipe.RowId}] {recipe.ItemResult.Value!.Name}");
                 ImGui.SameLine();
-                if (ImGuiX.IconButton(FontAwesomeIcon.BookOpen, $"{recipe.RowId}"))
+                if (ImGui.IconButton(FontAwesomeIcon.BookOpen, $"{recipe.RowId}"))
                     AgentRecipeNote.Instance()->OpenRecipeByRecipeId(recipe.RowId);
             }
         }

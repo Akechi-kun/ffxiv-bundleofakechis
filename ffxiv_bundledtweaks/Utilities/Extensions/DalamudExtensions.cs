@@ -26,18 +26,18 @@ public static unsafe class DalamudExtensions
 
         ImGui.Indent();
 
-        ImGuiX.FieldAndValue("State", fate.State);
-        ImGuiX.FieldAndValue("Position", fate.Position);
-        ImGuiX.FieldAndValue("Progress", $"{fate.Progress}%");
-        ImGuiX.FieldAndValue("Time Remaining", $"{TimeSpan.FromSeconds(fate.TimeRemaining):mm\\:ss} / {TimeSpan.FromSeconds(fate.Duration):mm\\:ss}");
-        ImGuiX.FieldAndValue("Level", $"{fate.Level}-{fate.MaxLevel}");
-        ImGuiX.FieldAndValue("Bonus", fate.HasBonus);
-        ImGuiX.FieldAndValue("Distance To", Player.DistanceTo(fate.Position));
-        ImGuiX.FieldAndValue("Hand In Count", fate.HandInCount);
-        ImGuiX.FieldAndValue("Event Item", fate.GameData.ValueNullable?.EventItem.ValueNullable?.Print() ?? "N/A", fate.GameData.ValueNullable?.EventItem.RowId != 0);
-        ImGuiX.FieldAndValue("Event Item Count", fate.EventItemInventoryCount());
-        ImGuiX.FieldAndValue("Distance to Aetheryte", Vector3.Distance(fate.Position, Coords.AetherytePosition(Coords.FindClosestAetheryte(fate.TerritoryType.RowId, fate.Position) ?? 0)));
-        ImGuiX.FieldAndValue("Worth Teleporting", Coords.IsTeleportingFaster(fate.Position));
+        ImGui.FieldAndValue("State", fate.State);
+        ImGui.FieldAndValue("Position", fate.Position);
+        ImGui.FieldAndValue("Progress", $"{fate.Progress}%");
+        ImGui.FieldAndValue("Time Remaining", $"{TimeSpan.FromSeconds(fate.TimeRemaining):mm\\:ss} / {TimeSpan.FromSeconds(fate.Duration):mm\\:ss}");
+        ImGui.FieldAndValue("Level", $"{fate.Level}-{fate.MaxLevel}");
+        ImGui.FieldAndValue("Bonus", fate.HasBonus);
+        ImGui.FieldAndValue("Distance To", Player.DistanceTo(fate.Position));
+        ImGui.FieldAndValue("Hand In Count", fate.HandInCount);
+        ImGui.FieldAndValue("Event Item", fate.GameData.ValueNullable?.EventItem.ValueNullable?.Print() ?? "N/A", fate.GameData.ValueNullable?.EventItem.RowId != 0);
+        ImGui.FieldAndValue("Event Item Count", fate.EventItemInventoryCount());
+        ImGui.FieldAndValue("Distance to Aetheryte", Vector3.Distance(fate.Position, Coords.AetherytePosition(Coords.FindClosestAetheryte(fate.TerritoryType.RowId, fate.Position) ?? 0)));
+        ImGui.FieldAndValue("Worth Teleporting", Coords.IsTeleportingFaster(fate.Position));
 
         ImGui.Unindent();
     }

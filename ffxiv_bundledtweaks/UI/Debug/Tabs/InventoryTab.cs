@@ -31,17 +31,17 @@ internal unsafe class InventoryTab : DebugTab
     public override void Draw()
     {
         ImGui.TextUnformatted($"{nameof(RaptureAtkModule.AgentUpdateFlag.InventoryUpdate)}: {RaptureAtkModule.Instance()->AgentUpdateFlag.HasFlag(RaptureAtkModule.AgentUpdateFlags.InventoryUpdate)}");
-        ImGuiX.DrawPaddedSeparator();
+        ImGui.DrawPaddedSeparator();
         ImGui.InputText("Filter", ref searchFilter, 256);
         using (var table = ImRaii.Table("InventoryItems", 6, ImGuiTableFlags.SizingFixedFit))
             if (table)
             {
-                ImGuiX.DrawTableColumn("Name");
-                ImGuiX.DrawTableColumn("Container");
-                ImGuiX.DrawTableColumn("Slot (IM)");
-                ImGuiX.DrawTableColumn("Slot (ODR)");
-                ImGuiX.DrawTableColumn("Page");
-                ImGuiX.DrawTableColumn("Index");
+                ImGui.DrawTableColumn("Name");
+                ImGui.DrawTableColumn("Container");
+                ImGui.DrawTableColumn("Slot (IM)");
+                ImGui.DrawTableColumn("Slot (ODR)");
+                ImGui.DrawTableColumn("Page");
+                ImGui.DrawTableColumn("Index");
 
                 foreach (var container in Inventory.Equippable)
                 {
@@ -68,7 +68,7 @@ internal unsafe class InventoryTab : DebugTab
                     }
                 }
             }
-        //ImGuiX.DrawPaddedSeparator();
+        //ImGui.DrawPaddedSeparator();
         //foreach (var item in FilteredItems)
         //{
         //    var data = GetRow<Item>(item.Value->ItemId)!;

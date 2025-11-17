@@ -58,7 +58,6 @@ public class Plugin : IDalamudPlugin
 
         Svc.Framework.RunOnFrameworkThread(InitializeTweaks);
         C.EnabledTweaks.CollectionChanged += OnChange;
-        Svc.ClientState.EnterPvP += Events.OnEnteredPvPInstance;
         DalamudReflector.RegisterOnInstalledPluginsChangedEvents(OnPluginsChanged);
     }
 
@@ -94,7 +93,6 @@ public class Plugin : IDalamudPlugin
             Svc.Log.Debug($"Disposing {tweak.InternalName}");
             TryExecute(tweak.DisposeInternal);
         }
-        Svc.ClientState.EnterPvP -= Events.OnEnteredPvPInstance;
         C.EnabledTweaks.CollectionChanged -= OnChange;
         ECommonsMain.Dispose();
     }

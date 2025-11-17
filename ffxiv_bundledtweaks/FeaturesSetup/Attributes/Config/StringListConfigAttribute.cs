@@ -33,7 +33,7 @@ public class StringListConfigAttribute : BaseConfigAttribute
 
         if (value is ICollection<string> items && items.Count > 0)
         {
-            ImGuiX.DrawSection("Items");
+            ImGui.DrawSection("Items");
             foreach (var item in items.ToList())
             {
                 ImGuiEx.TextV(item);

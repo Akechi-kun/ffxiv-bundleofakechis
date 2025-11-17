@@ -161,9 +161,9 @@ public unsafe class AchievementTrackerWindow(AchievementTracker tweak) : Window(
                 if (ImGui.IsItemHovered()) ImGui.SetTooltip($"[{a.Achievement.Points}pts] {a.Achievement.Description}");
 
                 ImGui.NextColumn();
-                ImGuiX.DrawProgressBar((int)a.Achievement.CurrentProgress, (int)a.Achievement.MaxProgress, tweak.Config.BarColour);
+                ImGui.DrawProgressBar((int)a.Achievement.CurrentProgress, (int)a.Achievement.MaxProgress, tweak.Config.BarColour);
                 ImGui.SameLine();
-                ImGui.SetCursorPosX(ImGui.GetContentRegionMax().X - ImGuiX.IconUnitWidth() - ImGui.GetStyle().WindowPadding.X);
+                ImGui.SetCursorPosX(ImGui.GetContentRegionMax().X - ImGui.IconUnitWidth() - ImGui.GetStyle().WindowPadding.X);
                 if (ImGuiComponents.IconButton((int)a.Achievement.ID, FontAwesomeIcon.Trash))
                 {
                     tweak.Config.Achievements.Remove(a.Achievement);

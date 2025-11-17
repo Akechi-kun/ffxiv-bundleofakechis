@@ -39,7 +39,7 @@ public class SimpleCurrencyAlert : Tweak<SimpleCurrencyAlertConfig>
 
         foreach (var i in Config.Alerts.ToList())
         {
-            ImGuiX.Icon(i.Icon, 25);
+            ImGui.Icon(i.Icon, 25);
             ImGui.SameLine();
             ImGui.SetNextItemWidth(100);
             ImGui.InputInt($"Threshold##{i.ItemId}", ref i.Threshold, 0);
@@ -47,7 +47,7 @@ public class SimpleCurrencyAlert : Tweak<SimpleCurrencyAlertConfig>
             ImGui.SetNextItemWidth(100);
             ImGuiEx.EnumCombo($"##Level{i.ItemId}", ref i.Level);
             ImGui.SameLine();
-            if (ImGuiX.IconButton(FontAwesomeIcon.Trash, $"##Trash{i.ItemId}"))
+            if (ImGui.IconButton(FontAwesomeIcon.Trash, $"##Trash{i.ItemId}"))
                 Config.Alerts.Remove(i);
         }
     }

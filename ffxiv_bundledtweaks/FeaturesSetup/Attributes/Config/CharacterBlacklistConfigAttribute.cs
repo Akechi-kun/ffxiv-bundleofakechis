@@ -12,14 +12,14 @@ public class CharacterBlacklistConfigAttribute : BaseConfigAttribute
         var value = (List<ulong>)fieldInfo.GetValue(config)!;
         var attr = fieldInfo.GetCustomAttribute<BaseConfigAttribute>();
 
-        ImGuiX.DrawSection($"Character Blacklist ({value.Count} excluded)");
+        ImGui.DrawSection($"Character Blacklist ({value.Count} excluded)");
 
         var currentCharacterId = Svc.ClientState.LocalContentId;
         var isExcluded = value.Contains(currentCharacterId);
 
         if (!isExcluded)
         {
-            if (ImGuiX.IconButton(FontAwesomeIcon.UserMinus, "minus", "Exclude Current Character"))
+            if (ImGui.IconButton(FontAwesomeIcon.UserMinus, "minus", "Exclude Current Character"))
             {
                 value.Add(currentCharacterId);
                 OnChangeInternal(tweak, fieldInfo);
@@ -27,7 +27,7 @@ public class CharacterBlacklistConfigAttribute : BaseConfigAttribute
         }
         else
         {
-            if (ImGuiX.IconButton(FontAwesomeIcon.UserPlus, "plus", "Remove Character Exclusion"))
+            if (ImGui.IconButton(FontAwesomeIcon.UserPlus, "plus", "Remove Character Exclusion"))
             {
                 value.Remove(currentCharacterId);
                 OnChangeInternal(tweak, fieldInfo);
@@ -35,7 +35,7 @@ public class CharacterBlacklistConfigAttribute : BaseConfigAttribute
         }
 
         ImGui.SameLine();
-        if (ImGuiX.IconButton(FontAwesomeIcon.Trash, "trash", "Clear All"))
+        if (ImGui.IconButton(FontAwesomeIcon.Trash, "trash", "Clear All"))
         {
             value.Clear();
             OnChangeInternal(tweak, fieldInfo);

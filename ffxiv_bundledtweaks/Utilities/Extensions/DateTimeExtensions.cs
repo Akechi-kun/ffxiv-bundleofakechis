@@ -2,7 +2,7 @@
 using System.Text;
 using System.Text.RegularExpressions;
 
-namespace Automaton.Utilities.Extensions;
+namespace ComplexTweaks.Utilities.Extensions;
 public static class DateTimeExtensions
 {
     // there was probably a better way to do this

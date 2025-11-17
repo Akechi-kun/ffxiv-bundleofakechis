@@ -30,7 +30,7 @@ public class EnhancedLoginLogout : Tweak<EnhancedLoginLogoutConfig>
     {
         base.DrawConfig();
 
-        ImGuiX.DrawSection("Login Commands");
+        ImGui.DrawSection("Login Commands");
 
         if (Service.AutoRetainerIPC.IsLoaded)
             ImGui.Checkbox("Run Commands if AutoRetainer is active", ref Config.RunCommandsWhenARIsActive);
@@ -55,7 +55,7 @@ public class EnhancedLoginLogout : Tweak<EnhancedLoginLogoutConfig>
 
         foreach (var c in Config.Chars.OrderByDescending(x => x.Name == "Global"))
         {
-            ImGuiX.DrawSection(c.Name, drawSeparator: false);
+            ImGui.DrawSection(c.Name, drawSeparator: false);
             if (ImGui.IsItemClicked(ImGuiMouseButton.Right)) Config.Chars.Remove(c);
 
             foreach (var cmd in c.LoginCommands.ToList())

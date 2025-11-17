@@ -142,7 +142,7 @@ public class DateWithDestiny : Tweak<DateWithDestinyConfiguration, DateWithDesti
     {
         DrawCommands();
 
-        ImGuiX.DrawSection("Configuration");
+        ImGui.DrawSection("Configuration");
         ImGui.Checkbox("Yo-Kai Mode (Very Experimental)", ref yokaiMode);
         ImGui.Checkbox("Prioritize targeting Forlorns", ref Config.PrioritizeForlorns);
         ImGui.Checkbox("Prioritize Fates with EXP bonus", ref Config.PrioritizeBonusFates);
@@ -168,20 +168,20 @@ public class DateWithDestiny : Tweak<DateWithDestinyConfiguration, DateWithDesti
         }
         ImGui.Unindent();
 
-        ImGuiX.DrawSection("Fate Options");
+        ImGui.DrawSection("Fate Options");
         ImGui.DragInt("Max Duration (s)", ref Config.MaxDuration);
         ImGui.SameLine();
-        ImGuiX.ResetButton(ref Config.MaxDuration, 900);
+        ImGui.ResetButton(ref Config.MaxDuration, 900);
 
         ImGui.DragInt("Min Time Remaining (s)", ref Config.MinTimeRemaining);
         ImGui.SameLine();
-        ImGuiX.ResetButton(ref Config.MinTimeRemaining, 120);
+        ImGui.ResetButton(ref Config.MinTimeRemaining, 120);
 
         ImGui.DragInt("Max Progress (%)", ref Config.MaxProgress, 1, 0, 100);
         ImGui.SameLine();
-        ImGuiX.ResetButton(ref Config.MaxProgress, 90);
+        ImGui.ResetButton(ref Config.MaxProgress, 90);
 
-        ImGuiX.DrawSection("Fate Window Options");
+        ImGui.DrawSection("Fate Window Options");
         ImGui.Checkbox("Show Time Remaining", ref Config.ShowFateTimeRemaining);
         ImGui.Checkbox("Show Bonus Indicator", ref Config.ShowFateBonusIndicator);
     }
@@ -441,7 +441,7 @@ public class DateWithDestinyWindow(DateWithDestiny tweak) : Window($"Fate Tracke
 
             if (tweak.Config.ShowFateBonusIndicator && fate.HasBonus)
             {
-                ImGui.Image(Svc.Texture.GetFromGameIcon(new Dalamud.Interface.Textures.GameIconLookup(65001)).GetWrapOrEmpty().Handle, new Vector2(ImGuiX.IconUnitHeight()));
+                ImGui.Image(Svc.Texture.GetFromGameIcon(new Dalamud.Interface.Textures.GameIconLookup(65001)).GetWrapOrEmpty().Handle, new Vector2(ImGui.IconUnitHeight()));
 
                 ImGui.SameLine();
             }
@@ -452,11 +452,11 @@ public class DateWithDestinyWindow(DateWithDestiny tweak) : Window($"Fate Tracke
 
             ImGui.TableNextColumn();
 
-            ImGuiX.DrawProgressBar(fate.Progress, 100, new Vector4(0.404f, 0.259f, 0.541f, 1));
+            ImGui.DrawProgressBar(fate.Progress, 100, new Vector4(0.404f, 0.259f, 0.541f, 1));
 
             ImGui.SameLine();
 
-            ImGui.SetCursorPosX(ImGui.GetContentRegionMax().X - ImGuiX.IconUnitWidth() - ImGui.GetStyle().WindowPadding.X);
+            ImGui.SetCursorPosX(ImGui.GetContentRegionMax().X - ImGui.IconUnitWidth() - ImGui.GetStyle().WindowPadding.X);
             if (ImGuiComponents.IconButton($"###Blacklist{fate.FateId}", FontAwesomeIcon.Ban))
             {
                 tweak.Config.blacklist.Add(fate.FateId);

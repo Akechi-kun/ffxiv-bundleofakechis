@@ -3,7 +3,7 @@ using SixLabors.ImageSharp.PixelFormats;
 using SixLabors.ImageSharp.Processing;
 using System.Text;
 
-namespace Automaton.Utilities;
+namespace ComplexTweaks.Utilities;
 public class Img2Ascii
 {
     // A lot of this is based on https://github.com/TheZoraiz/ascii-image-converter/

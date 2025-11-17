@@ -28,7 +28,7 @@ public abstract class BaseConfigAttribute : Attribute
         foreach (var attribute in attributes)
         {
             ImGui.SameLine();
-            ImGuiX.Icon(attribute.Icon, attribute.Color);
+            ImGui.Icon(attribute.Icon, attribute.Color);
             if (ImGui.IsItemHovered())
                 ImGui.SetTooltip(attribute.Description);
         }

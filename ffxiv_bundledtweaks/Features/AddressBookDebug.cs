@@ -22,7 +22,7 @@ public class AddressBookDebug : Tweak<AddresBookDebugConfiguration>
         if (!Player.Available || Player.IsInPvP) return;
         if (ImGui.InputText($"##NewLocation", ref _name, 50, ImGuiInputTextFlags.EnterReturnsTrue))
             Config.Locations.Add((_name, Player.Territory, PlayerEx.Position));
-        ImGuiX.DrawSection("Locations in Zone");
+        ImGui.DrawSection("Locations in Zone");
 
         var locs = Config.Locations.Where(x => x.Territory == Player.Territory);
         foreach (var loc in locs)

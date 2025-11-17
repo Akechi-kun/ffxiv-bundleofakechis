@@ -33,7 +33,7 @@ public class BoolConfigAttribute : BaseConfigAttribute
         if (missingIpcs.Length > 0)
         {
             ImGui.SameLine();
-            ImGuiX.Icon(60074, 24);
+            ImGui.Icon(60074, 24);
         }
 
         DrawConfigInfos(fieldInfo);
@@ -42,14 +42,14 @@ public class BoolConfigAttribute : BaseConfigAttribute
         if (desc != null)
         {
             ImGuiEx.PushCursorY(-3);
-            using var descriptionIndent = ImGuiX.ConfigIndent();
+            using var descriptionIndent = ImGui.ConfigIndent();
             ImGui.TextColoredWrapped(Colors.Grey, desc);
             ImGuiEx.PushCursorY(3);
         }
 
         if (missingIpcs.Length > 0)
         {
-            using var warningIndent = ImGuiX.ConfigIndent();
+            using var warningIndent = ImGui.ConfigIndent();
             ImGuiEx.TextV(Colors.Grey2, $"Missing {missingIpcs.Length} of the required plugins for this command to work:");
             foreach (var entry in missingIpcs)
             {
