@@ -6,7 +6,7 @@ using System.Runtime.InteropServices;
 using ValueType = FFXIVClientStructs.FFXIV.Component.GUI.ValueType;
 
 namespace ComplexTweaks.Utilities.Extensions;
-public static class ClientStructsExtensions
+public static unsafe class ClientStructsExtensions
 {
     public static unsafe string ValueString(this AtkValue v) => v.Type switch
     {

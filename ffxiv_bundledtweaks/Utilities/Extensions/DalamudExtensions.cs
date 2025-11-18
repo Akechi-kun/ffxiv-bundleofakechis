@@ -11,6 +11,22 @@ public static unsafe class DalamudExtensions
     public static AtkUnitBase* ToPtr(this AddonArgs args) => (AtkUnitBase*)args.Addon.Address;
     public static AtkUnitBase* ToPtr(this AtkUnitBasePtr wrapper) => (AtkUnitBase*)wrapper.Address;
 
+    public static AtkEvent* GenerateEvent(this AddonArgs args)
+    {
+        var atkUnit = args.ToPtr();
+        var evt = new AtkEvent() { Listener = &args.ToPtr()->AtkEventListener, Target = &AtkStage.Instance()->AtkEventTarget };
+        return &evt;
+    }
+
+    public static AtkEventData* GenerateEventData(this AddonArgs args)
+    {
+        var data = new AtkEventData();
+        return &data;
+    }
+
+    public static void ReceiveEvent(this AddonArgs args, AtkEventType eventType, int eventParam, AtkEvent* atkEvent, AtkEventData* atkEventData = null)
+        => args.ToPtr()->ReceiveEvent(eventType, eventParam, atkEvent, atkEventData);
+
     public static bool AllTargetable(this IPartyList party) => party.All(p => p.GameObject?.IsTargetable ?? false);
 
     public static unsafe FateContext* Struct(this IFate fate) => (FateContext*)fate.Address;
