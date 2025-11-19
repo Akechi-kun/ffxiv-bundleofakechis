@@ -376,4 +376,6 @@ public unsafe class Game
     public static bool IsAdventureComplete(uint rowId) => PlayerState.Instance()->IsAdventureComplete(rowId);
 
     public static bool InInteractRange(DGameObject obj) => EventFramework.Instance()->CheckInteractRange((GameObject*)Control.GetLocalPlayer(), (GameObject*)obj.Address, 1, false);
+
+    public static bool HasPermission(List<uint> ids) => ids.All(x => Service.Memory.HasPermission?.Invoke(Conditions.Instance(), x) ?? false);
 }

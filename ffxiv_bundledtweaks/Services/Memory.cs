@@ -7,7 +7,9 @@ using FFXIVClientStructs.FFXIV.Client.Game.UI;
 using FFXIVClientStructs.FFXIV.Client.UI;
 using FFXIVClientStructs.FFXIV.Client.UI.Agent;
 using FFXIVClientStructs.FFXIV.Client.UI.Info;
+using FFXIVClientStructs.FFXIV.Common.Component.Excel;
 using FFXIVClientStructs.FFXIV.Common.Lua;
+using FFXIVClientStructs.FFXIV.Component.Excel;
 using FFXIVClientStructs.FFXIV.Component.GUI;
 using System.Runtime.InteropServices;
 
@@ -39,6 +41,7 @@ public unsafe class Memory
         internal const string SendLogout = "40 53 48 83 EC 20 48 8B 0D ?? ?? ?? ?? E8 ?? ?? ?? ?? 48 8B D8 48 85 C0 74 3C 48 8B 0D ?? ?? ?? ??";
         internal const string HasPermission = "E8 ?? ?? ?? ?? 84 C0 75 ?? 8B FB";
         internal const string UpdateOnlineStatus = "48 89 5C 24 ?? 57 48 83 EC 20 4C 8B 49 28 48 8B D9";
+        internal const string CanEquip = "E8 ?? ?? ?? ?? 85 C0 75 ?? 80 7E";
     }
 
     public static class Delegates
@@ -65,6 +68,7 @@ public unsafe class Memory
         internal delegate nint SendLogoutDelegate();
         internal delegate bool HasPermissionDelegate(Conditions* @this, uint permissionId, int excludedCondition1 = 0, int excludedCondition2 = 0);
         internal delegate void UpdateOnlineStatusDelegate(InfoProxyDetail* @this);
+        internal delegate bool CanEquip(uint itemId, byte race, byte sex, ushort level, byte classJobId, byte grandCompany, byte pvpRank, ExcelRow* item);
     }
 
     internal Delegates.RidePillionDelegate? RidePillion = EzDelegate.Get<Delegates.RidePillionDelegate>(Signatures.RidePillion);
@@ -73,6 +77,7 @@ public unsafe class Memory
     internal Delegates.SendLogoutDelegate? SendLogout = EzDelegate.Get<Delegates.SendLogoutDelegate>(Signatures.SendLogout);
     internal Delegates.HasPermissionDelegate? HasPermission = EzDelegate.Get<Delegates.HasPermissionDelegate>(Signatures.HasPermission);
     internal Delegates.UpdateOnlineStatusDelegate? ClearAfkStatus = EzDelegate.Get<Delegates.UpdateOnlineStatusDelegate>(Signatures.UpdateOnlineStatus);
+    internal Delegates.CanEquip? CanEquip = EzDelegate.Get<Delegates.CanEquip>(Signatures.CanEquip);
 
     public Memory() => EzSignatureHelper.Initialize(this);
 

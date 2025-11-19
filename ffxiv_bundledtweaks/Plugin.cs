@@ -1,6 +1,5 @@
 using ComplexTweaks.Configuration;
 using ComplexTweaks.UI;
-using Dalamud.IoC;
 using Dalamud.Plugin;
 using ECommons;
 using ECommons.Configuration;

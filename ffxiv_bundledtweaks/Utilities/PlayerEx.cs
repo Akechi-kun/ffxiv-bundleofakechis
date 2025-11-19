@@ -23,11 +23,16 @@ public static unsafe class PlayerEx
         public static unsafe Camera* Camera => CameraManager.Instance()->GetActiveCamera();
         public static PlayerController* Controller => (PlayerController*)Svc.SigScanner.GetStaticAddressFromSig(Memory.Signatures.PlayerController);
 
+        public static byte Race => Player.Character->DrawData.CustomizeData.Race;
+        public static byte Sex => Player.Character->Sex;
+        public static byte PvPRank => PvPProfile.Instance()->GetPvPRank();
+
         public static bool ReadyAndLoaded => !Player.IsBusy && Game.IsTerritoryLoaded();
         public static float Speed { get => Player.Controller->MoveControllerWalk.BaseMovementSpeed; set => Memory.SetSpeed(6 * value); }
         public static bool HasPenalty => FFXIVClientStructs.FFXIV.Client.Game.UI.InstanceContent.Instance()->GetPenaltyRemainingInMinutes(0) > 0;
         public static bool InFlightAllowedTerritory => CreateRowRef<TerritoryType>(Player.Territory).AllowsFlight();
         public static bool AllowedToFly => PlayerState.Instance()->IsAetherCurrentZoneComplete(Svc.ClientState.TerritoryType);
+        public static ushort CurrentCfc => GameMain.Instance()->CurrentContentFinderConditionId;
 
         public static HaterInfo[] Haters => UIState.Instance()->Hater.Haters.ToArray();
         public static int HatersWithFullAggro => Player.Haters.Count(h => h.Enmity == 100);
@@ -39,7 +44,7 @@ public static unsafe class PlayerEx
     extension(GenericHelpers)
     {
         public static RowRef<T> CreateRowRef<T>(uint rowId, ClientLanguage? language = null) where T : struct, IExcelRow<T>
-        => new(Svc.Data.Excel, rowId, (language ?? Svc.ClientState.ClientLanguage).ToLumina());
+            => new(Svc.Data.Excel, rowId, (language ?? Svc.ClientState.ClientLanguage).ToLumina());
     }
 
     public static Vector3 Position { get => Svc.ClientState.LocalPlayer.Position; set => Player.GameObject->SetPosition(value.X, value.Y, value.Z); }

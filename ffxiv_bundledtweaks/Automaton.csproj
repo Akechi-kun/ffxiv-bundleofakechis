@@ -32,11 +32,8 @@
 
     <ItemGroup>
         <ProjectReference Include="..\AutoRetainerAPI\AutoRetainerAPI\AutoRetainerAPI.csproj" />
+		<ProjectReference Include="..\InteropSourceGenerators\InteropSourceGenerator.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
     </ItemGroup>
-
-	<ItemGroup>
-		<EmbeddedResource Include="Assets\rat.png" />
-	</ItemGroup>
 
 	<ItemGroup>
 	  <PackageReference Update="DalamudPackager" Version="13.1.0" />

@@ -1,6 +1,8 @@
 ﻿using Dalamud.Game.ClientState.Keys;
+using FFXIVClientStructs.FFXIV.Client.System.Framework;
 using FFXIVClientStructs.FFXIV.Client.System.Input;
 using FFXIVClientStructs.FFXIV.Client.UI;
+using FFXIVClientStructs.FFXIV.Component.Excel;
 using Lumina.Excel;
 using Lumina.Excel.Sheets;
 

@@ -1,6 +1,4 @@
 using FFXIVClientStructs.FFXIV.Client.UI.Agent;
-using FFXIVClientStructs.STD;
-using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
 namespace ComplexTweaks.Utilities;
