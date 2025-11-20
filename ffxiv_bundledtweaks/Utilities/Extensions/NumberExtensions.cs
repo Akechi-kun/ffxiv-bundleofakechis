@@ -21,5 +21,15 @@ public static class NumberExtensions
     public static Vector2 ToVec2(this Point p) => new(p.X, p.Y);
     public static Point ToPoint(this Vector2 v) => new((int)Math.Round(v.X), (int)Math.Round(v.Y));
     public static Vector3 ToVector3(this (float X, float Y, float Z) t) => new(t.X, t.Y, t.Z);
+
+    public static Vector3 RandomPoint(this Vector3 center, float radius)
+    {
+        var random = new Random();
+        var angle = random.NextFloat(0, 1) * 2f * MathF.PI;
+        var distance = random.NextFloat(0, radius);
+        return center + new Vector3(MathF.Cos(angle), 0f, MathF.Sin(angle)) * distance;
+    }
+
+    public static Vector3 OnMesh(this Vector3 position) => Service.Navmesh.NearestPoint(position, 5, 5) ?? position;
     #endregion
 }
