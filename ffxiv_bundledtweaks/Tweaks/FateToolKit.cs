@@ -25,38 +25,43 @@ public class FateToolKit : Tweak<FateToolKitConfig>
     public override string Name => "Fate Tool Kit (Date With Destiny)";
     public override string Description => "Fate tracker with additional fate automations.";
 
+    private const string _presetName = "CBT - DwD"; // TODO: need xan to add chocobo, sync, and pull size tweaks
+    private const string _presetCompressed = "G+oeAORUXTtl2E83R2j3llZskAlfup84YIqPcvnvPv2pIBTinOdHYxILZYONhdvCixJcH" +
+        "VjTXq1a4zVxrKdTh4l+ajwMK8CA6Tyc5nc6AkBljhYFYPKZYHC3RlI3HOwVBXDNCIARXa+Sulk4MF2IDTvyM+mu67A85ro1l41lFPD" +
+        "4HDRr+jJ+lqgYBTyicyCGEdXSXsx6jwIwGvr+qhG5cPg7ux4UgOHAdDTs1shizX8AmE7swXyfK4ikDgXgcut6DiDmy0GWr3Ceqm3KP" +
+        "AUi3vTr/MYDIqUIika/g0XGBVFTtV9NmVwd97Mo0D5E0+2mysa1ST515q9Nhqv0zC4U0xhYxG0d0YAXUBI767Po07M7WuUIq9ZOfKw" +
+        "0yUAAlmUo/U4tT7dV2GDlZqEJK6pUqQqWXEXl8c4iYx0ria7p3qLH0QfLbfG4i5Vw2S6Plki/Su9b5rANRs30xTYygW439tvfhnpxD" +
+        "0yZ8+66jen4XikeLDoZEXGS6JzYj8BVZobtit3hurKtlkzR5WgOkj7s0XpOVV5ir+x8X6txRe6F4W3vfGeDYDoC+J+O/gE=";
+    private static readonly string _preset = _presetCompressed.FromBase64();
+
     [CommandHandler(["/dwd", "/vfate"], "Opens the FATE tracker")]
-    private void OnCommand(string command, string arguments) => Window<DateWithDestinyWindow>()?.Toggle();
+    private void OnCommand(string _, string __) => Window<DateWithDestinyWindow>()?.Toggle();
 
     [TweakEvent(TweakEvent.FateJoined, AutoEnable = false)]
-    private void OnFateJoined(Type type, EventArgs args)
+    private void OnFateJoined(Type _, EventArgs args)
     {
-        // return if fateargs fateid is not next fate
         if (args is FateEventArgs { FateId: var id } && Service.Automation.CurrentTask is FateGrind task && id != task.NextFate?.FateId) return;
 
-        if (Service.BossMod.GetActive() != "")
+        if (Service.BossMod.GetActive() != _presetName)
         {
-            if (Service.BossMod.Get("") is null)
-                Service.BossMod.Create("", true);
+            if (Service.BossMod.Get(_presetName) is null)
+                Service.BossMod.Create(_preset, true);
             else
-                Service.BossMod.SetActive("");
+                Service.BossMod.SetActive(_presetName);
         }
 
         // todo: pull size based on role
     }
 
     [TweakEvent(TweakEvent.FateLeft, AutoEnable = false)]
-    private void OnFateLeft(Type type, EventArgs args)
+    private void OnFateLeft(Type _, EventArgs __)
     {
         Service.BossMod.ClearActive();
         Service.Automation.Start(new FateGrind(Config));
     }
 
     [TweakEvent(TweakEvent.Died, AutoEnable = false)]
-    private void OnDeath(Type type, EventArgs args)
-    {
-        Service.Automation.Start(new FateGrind(Config));
-    }
+    private void OnDeath(Type _, EventArgs __) => Service.Automation.Start(new FateGrind(Config));
 
     private sealed class FateGrind(FateToolKitConfig config) : CommonTasks
     {

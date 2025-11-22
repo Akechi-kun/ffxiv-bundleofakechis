@@ -1,4 +1,7 @@
 ﻿using System.Globalization;
+using System.IO;
+using System.IO.Compression;
+using System.Text;
 using System.Text.RegularExpressions;
 
 namespace ComplexTweaks.Utilities.Extensions;
@@ -18,6 +21,25 @@ public static partial class StringExtensions
             return true;
         }
         return false;
+    }
+
+    public static string ToBase64(this string s)
+    {
+        var jsonBytes = Encoding.UTF8.GetBytes(s);
+        using var output = new MemoryStream();
+        using (var brotli = new BrotliStream(output, CompressionLevel.Optimal))
+            brotli.Write(jsonBytes, 0, jsonBytes.Length);
+        return Convert.ToBase64String(output.ToArray());
+    }
+
+    public static string FromBase64(this string s)
+    {
+        var compressedBytes = Convert.FromBase64String(s);
+        using var input = new MemoryStream(compressedBytes);
+        using var brotli = new BrotliStream(input, CompressionMode.Decompress);
+        using var output = new MemoryStream();
+        brotli.CopyTo(output);
+        return Encoding.UTF8.GetString(output.ToArray());
     }
 
     public static string ToTitleCase(this string s) => CultureInfo.InvariantCulture.TextInfo.ToTitleCase(s.ToLower());
