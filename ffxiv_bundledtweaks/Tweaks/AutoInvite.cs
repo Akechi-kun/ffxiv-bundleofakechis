@@ -1,7 +1,6 @@
 ﻿using Dalamud.Game.Text;
 using Dalamud.Game.Text.SeStringHandling;
 using Dalamud.Game.Text.SeStringHandling.Payloads;
-using ECommons.EzHookManager;
 using FFXIVClientStructs.FFXIV.Client.Game.Group;
 using FFXIVClientStructs.FFXIV.Client.UI.Info;
 using FFXIVClientStructs.FFXIV.Client.UI.Misc;
@@ -22,13 +21,12 @@ public class AutoInviteConfiguration
 }
 
 [Tweak]
-public class AutoInvite : Tweak<AutoInviteConfiguration>
+public partial class AutoInvite : Tweak<AutoInviteConfiguration>
 {
     // Based on https://github.com/Bluefissure/Inviter but without all the hooks
     public override string Name => "Auto Inviter";
     public override string Description => "Auto invite people to your party based on a chat message.";
 
-    private unsafe EzHook<RaptureLogModule.Delegates.AddMsgSourceEntry>? Hook;
     private bool On
     {
         get;
@@ -41,21 +39,10 @@ public class AutoInvite : Tweak<AutoInviteConfiguration>
     }
     private int _attempts = 0;
 
-    public override unsafe void Enable()
+    [AddressHook<RaptureLogModule>(nameof(RaptureLogModule.MemberFunctionPointers.AddMsgSourceEntry))]
+    private unsafe void AddMsgSourceEntry(RaptureLogModule* thisPtr, ulong contentId, ulong accountId, int messageIndex, ushort worldId, ushort chatType)
     {
-        Hook = new((nint)RaptureLogModule.MemberFunctionPointers.AddMsgSourceEntry, Detour, false);
-        Hook.Enable();
-    }
-
-    public override unsafe void Disable()
-    {
-        Hook?.Disable();
-        Hook = null;
-    }
-
-    private unsafe void Detour(RaptureLogModule* thisPtr, ulong contentId, ulong accountId, int messageIndex, ushort worldId, ushort chatType)
-    {
-        Hook?.Original(thisPtr, contentId, accountId, messageIndex, worldId, chatType);
+        AddMsgSourceEntryHook.Original(thisPtr, contentId, accountId, messageIndex, worldId, chatType);
 
         if (!On) return;
 

@@ -179,6 +179,7 @@ public abstract partial class Tweak // Internal
             var hook = property.GetValue(this);
             if (hook == null) continue;
 
+            Debug($"Calling {methodName} on {property.Name}");
             typeof(Hook<>)
                 .MakeGenericType(property.PropertyType.GetGenericArguments().First())
                 .GetMethod(methodName)?
