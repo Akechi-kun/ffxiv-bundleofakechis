@@ -12,8 +12,8 @@ internal unsafe class TestTab : DebugTab
         ImGuiEx.Text($"{Svc.PluginInterface.InternalName}: {Svc.PluginInterface.GetPluginConfigDirectory()}");
 
         if (ImGui.Button($"compress"))
-            ImGui.SetClipboardText(JsonCompression.CompressToBase64(ImGui.GetClipboardText()));
+            ImGui.SetClipboardText(ImGui.GetClipboardText().ToBase64());
         if (ImGui.Button($"decompress"))
-            ImGui.SetClipboardText(JsonCompression.DecompressFromBase64(ImGui.GetClipboardText()));
+            ImGui.SetClipboardText(ImGui.GetClipboardText().FromBase64());
     }
 }

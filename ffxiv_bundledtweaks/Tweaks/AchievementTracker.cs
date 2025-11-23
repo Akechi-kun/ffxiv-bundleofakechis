@@ -18,7 +18,7 @@ public class AchievementTrackerConfiguration
 }
 
 [Tweak]
-public unsafe class AchievementTracker : Tweak<AchievementTrackerConfiguration, AchievementTrackerWindow>
+public unsafe partial class AchievementTracker : Tweak<AchievementTrackerConfiguration, AchievementTrackerWindow>
 {
     public override string Name => "Achievement Tracker";
     public override string Description => $"Adds an achievement tracker";
@@ -34,32 +34,29 @@ public unsafe class AchievementTracker : Tweak<AchievementTrackerConfiguration, 
         public bool Completed => CurrentProgress != default && CurrentProgress >= MaxProgress;
     }
 
-    private readonly Memory.AchievementProgress AchievementProgress = new();
-    public override void Enable()
-    {
-        AchievementProgress.ReceiveAchievementProgressHook.Enable();
-        Events.AchievementProgressUpdate += OnAchievementProgressUpdate;
-    }
-
-    public override void Disable()
-    {
-        AchievementProgress.ReceiveAchievementProgressHook.Disable();
-        Events.AchievementProgressUpdate -= OnAchievementProgressUpdate;
-    }
-
     [CommandHandler("/atracker", "Toggle the Achievement Tracker window")]
     private void OnCommand(string command, string arguments) => Window<Window>()?.Toggle();
 
-    private void OnAchievementProgressUpdate(uint id, uint current, uint max)
+    [AddressHook<Achievement>(nameof(Achievement.MemberFunctionPointers.ReceiveAchievementProgress))]
+    private void ReceiveAchievementProgress(Achievement* achievement, uint id, uint current, uint max)
     {
-        foreach (var achv in Config.Achievements)
+        try
         {
-            if (achv.ID == id)
+            foreach (var achv in Config.Achievements)
             {
-                achv.CurrentProgress = current;
-                achv.MaxProgress = max;
+                if (achv.ID == id)
+                {
+                    achv.CurrentProgress = current;
+                    achv.MaxProgress = max;
+                }
             }
         }
+        catch (Exception e)
+        {
+            Error(e, $"Error receiving achievement progress");
+        }
+
+        ReceiveAchievementProgressHook.Original(achievement, id, current, max);
     }
 
     public void RequestUpdate(uint id = 0)
