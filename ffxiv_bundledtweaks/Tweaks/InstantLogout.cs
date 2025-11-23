@@ -20,7 +20,7 @@ public partial class InstantLogout : Tweak
         var msg = (*rawMessage).ToString();
         if (msg is null or { Length: 0 } || !msg.StartsWith('/'))
         {
-            ExecuteCommandInnerHook!.Original(commandModule, rawMessage, uiModule);
+            ExecuteCommandInnerHook.Original(commandModule, rawMessage, uiModule);
             return;
         }
 
@@ -28,7 +28,7 @@ public partial class InstantLogout : Tweak
         if (GetRow<TextCommand>(172) is { Command: var cmd, Alias: var alias } && (cmd.ToString() == msg || alias.ToString() == msg) && ShouldLogout())
             Logout();
 
-        ExecuteCommandInnerHook!.Original(commandModule, rawMessage, uiModule);
+        ExecuteCommandInnerHook.Original(commandModule, rawMessage, uiModule);
     }
 
     [SigHook("E8 ?? ?? ?? ?? 40 B5 ?? 41 B9")]
@@ -45,7 +45,7 @@ public partial class InstantLogout : Tweak
             }
         }
 
-        return SystemMenuExecuteHook!.Original(agentHud, a2, a3, a4, a5);
+        return SystemMenuExecuteHook.Original(agentHud, a2, a3, a4, a5);
     }
 
     // only trigger instant when the 20s would trigger since this causes "the selected character was not logged out properly" and I'd like to do that as infrequently as possible
