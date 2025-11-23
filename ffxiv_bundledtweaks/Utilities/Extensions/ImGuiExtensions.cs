@@ -149,6 +149,95 @@ public static class ImGuiExtensions
                 var = value;
         }
 
+        /// <summary>
+        /// Calculates a contrasting text colour (b/w) based on the background colour's luminance.
+        /// Uses perceptual luminance formula: 0.299*R + 0.587*G + 0.114*B
+        /// </summary>
+        public static Vector4 GetContrastingTextColor(Vector4 backgroundColor)
+        {
+            var luminance = 0.299f * backgroundColor.X + 0.587f * backgroundColor.Y + 0.114f * backgroundColor.Z;
+            return luminance > 0.5f ? new Vector4(0, 0, 0, backgroundColor.W) : new Vector4(1, 1, 1, backgroundColor.W);
+        }
+
+        /// <summary>
+        /// Calculates a contrasting text colour for a progress bar, considering both the filled and unfilled portions.
+        /// The text colour is determined by which colour (filled or background) covers more of the text area.
+        /// </summary>
+        public static Vector4 GetProgressBarTextColor(Vector4 filledColor, Vector4 backgroundColor, float percentage, float textStartX, float textWidth, float barWidth)
+        {
+            var filledEndX = barWidth * percentage;
+            var textEndX = textStartX + textWidth;
+
+            var overlapStart = Math.Max(textStartX, 0);
+            var overlapEnd = Math.Min(textEndX, filledEndX);
+            var textOverFilled = Math.Max(0, overlapEnd - overlapStart);
+            var textOverBackground = textWidth - textOverFilled;
+
+            Vector4 dominantColor;
+            if (textOverFilled > textOverBackground)
+                dominantColor = filledColor;
+            else if (textOverBackground > textOverFilled)
+                dominantColor = backgroundColor;
+            else
+            {
+                var blendFactor = 0.5f;
+                dominantColor = new Vector4(
+                    filledColor.X * blendFactor + backgroundColor.X * (1 - blendFactor),
+                    filledColor.Y * blendFactor + backgroundColor.Y * (1 - blendFactor),
+                    filledColor.Z * blendFactor + backgroundColor.Z * (1 - blendFactor),
+                    filledColor.W * blendFactor + backgroundColor.W * (1 - blendFactor)
+                );
+            }
+
+            return GetContrastingTextColor(dominantColor);
+        }
+
+        /// <summary>
+        /// Sets up drag and drop source for reordering list items.
+        /// Call this after drawing the draggable item (e.g., after a Button or Selectable).
+        /// </summary>
+        public static void DragDropSource(int index, ReadOnlySpan<byte> payloadType, string? dragPreviewText = null)
+        {
+            using var source = ImRaii.DragDropSource();
+            if (source)
+            {
+                if (!string.IsNullOrEmpty(dragPreviewText))
+                    ImGui.Text(dragPreviewText);
+                ImGui.SetDragDropPayload(payloadType, BitConverter.GetBytes(index), ImGuiCond.None);
+            }
+        }
+
+        /// <summary>
+        /// Sets up drag and drop target for reordering list items.
+        /// Call this after drawing the drop target item.
+        /// </summary>
+        /// <param name="onReorder">Callback that performs the reorder: (sourceIndex, targetIndex) => { /* reorder logic */ }</param>
+        public static void DragDropTarget(int targetIndex, ReadOnlySpan<byte> payloadType, int listCount, Action<int, int> onReorder)
+        {
+            using var target = ImRaii.DragDropTarget();
+            if (target)
+            {
+                var payload = ImGui.AcceptDragDropPayload(payloadType);
+                unsafe
+                {
+                    if (!payload.IsNull && payload.IsDelivery() && payload.Data != null && payload.DataSize == sizeof(int))
+                    {
+                        var sourceIndex = *(int*)payload.Data;
+                        if (sourceIndex != targetIndex && sourceIndex >= 0 && sourceIndex < listCount)
+                        {
+                            // Calculate insert index before removal
+                            // When dragging down (sourceIndex < targetIndex), insert after target (at targetIndex+1)
+                            // When dragging up (sourceIndex > targetIndex), insert before target (at targetIndex)
+                            var insertIndex = sourceIndex < targetIndex ? targetIndex + 1 : targetIndex;
+
+                            // Call the reorder callback with source and calculated insert index
+                            onReorder(sourceIndex, insertIndex);
+                        }
+                    }
+                }
+            }
+        }
+
         // https://github.com/KazWolfe/CollectorsAnxiety/blob/bf48a4b0681e5f70fb67e3b1cb22b4565ecfcc02/CollectorsAnxiety/Util/ImGuiUtil.cs#L10
         public static void DrawProgressBar(int progress, int total, Vector4 colour)
         {
@@ -243,6 +332,13 @@ public static class ImGuiExtensions
             ImGui.SameLine();
             using (var _ = ImRaii.PushColor(ImGuiCol.Text, EzColor.White.Vector4))
                 ImGui.TextUnformatted($"{(valueCondition is { } condition && condition || valueCondition is not { } ? value : "N/A")}");
+        }
+
+        public static void SpacedSeparator()
+        {
+            ImGui.Spacing();
+            ImGui.Separator();
+            ImGui.Spacing();
         }
     }
 }

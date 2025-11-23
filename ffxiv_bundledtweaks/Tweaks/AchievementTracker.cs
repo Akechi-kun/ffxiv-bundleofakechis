@@ -1,11 +1,8 @@
 using Dalamud.Bindings.ImGui;
-using Dalamud.Interface;
-using Dalamud.Interface.Components;
 using Dalamud.Interface.Utility.Raii;
 using Dalamud.Interface.Windowing;
 using ECommons.ImGuiMethods;
 using FFXIVClientStructs.FFXIV.Client.Game.UI;
-using SheetAchievement = Lumina.Excel.Sheets.Achievement;
 
 namespace ComplexTweaks.Tweaks;
 
@@ -70,7 +67,7 @@ public unsafe partial class AchievementTracker : Tweak<AchievementTrackerConfigu
 
 public unsafe class AchievementTrackerWindow(AchievementTracker tweak) : Window($"Achievement Tracker##{nameof(AchievementTrackerWindow)}")
 {
-    private SheetAchievement? selectedAchievement;
+    private Sheets.Achievement? selectedAchievement;
     internal static string Search = string.Empty;
     private DateTime lastCallTime;
 
@@ -78,23 +75,12 @@ public unsafe class AchievementTrackerWindow(AchievementTracker tweak) : Window(
 
     public override void Draw()
     {
-        try
-        {
-            DrawAchievementSearch();
-
-            ImGui.Spacing();
-            ImGui.Separator();
-            ImGui.Spacing();
-
-            DrawTracker();
-        }
-        catch (Exception e)
-        {
-            Svc.Log.Error(e.ToString());
-        }
+        DrawSearch();
+        ImGui.SpacedSeparator();
+        DrawAchievements();
     }
 
-    private void DrawAchievementSearch()
+    private void DrawSearch()
     {
         var timeSinceLastCall = DateTime.Now - lastCallTime;
 
@@ -103,67 +89,117 @@ public unsafe class AchievementTrackerWindow(AchievementTracker tweak) : Window(
             tweak.RequestUpdate();
             lastCallTime = DateTime.Now;
         }
-        var preview = selectedAchievement is null ? string.Empty : $"{selectedAchievement?.Name}";
-
-        ImGuiEx.TextV($"Select Achievement");
-        ImGui.SameLine(120f.Scale());
 
         ImGuiEx.SetNextItemFullWidth();
+        var preview = selectedAchievement is null ? "Add an achievement" : $"{selectedAchievement?.Name}";
         using var combo = ImRaii.Combo("###AchievementSelect", preview);
         if (!combo) return;
+
         ImGui.Text("Search");
         ImGui.SameLine();
         ImGui.InputText("###AchievementSearch", ref Search, 100);
 
-        if (ImGui.Selectable(string.Empty, selectedAchievement == null))
+        if (ImGui.Selectable("(None)", selectedAchievement == null))
             selectedAchievement = null;
 
-        foreach (var achv in GetSheet<SheetAchievement>().Where(x => !x.Name.ToString().IsNullOrEmpty() && x.Name.ToString().Contains(Search, StringComparison.CurrentCultureIgnoreCase)))
+        foreach (var achv in GetSheet<Sheets.Achievement>().Where(x => !x.Name.ToString().IsNullOrEmpty() && x.Name.ToString().Contains(Search, StringComparison.CurrentCultureIgnoreCase)))
         {
             using var _ = ImRaii.PushId($"###achievement{achv.RowId}");
             var selected = ImGui.Selectable($"{achv.Name}", achv.RowId == selectedAchievement?.RowId);
 
             if (selected)
             {
-                tweak.Config.Achievements.Add(new AchievementTracker.Achv { ID = achv.RowId, Name = achv.Name.ToString(), Description = GetRow<SheetAchievement>(achv.RowId)!.Value.Description.ToString(), Points = GetRow<SheetAchievement>(achv.RowId)!.Value.Points });
-                tweak.RequestUpdate(achv.RowId);
+                if (!tweak.Config.Achievements.Any(a => a.ID == achv.RowId))
+                {
+                    tweak.Config.Achievements.Add(new AchievementTracker.Achv
+                    {
+                        ID = achv.RowId,
+                        Name = achv.Name.ToString(),
+                        Description = GetRow<Sheets.Achievement>(achv.RowId)!.Value.Description.ToString(),
+                        Points = GetRow<Sheets.Achievement>(achv.RowId)!.Value.Points
+                    });
+                    tweak.RequestUpdate(achv.RowId);
+                }
+                selectedAchievement = null;
+                Search = string.Empty;
             }
         }
     }
 
-    private void DrawTracker()
+    private void DrawAchievements()
     {
         try
         {
-            foreach (var a in tweak.Config.Achievements.ToList().Select((x, i) => new { Achievement = x, Index = i }))
+            if (tweak.Config.Achievements.Count == 0)
+                return;
+
+            var achievements = tweak.Config.Achievements.ToList();
+            var style = ImGui.GetStyle();
+
+            for (var i = 0; i < achievements.Count; i++)
             {
-                if (tweak.Config.AutoRemoveCompleted && a.Achievement.Completed)
+                var achv = achievements[i];
+
+                if (tweak.Config.AutoRemoveCompleted && achv.Completed)
                 {
-                    tweak.Config.Achievements.Remove(a.Achievement);
+                    tweak.Config.Achievements.Remove(achv);
                     continue;
                 }
 
-                ImGui.Columns(2);
+                using var id = ImRaii.PushId($"achv_{achv.ID}_{i}");
 
-                if (ImGuiEx.IconButton(FontAwesomeIcon.ArrowUp, $"{a.Achievement.ID}", enabled: a.Index != 0))
-                    (tweak.Config.Achievements[a.Index], tweak.Config.Achievements[a.Index - 1]) = (tweak.Config.Achievements[a.Index - 1], tweak.Config.Achievements[a.Index]);
-                ImGui.SameLine();
-                if (ImGuiEx.IconButton(FontAwesomeIcon.ArrowDown, $"{a.Achievement.ID}", enabled: a.Index != tweak.Config.Achievements.Count - 1))
-                    (tweak.Config.Achievements[a.Index], tweak.Config.Achievements[a.Index + 1]) = (tweak.Config.Achievements[a.Index + 1], tweak.Config.Achievements[a.Index]);
+                var availableWidth = ImGui.GetContentRegionAvail().X;
+                var nameWidth = Math.Min(200f.Scale(), availableWidth * 0.4f);
+                var progressWidth = availableWidth - nameWidth - style.ItemSpacing.X;
 
-                ImGui.SameLine();
-                ImGuiEx.TextV($"[{a.Achievement.ID}] {a.Achievement.Name}");
-                if (ImGui.IsItemHovered()) ImGui.SetTooltip($"[{a.Achievement.Points}pts] {a.Achievement.Description}");
-
-                ImGui.NextColumn();
-                ImGui.DrawProgressBar((int)a.Achievement.CurrentProgress, (int)a.Achievement.MaxProgress, tweak.Config.BarColour);
-                ImGui.SameLine();
-                ImGui.SetCursorPosX(ImGui.GetContentRegionMax().X - ImGui.IconUnitWidth() - ImGui.GetStyle().WindowPadding.X);
-                if (ImGuiComponents.IconButton((int)a.Achievement.ID, FontAwesomeIcon.Trash))
+                using (var buttonStyle = ImRaii.PushStyle(ImGuiStyleVar.ButtonTextAlign, new Vector2(0, 0.5f)))
+                using (var color = ImRaii.PushColor(ImGuiCol.Button, 0)
+                    .Push(ImGuiCol.ButtonHovered, ImGui.GetColorU32(ImGuiCol.ButtonHovered))
+                    .Push(ImGuiCol.ButtonActive, ImGui.GetColorU32(ImGuiCol.ButtonActive)))
                 {
-                    tweak.Config.Achievements.Remove(a.Achievement);
+                    ImGui.Button($"[{achv.ID}] {achv.Name}", new Vector2(nameWidth, 0)); // prevent window drag
+
+                    if (ImGui.IsItemClicked(ImGuiMouseButton.Right))
+                        tweak.Config.Achievements.Remove(achv);
+
+                    ImGui.DragDropSource(i, "ACHIEVEMENT_ITEM"u8, $"[{achv.ID}] {achv.Name}");
+                    ImGui.DragDropTarget(i, "ACHIEVEMENT_ITEM"u8, tweak.Config.Achievements.Count, (sourceIndex, insertIndex) =>
+                    {
+                        var dragged = tweak.Config.Achievements[sourceIndex];
+                        tweak.Config.Achievements.RemoveAt(sourceIndex);
+                        if (sourceIndex < insertIndex) // shift left if removed before the insert point
+                            insertIndex--;
+                        tweak.Config.Achievements.Insert(insertIndex, dragged);
+                    });
+
+                    if (ImGui.IsItemHovered())
+                        ImGui.SetTooltip($"[{achv.Points}pts] {achv.Description}\nDrag to reorder\nRight-click to remove");
                 }
-                ImGui.Columns(1);
+
+                ImGui.SameLine();
+
+                var percentage = achv.MaxProgress > 0 ? (float)achv.CurrentProgress / achv.MaxProgress : 0f;
+                var progressLabel = $"{percentage:P0} ({achv.CurrentProgress}/{achv.MaxProgress})";
+
+                var cursorPos = ImGui.GetCursorPos();
+                var barWidth = progressWidth;
+                var labelSize = ImGui.CalcTextSize(progressLabel);
+                var textX = progressWidth - labelSize.X - 4f;
+
+                var backgroundColor = style.Colors[(int)ImGuiCol.FrameBg];
+                var textColor = ImGui.GetProgressBarTextColor(tweak.Config.BarColour, backgroundColor, percentage, textX, labelSize.X, barWidth);
+
+                using (var color = ImRaii.PushColor(ImGuiCol.PlotHistogram, tweak.Config.BarColour))
+                    ImGui.ProgressBar(percentage, new Vector2(progressWidth, ImGui.GetFrameHeight()), "");
+
+                ImGui.SetCursorPos(new Vector2(cursorPos.X + textX, cursorPos.Y + (ImGui.GetFrameHeight() - labelSize.Y) * 0.5f));
+                ImGui.TextColored(textColor, progressLabel);
+
+                if (i < achievements.Count - 1)
+                {
+                    ImGui.Spacing();
+                    ImGui.Separator();
+                }
             }
         }
         catch (Exception e) { e.Log(); }
