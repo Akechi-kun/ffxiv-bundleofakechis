@@ -75,9 +75,12 @@ public unsafe class AchievementTrackerWindow(AchievementTracker tweak) : Window(
 
     public override void Draw()
     {
-        DrawSearch();
-        ImGui.SpacedSeparator();
-        DrawAchievements();
+        TryExecute(() =>
+        {
+            DrawSearch();
+            ImGui.SpacedSeparator();
+            DrawAchievements();
+        });
     }
 
     private void DrawSearch()
