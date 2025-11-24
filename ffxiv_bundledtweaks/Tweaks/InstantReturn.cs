@@ -1,25 +1,35 @@
-﻿using FFXIVClientStructs.FFXIV.Client.UI.Agent;
+﻿using ECommons.Automation;
+using FFXIVClientStructs.FFXIV.Client.Game;
+using FFXIVClientStructs.FFXIV.Client.UI.Agent;
 using FFXIVClientStructs.FFXIV.Component.GUI;
 
 namespace ComplexTweaks.Tweaks;
 
 [Tweak(debug: true)]
-public unsafe class InstantReturn : Tweak
+public unsafe partial class InstantReturn : Tweak
 {
     public override string Name => "Quick Return";
     public override string Description => "Calls the return function directly";
 
-    private readonly Memory.AgentReturn Return = new();
-    public override void Enable()
-    {
-        Return.ReturnHook.Enable();
-        Svc.AddonLifecycle.RegisterListener(AddonEvent.PostSetup, "SelectYesno", HandleReturn);
-    }
+    public override void Enable() => Svc.AddonLifecycle.RegisterListener(AddonEvent.PostSetup, "SelectYesno", HandleReturn);
+    public override void Disable() => Svc.AddonLifecycle.UnregisterListener(HandleReturn);
 
-    public override void Disable()
+    [SigHook(Memory.Signatures.AgentReturnReceiveEvent)]
+    private byte AgentReturn_InvokeAction(AgentInterface* agent)
     {
-        Return.ReturnHook.Disable();
-        Svc.AddonLifecycle.UnregisterListener(HandleReturn);
+        if (ActionManager.Instance()->GetActionStatus(ActionType.GeneralAction, 6) != 0 || Player.IsInPvP)
+            return AgentReturn_InvokeActionHook.Original(agent);
+
+        if (Svc.Party.Length > 1)
+        {
+            if (Svc.Party[0]?.Name == Svc.ClientState.LocalPlayer?.Name)
+                Chat.SendMessage("/partycmd breakup");
+            else
+                Chat.SendMessage("/leave");
+        }
+
+        Svc.Memory.ExecuteCommand?.Invoke((int)ExecuteCommandFlag.InstantReturn);
+        return 1;
     }
 
     private void HandleReturn(AddonEvent type, AddonArgs args)
