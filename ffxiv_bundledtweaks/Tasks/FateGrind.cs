@@ -10,6 +10,7 @@ using System.Threading.Tasks;
 using FateState = Dalamud.Game.ClientState.Fates.FateState;
 
 namespace ComplexTweaks.Tasks;
+
 public sealed class FateGrind(DateWithDestinyConfiguration config) : CommonTasks
 {
     // TODO:

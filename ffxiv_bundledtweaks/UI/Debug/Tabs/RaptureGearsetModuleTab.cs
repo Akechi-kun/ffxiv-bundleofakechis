@@ -4,6 +4,7 @@ using Dalamud.Bindings.ImGui;
 using Lumina.Excel.Sheets;
 
 namespace ComplexTweaks.UI.Debug.Tabs;
+
 public unsafe class RaptureGearsetModuleTab : DebugTab
 {
     public override void Draw()

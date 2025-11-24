@@ -3,6 +3,7 @@ using System.Text;
 using System.Text.RegularExpressions;
 
 namespace ComplexTweaks.Utilities.Extensions;
+
 public static class DateTimeExtensions
 {
     // there was probably a better way to do this

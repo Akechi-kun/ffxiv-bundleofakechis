@@ -1,6 +1,7 @@
 ﻿using FFXIVClientStructs.FFXIV.Client.Enums;
 
 namespace ComplexTweaks.Utilities.Extensions;
+
 public static class EnumExtensions
 {
     public static Ipc[] ToArray(this Ipc flags)

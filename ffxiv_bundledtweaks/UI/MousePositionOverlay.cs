@@ -5,6 +5,7 @@ using ECommons.SimpleGui;
 using Dalamud.Bindings.ImGui;
 
 namespace ComplexTweaks.UI;
+
 public class MousePositionOverlay : Window
 {
     public MousePositionOverlay() : base("Hyperborea Overlay", ImGuiWindowFlags.NoDecoration | ImGuiWindowFlags.NoNav | ImGuiWindowFlags.NoSavedSettings | ImGuiWindowFlags.NoBackground | ImGuiWindowFlags.NoInputs | ImGuiWindowFlags.AlwaysUseWindowPadding, true)

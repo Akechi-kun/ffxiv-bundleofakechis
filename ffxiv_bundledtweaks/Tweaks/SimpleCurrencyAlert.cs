@@ -5,6 +5,7 @@ using Dalamud.Bindings.ImGui;
 using Lumina.Excel.Sheets;
 
 namespace ComplexTweaks.Tweaks;
+
 public class SimpleCurrencyAlertConfig
 {
     public List<SimpleCurrencyAlert.Alert> Alerts = [];

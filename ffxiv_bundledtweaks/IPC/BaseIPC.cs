@@ -1,4 +1,5 @@
 ﻿namespace ComplexTweaks.IPC;
+
 public abstract class BaseIPC
 {
     public abstract string Name { get; }

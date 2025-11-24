@@ -2,6 +2,7 @@
 using Dalamud.Bindings.ImGui;
 
 namespace ComplexTweaks.UI.Debug.Tabs;
+
 internal class InstalledPluginsTab : DebugTab
 {
     public override void Draw()

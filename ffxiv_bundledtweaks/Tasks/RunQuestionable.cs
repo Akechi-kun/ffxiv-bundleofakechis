@@ -2,6 +2,7 @@
 using System.Threading.Tasks;
 
 namespace ComplexTweaks.Tasks;
+
 public sealed class RunQuestionable(List<string> questIds, bool returnHome) : CommonTasks
 {
     protected override async Task Execute()

@@ -2,6 +2,7 @@
 using System.Collections;
 
 namespace ComplexTweaks.IPC;
+
 internal class ItemVendorLocation
 {
     public static void OpenContextMenu(uint itemId)

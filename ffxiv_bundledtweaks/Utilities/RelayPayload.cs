@@ -4,6 +4,7 @@ using Lumina.Excel.Sheets;
 using System.IO;
 
 namespace ComplexTweaks.Utilities;
+
 public sealed class RelayPayload(MapLinkPayload mapLink, uint worldId, uint? instance, uint relayType, uint originChannel) : DalamudLinkPayload
 {
     private const byte EmbeddedInfoTypeByte = (byte)(EmbeddedInfoType.DalamudLink + 4);

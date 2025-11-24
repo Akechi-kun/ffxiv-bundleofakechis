@@ -3,6 +3,7 @@ using Lumina.Excel.Sheets;
 using System.Threading.Tasks;
 
 namespace ComplexTweaks.Tasks;
+
 public sealed class MateriaTransmutation : CommonTasks
 {
     protected override Task Execute()

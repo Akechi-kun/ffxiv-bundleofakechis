@@ -1,6 +1,7 @@
 ﻿using Dalamud.Bindings.ImGui;
 
 namespace ComplexTweaks.UI.Debug.Tabs;
+
 internal unsafe class PlayerExTab : DebugTab
 {
     public override void Draw()

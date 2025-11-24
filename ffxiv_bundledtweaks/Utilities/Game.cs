@@ -14,6 +14,7 @@ using Lumina.Data.Parsing.Layer;
 using Lumina.Excel.Sheets;
 
 namespace ComplexTweaks.Utilities;
+
 public unsafe class Game
 {
     public static AtkUnitBase* GetAddonByName(string name) => RaptureAtkUnitManager.Instance()->GetAddonByName(name);

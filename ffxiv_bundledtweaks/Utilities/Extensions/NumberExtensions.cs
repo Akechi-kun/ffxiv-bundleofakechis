@@ -2,6 +2,7 @@
 using System.Globalization;
 
 namespace ComplexTweaks.Utilities.Extensions;
+
 public static class NumberExtensions
 {
     #region uint

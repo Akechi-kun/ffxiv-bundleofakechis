@@ -4,6 +4,7 @@ using FFXIVClientStructs.FFXIV.Client.Game.Event;
 using System.Threading.Tasks;
 
 namespace ComplexTweaks.Tasks;
+
 public sealed class RetrieveAllMateria(GameInventoryItem item) : CommonTasks
 {
     protected override async Task Execute()

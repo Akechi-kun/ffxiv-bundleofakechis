@@ -3,6 +3,7 @@ using ECommons.ImGuiMethods;
 using FFXIVClientStructs.FFXIV.Client.UI.Info;
 
 namespace ComplexTweaks.UI.Debug.Tabs;
+
 internal unsafe class TestTab : DebugTab
 {
     public override void Draw()

@@ -10,6 +10,7 @@ using System.Reflection;
 using System.Threading.Tasks;
 
 namespace ComplexTweaks.Utilities.Extensions;
+
 public static class ImGuiExtensions
 {
     private static float startTime;

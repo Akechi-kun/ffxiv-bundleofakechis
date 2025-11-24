@@ -5,6 +5,7 @@ using Lumina.Excel.Sheets;
 using System.Threading.Tasks;
 
 namespace ComplexTweaks.Tasks;
+
 public sealed class BuyCeruleumTanks : CommonTasks
 {
     private const uint CeruleumTankId = 10155;

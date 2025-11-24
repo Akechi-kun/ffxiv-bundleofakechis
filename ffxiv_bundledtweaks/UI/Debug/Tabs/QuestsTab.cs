@@ -6,6 +6,7 @@ using Lumina.Excel.Sheets;
 using System.Text.RegularExpressions;
 
 namespace ComplexTweaks.UI.Debug.Tabs;
+
 internal class QuestsTab : DebugTab
 {
     private uint _questId;

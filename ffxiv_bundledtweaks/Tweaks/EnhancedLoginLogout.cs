@@ -5,6 +5,7 @@ using ECommons.Events;
 using Dalamud.Bindings.ImGui;
 
 namespace ComplexTweaks.Tweaks;
+
 public class EnhancedLoginLogoutConfig
 {
     public List<EnhancedLoginLogout.CharacterCommands> Chars = [];

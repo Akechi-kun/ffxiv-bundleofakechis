@@ -2,6 +2,7 @@
 using Dalamud.Game.Gui.ContextMenu;
 
 namespace ComplexTweaks.Tweaks;
+
 [Tweak]
 internal class RetrieveMateria : Tweak
 {

@@ -3,6 +3,7 @@ using ECommons.ImGuiMethods;
 using Dalamud.Bindings.ImGui;
 
 namespace ComplexTweaks.UI.Debug.Tabs;
+
 internal unsafe class ExecuteCommandTab : DebugTab
 {
     private readonly Memory.ExecuteCommands ec = new();

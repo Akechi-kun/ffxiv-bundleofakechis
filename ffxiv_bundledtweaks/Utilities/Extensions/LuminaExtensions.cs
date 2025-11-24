@@ -5,6 +5,7 @@ using Lumina.Excel;
 using Lumina.Excel.Sheets;
 
 namespace ComplexTweaks.Utilities.Extensions;
+
 public static class LuminaExtensions
 {
     public record IngredientExtension()

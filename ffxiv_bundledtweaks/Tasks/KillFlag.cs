@@ -6,6 +6,7 @@ using Lumina.Excel.Sheets;
 using System.Threading.Tasks;
 
 namespace ComplexTweaks.Tasks;
+
 public sealed class KillFlag(string world) : CommonTasks
 {
     private const float HUNT_DETECTION_RADIUS = 15.0f;

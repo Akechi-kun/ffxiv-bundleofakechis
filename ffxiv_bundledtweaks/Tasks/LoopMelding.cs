@@ -5,6 +5,7 @@ using FFXIVClientStructs.FFXIV.Client.UI.Agent;
 using System.Threading.Tasks;
 
 namespace ComplexTweaks.Tasks;
+
 public sealed class LoopMelding(GameInventoryItem item) : CommonTasks
 {
     private static readonly uint GettingTooAttachedVII = 1905;

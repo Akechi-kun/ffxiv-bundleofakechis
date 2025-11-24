@@ -3,6 +3,7 @@ using Dalamud.Bindings.ImGui;
 using System.Text.RegularExpressions;
 
 namespace ComplexTweaks.UI.Debug.Tabs;
+
 public interface IDebugTab : IDrawableTab;
 
 public interface IDrawableTab

@@ -3,6 +3,7 @@ using FFXIVClientStructs.FFXIV.Component.GUI;
 using FFXIVClientStructs.Interop;
 
 namespace ComplexTweaks.Services;
+
 public unsafe class FocusWatcher : IDisposable
 {
     public FocusWatcher() => Svc.Framework.Update += CheckAddonFocus;

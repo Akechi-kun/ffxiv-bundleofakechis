@@ -1,4 +1,5 @@
 ﻿namespace ComplexTweaks.TweakSystem;
+
 public abstract class ARTweak : Tweak
 {
     public ARTweak() : base() => AutoRetainer = new(Name);

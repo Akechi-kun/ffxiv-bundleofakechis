@@ -16,6 +16,7 @@ using static Dalamud.Game.Text.XivChatType;
 using FFXIVClientStructs.FFXIV.Client.UI.Info;
 
 namespace ComplexTweaks.Tweaks;
+
 public class HuntRelayHelperConfiguration
 {
     public List<(XivChatType Channel, string Command, bool IsLocal, bool Enabled)> Channels =

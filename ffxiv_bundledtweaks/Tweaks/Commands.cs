@@ -9,6 +9,7 @@ using System.Threading.Tasks;
 using ValueType = FFXIVClientStructs.FFXIV.Component.GUI.ValueType;
 
 namespace ComplexTweaks.Tweaks;
+
 public class CommandsConfiguration
 {
     [BoolConfig(Label = "/tpflag")]

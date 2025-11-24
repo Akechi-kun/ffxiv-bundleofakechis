@@ -1,6 +1,7 @@
 ﻿using ECommons.EzIpcManager;
 
 namespace ComplexTweaks.IPC;
+
 public class Provider
 {
     public Provider() => EzIPC.Init(this);

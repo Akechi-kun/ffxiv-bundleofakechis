@@ -3,6 +3,7 @@ using ECommons.GameFunctions;
 using System.Threading.Tasks;
 
 namespace ComplexTweaks.Tasks;
+
 public sealed class GatherLeve : CommonTasks
 {
     private unsafe DGameObject? LeveNode => Svc.Objects.FirstOrDefault(o => o.IsTargetable && o.ObjectKind == ObjectKind.GatheringPoint && o.Struct()->NamePlateIconId == 71244);

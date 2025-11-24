@@ -1,6 +1,7 @@
 ﻿using Dalamud.Game.Text.SeStringHandling.Payloads;
 
 namespace ComplexTweaks.Utilities;
+
 public static class SSRanks
 {
     public static Vector2 Lakeland => new(23.3f, 22.1f);

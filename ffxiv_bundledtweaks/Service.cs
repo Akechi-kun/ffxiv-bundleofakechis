@@ -2,6 +2,7 @@
 using System.Reflection;
 
 namespace ComplexTweaks.Services;
+
 public class Service
 {
     public static Provider Provider { get; private set; } = null!;

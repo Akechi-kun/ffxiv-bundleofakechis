@@ -1,4 +1,5 @@
 ﻿namespace ComplexTweaks.Utilities;
+
 public static class Enums
 {
     public enum MovementType

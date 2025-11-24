@@ -4,6 +4,7 @@ using FFXIVClientStructs.FFXIV.Client.Game.UI;
 using Dalamud.Bindings.ImGui;
 
 namespace ComplexTweaks.UI.Debug.Tabs;
+
 internal unsafe class TasksTab : DebugTab
 {
     public override void Draw()

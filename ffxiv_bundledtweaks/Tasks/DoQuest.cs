@@ -3,6 +3,7 @@ using Lumina.Excel.Sheets;
 using System.Threading.Tasks;
 
 namespace ComplexTweaks.Tasks;
+
 public sealed class DoQuest(Quest row) : CommonTasks
 {
     protected override async Task Execute()

@@ -5,6 +5,7 @@ using System.Text;
 using System.Text.RegularExpressions;
 
 namespace ComplexTweaks.Utilities.Extensions;
+
 public static partial class StringExtensions
 {
     public static bool TryParseVector3(this string input, out Vector3 output)

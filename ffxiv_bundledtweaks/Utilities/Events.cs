@@ -1,6 +1,7 @@
 ﻿using Dalamud.Game.Network.Structures;
 
 namespace ComplexTweaks.Utilities;
+
 public class Events
 {
     public static event Action<uint, uint, uint>? AchievementProgressUpdate;

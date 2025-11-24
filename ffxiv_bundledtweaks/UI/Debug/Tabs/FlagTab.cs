@@ -3,6 +3,7 @@ using Dalamud.Bindings.ImGui;
 using Lumina.Excel.Sheets;
 
 namespace ComplexTweaks.UI.Debug.Tabs;
+
 internal unsafe class FlagTab : DebugTab
 {
     public override void Draw()
