@@ -227,6 +227,32 @@ public class IndentedStringBuilder
         => new IndentSuspender(this);
 
     /// <summary>
+    ///     Appends an opening brace '{' on a new line with proper indentation.
+    /// </summary>
+    public virtual IndentedStringBuilder AppendOpenBrace()
+    {
+        AppendLine("{");
+        return this;
+    }
+
+    /// <summary>
+    ///     Appends a closing brace '}' on a new line with proper indentation.
+    /// </summary>
+    public virtual IndentedStringBuilder AppendCloseBrace()
+    {
+        AppendLine("}");
+        return this;
+    }
+
+    /// <summary>
+    ///     Creates a scoped block that appends a header line, opens a brace, indents the content,
+    ///     and closes the brace when disposed. If header is null or empty, only the braces are added.
+    /// </summary>
+    /// <param name="header">The header line to append before the opening brace (e.g., "public void Method()").</param>
+    public virtual IDisposable Block(string? header = null)
+        => new BlockScope(this, header);
+
+    /// <summary>
     ///     Returns the built string.
     /// </summary>
     /// <returns>The built string.</returns>
@@ -272,5 +298,27 @@ public class IndentedStringBuilder
 
         public void Dispose()
             => _stringBuilder._indent = _indent;
+    }
+
+    private sealed class BlockScope : IDisposable
+    {
+        private readonly IndentedStringBuilder _stringBuilder;
+
+        public BlockScope(IndentedStringBuilder stringBuilder, string? header)
+        {
+            _stringBuilder = stringBuilder;
+
+            if (header is { Length: > 0 })
+                _stringBuilder.AppendLine(header);
+
+            _stringBuilder.AppendOpenBrace();
+            _stringBuilder.IncrementIndent();
+        }
+
+        public void Dispose()
+        {
+            _stringBuilder.DecrementIndent();
+            _stringBuilder.AppendCloseBrace();
+        }
     }
 }
