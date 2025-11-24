@@ -126,7 +126,11 @@ public unsafe class OverrideMovement
     private void OnConfigChanged(object? sender, ConfigChangeEvent evt) => UpdateLegacyMode();
     private void UpdateLegacyMode()
     {
-        _legacyMode = Svc.GameConfig.UiControl.TryGetUInt("MoveMode", out var mode) && mode == 1;
-        Svc.Log.Debug($"Legacy mode is now {(_legacyMode ? "enabled" : "disabled")}");
+        var newMode = Svc.GameConfig.UiControl.TryGetUInt("MoveMode", out var mode) && mode == 1;
+        if (_legacyMode != newMode)
+        {
+            _legacyMode = newMode;
+            Svc.Log.Debug($"Legacy mode is now {(_legacyMode ? "enabled" : "disabled")}");
+        }
     }
 }
