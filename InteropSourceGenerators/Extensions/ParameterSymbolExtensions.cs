@@ -1,23 +1,26 @@
-using LanguageExt;
 using Microsoft.CodeAnalysis;
-using static LanguageExt.Prelude;
 
 namespace InteropSourceGenerators.Extensions;
 
-public static class ParameterSymbolExtensions
+/// <summary>
+///     Extension methods for <see cref="IParameterSymbol" /> types.
+/// </summary>
+// ReSharper disable once InconsistentNaming
+internal static class IParameterSymbolExtensions
 {
-    public static Option<string> GetDefaultValueString(this IParameterSymbol symbol)
+    public static string? GetDefaultValueString(this IParameterSymbol symbol)
     {
-        if (symbol.HasExplicitDefaultValue)
-        {
-            var defaultValue = symbol.ExplicitDefaultValue;
-            return defaultValue switch
-            {
-                bool boolValue => boolValue ? Some("true") : Some("false"),
-                _ => defaultValue is null ? None : Some(defaultValue.ToString()),
-            };
-        }
+        if (!symbol.HasExplicitDefaultValue)
+            return null;
 
-        return None;
+        var defaultValue = symbol.ExplicitDefaultValue;
+
+        if (defaultValue is null)
+            return null;
+
+        if (defaultValue is bool boolValue)
+            return boolValue ? "true" : "false";
+
+        return defaultValue.ToString();
     }
 }

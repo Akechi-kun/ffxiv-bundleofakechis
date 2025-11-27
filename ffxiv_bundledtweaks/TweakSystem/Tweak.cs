@@ -44,22 +44,11 @@ public abstract partial class Tweak : ITweak
 
         try
         {
-            SetupVTableHooks(); // before SetupAddressHooks!
+            SetupHooks();
         }
         catch (Exception ex)
         {
-            Error(ex, "Unexpected error during SetupVTableHooks");
-            LastInternalException = ex;
-            return;
-        }
-
-        try
-        {
-            SetupAddressHooks();
-        }
-        catch (Exception ex)
-        {
-            Error(ex, "Unexpected error during SetupAddressHooks");
+            Error(ex, "Unexpected error during SetupHooks");
             LastInternalException = ex;
             return;
         }
@@ -119,6 +108,7 @@ public abstract partial class Tweak : ITweak
 
     public virtual void SetupAddressHooks() { }
     public virtual void SetupVTableHooks() { }
+    public virtual void SetupHooks() { }
 
     public virtual void Enable() { }
     public virtual void Disable() { }

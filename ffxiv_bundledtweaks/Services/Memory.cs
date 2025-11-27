@@ -1,7 +1,5 @@
-﻿using ECommons.Automation;
-using ECommons.EzHookManager;
+﻿using ECommons.EzHookManager;
 using FFXIVClientStructs.FFXIV.Client.Game;
-using FFXIVClientStructs.FFXIV.Client.Game.Character;
 using FFXIVClientStructs.FFXIV.Client.Game.Event;
 using FFXIVClientStructs.FFXIV.Client.Game.UI;
 using FFXIVClientStructs.FFXIV.Client.UI;
