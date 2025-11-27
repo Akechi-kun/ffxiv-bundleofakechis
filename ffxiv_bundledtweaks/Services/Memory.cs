@@ -18,28 +18,27 @@ public unsafe class Memory
 {
     public static class Signatures
     {
-        internal const string AgentReturnReceiveEvent = "E8 ?? ?? ?? ?? 66 0F 1F 84 ?? 00 00 00 00 48 83 EF";
+        internal const string AgentReturnReceiveEvent = "E8 ?? ?? ?? ?? 66 0F 1F 84 ?? 00 00 00 00 48 83 EF"; // todo cs
         internal const string BewitchProc = "40 53 48 83 EC 50 45 33 C0";
         internal const string EnqueueSnipeTask = "48 89 5C 24 ?? 48 89 6C 24 ?? 48 89 74 24 ?? 57 48 83 EC 50 48 8B F9 48 8D 4C 24 ??"; // xan
         internal const string FollowQuestRecast = "F3 0F 11 7C 24 ?? E8 ?? ?? ?? ?? 48 8B 9C 24 ?? ?? ?? ??"; // atmo
-        internal const string ExecuteCommand = "E8 ?? ?? ?? ?? 8D 46 0A"; // st
-        internal const string ExecuteCommandComplexLocation = "E8 ?? ?? ?? ?? 48 8B 7B 08 45 33 C0";
+        internal const string ExecuteCommand = "E8 ?? ?? ?? ?? 8D 46 0A"; // todo cs
+        internal const string ExecuteCommandComplexLocation = "E8 ?? ?? ?? ?? 48 8B 7B 08 45 33 C0"; // todo cs
         internal const string KnockbackProc = "E8 ?? ?? ?? ?? 48 8D 0D ?? ?? ?? ?? E8 ?? ?? ?? ?? FF C6";
         internal const string MoveController = "E8 ?? ?? ?? ?? 48 85 C0 74 AE 83 FD 05";
-        internal const string MoveItem = "48 89 5C 24 ?? 48 89 74 24 ?? 48 89 7C 24 ?? 55 41 56 41 57 48 8B EC 48 83 EC 40 4C 8B F1"; // st
+        internal const string MoveItem = "48 89 5C 24 ?? 48 89 74 24 ?? 48 89 7C 24 ?? 55 41 56 41 57 48 8B EC 48 83 EC 40 4C 8B F1"; // todo cs
         internal const string PlayerController = "48 8D 0D ?? ?? ?? ?? E8 ?? ?? ?? ?? 0F 28 F0 45 0F 57 C0"; // bossmod (Client::Game::Control::InputManager)
         // If this changes again, since this involves relative offsets, if the instruction bytes change count (e.g. F3 0F 59 05 ?? ... = 4 to F3 44 0F 59 0D ?? ... = 5)
         // update the address math: `address = address + <instruction_byte_count> + Marshal.ReadInt32(address + 4) + 4;`
         // or try and find a sig with the same count (ghidra seems better lately over IDA for getting identical sigs?)
         internal const string PlayerGroundSpeed = "F3 0F 11 05 ?? ?? ?? ?? 40 38 2D";
         internal const string ReceiveAchievementProgress = "C7 81 ?? ?? ?? ?? ?? ?? ?? ?? 89 91 ?? ?? ?? ?? 44 89 81"; // cs
-        internal const string RidePillion = "48 85 C9 0F 84 ?? ?? ?? ?? 48 89 6C 24 ?? 56 48 83 EC";
         internal const string FreeCompanyDialogPacketReceive = "48 89 5C 24 ?? 48 89 74 24 ?? 57 48 81 EC ?? ?? ?? ?? 48 8B 05 ?? ?? ?? ?? 48 33 C4 48 89 84 24 ?? ?? ?? ?? 0F B6 42 31"; // xan
         internal const string ProcessPacketUpdateClassInfo = "48 89 5C 24 ?? 57 48 83 EC 20 48 8B DA 48 8D 0D ?? ?? ?? ??";
-        internal const string SystemMenuExecution = "E8 ?? ?? ?? ?? 40 B5 ?? 41 B9";
-        internal const string HasPermission = "E8 ?? ?? ?? ?? 84 C0 75 ?? 8B FB";
-        internal const string UpdateOnlineStatus = "48 89 5C 24 ?? 57 48 83 EC 20 4C 8B 49 28 48 8B D9";
-        internal const string CanEquip = "E8 ?? ?? ?? ?? 85 C0 75 ?? 80 7E";
+        internal const string SystemMenuExecution = "E8 ?? ?? ?? ?? 40 B5 ?? 41 B9"; // todo cs
+        internal const string HasPermission = "E8 ?? ?? ?? ?? 84 C0 75 ?? 8B FB"; // todo cs
+        internal const string UpdateOnlineStatus = "48 89 5C 24 ?? 57 48 83 EC 20 4C 8B 49 28 48 8B D9"; // todo cs
+        internal const string CanEquip = "E8 ?? ?? ?? ?? 85 C0 75 ?? 80 7E"; // todo cs
     }
 
     public static class Delegates
@@ -58,7 +57,6 @@ public unsafe class Memory
         internal delegate nint NoBewitchActionDelegate(CSGameObject* gameObj, float x, float y, float z, int a5, nint a6);
         internal delegate void ReceiveAchievementProgressDelegate(Achievement* achievement, uint id, uint current, uint max);
         internal delegate void RetrieveMateriaDelegate(EventFramework* framework, int eventID, InventoryType inventoryType, short inventorySlot, int extraParam);
-        internal delegate void RidePillionDelegate(BattleChara* target, int seatIndex);
         internal delegate void SalvageItemDelegate(AgentSalvage* thisPtr, InventoryItem* item, int addonId, byte a4);
         internal delegate nint WorldTravelSetupInfoDelegate(nint worldTravel, ushort currentWorld, ushort targetWorld);
         internal delegate void ProcessPacketUpdateClassInfoDelegate(InfoProxyInterface* ptr, byte* packetData);
@@ -68,7 +66,6 @@ public unsafe class Memory
         internal delegate bool CanEquip(uint itemId, byte race, byte sex, ushort level, byte classJobId, byte grandCompany, byte pvpRank, ExcelRow* item);
     }
 
-    internal Delegates.RidePillionDelegate? RidePillion = EzDelegate.Get<Delegates.RidePillionDelegate>(Signatures.RidePillion);
     internal Delegates.ExecuteCommandDelegate? ExecuteCommand = EzDelegate.Get<Delegates.ExecuteCommandDelegate>(Signatures.ExecuteCommand);
     internal Delegates.MoveItem? MoveItem = EzDelegate.Get<Delegates.MoveItem>(Signatures.MoveItem);
     internal Delegates.HasPermissionDelegate? HasPermission = EzDelegate.Get<Delegates.HasPermissionDelegate>(Signatures.HasPermission);

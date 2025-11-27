@@ -21,11 +21,10 @@ public class AutoPillion : Tweak
             return;
         }
 
-        var target = Svc.Party.FirstOrDefault(o => o?.EntityId != Player.Object.GameObjectId && o?.GameObject?.YalmDistanceX < 3 && HasMountSpace(o.GameObject.Character()->Mount), null);
-        if (target != null && target.GameObject != null && Service.Memory.RidePillion != null)
+        if (Svc.Party.FirstOrDefault(o => o?.EntityId != Player.Object.GameObjectId && o?.GameObject?.YalmDistanceX < 3 && HasMountSpace(o.GameObject.Character()->Mount), null) is { GameObject: { } target })
         {
             TaskManager.Enqueue(() => Debug("Detected mounted party member with extra seats, mounting..."));
-            TaskManager.Enqueue(() => Service.Memory.RidePillion!(target.GameObject.BattleChara(), 10));
+            TaskManager.Enqueue(() => target.BattleChara()->RidePillion(10));
             TaskManager.Enqueue(() => Svc.Condition[ConditionFlag.Mounted]);
         }
     }
