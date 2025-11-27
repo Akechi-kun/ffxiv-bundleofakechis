@@ -27,10 +27,10 @@ public class Plugin : IDalamudPlugin
         Version = P.GetType().Assembly.GetName().Version ?? new(0, 0);
         ECommonsMain.Init(pluginInterface, P, ECommons.Module.DalamudReflector, ECommons.Module.ObjectFunctions);
 
-#if LocalCS
+#if LOCAL_CS
         FFXIVClientStructs.Interop.Generated.Addresses.Register();
-        Resolver.GetInstance.Setup(Svc.SigScanner.SearchBase, Svc.Data.GameData.Repositories["ffxiv"].Version, new(Path.Join(pluginInterface.ConfigDirectory.FullName, "SigCache.json")));
-        Resolver.GetInstance.Resolve();
+        InteropGenerator.Runtime.Resolver.GetInstance.Setup(Svc.SigScanner.SearchBase, Svc.Data.GameData.Repositories["ffxiv"].Version, new(System.IO.Path.Join(pluginInterface.ConfigDirectory.FullName, "SigCache.json")));
+        InteropGenerator.Runtime.Resolver.GetInstance.Resolve();
 #endif
 
         EzConfig.DefaultSerializationFactory = new YamlFactory();
