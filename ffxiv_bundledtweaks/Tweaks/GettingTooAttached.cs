@@ -22,10 +22,8 @@ public unsafe class GettingTooAttached : Tweak<GettingTooAttachedConfiguration>
 
     const int AchievementId = 1905;
     internal bool active = false;
-    private readonly Memory.AchievementProgress AchievementProgress = new();
     public override void Enable()
     {
-        AchievementProgress.ReceiveAchievementProgressHook.Enable();
         Events.AchievementProgressUpdate += OnAchievementProgressUpdate;
         Svc.Toasts.ErrorToast += CheckForErrors;
         Svc.AddonLifecycle.RegisterListener(AddonEvent.PostSetup, "MateriaAttachDialog", ConfirmMateriaDialog);
@@ -34,7 +32,6 @@ public unsafe class GettingTooAttached : Tweak<GettingTooAttachedConfiguration>
 
     public override void Disable()
     {
-        AchievementProgress.ReceiveAchievementProgressHook.Disable();
         Events.AchievementProgressUpdate -= OnAchievementProgressUpdate;
         Svc.Toasts.ErrorToast -= CheckForErrors;
         Svc.AddonLifecycle.UnregisterListener(ConfirmMateriaDialog);

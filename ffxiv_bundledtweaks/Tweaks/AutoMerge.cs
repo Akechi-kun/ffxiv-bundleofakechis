@@ -35,7 +35,7 @@ public class AutoMerge : Tweak
         public bool ItemHQ { get; set; }
     }
 
-    private unsafe bool CanMoveItems => Service.Memory.HasPermission is { } func && new uint[] { 134, 136, 137 }.All(x => func(Conditions.Instance(), x)); // it at least checks these in MoveItemSlot
+    private unsafe bool CanMoveItems => new uint[] { 134, 136, 137 }.All(x => Conditions.Instance()->HasPermission(x)); // it at least checks these in MoveItemSlot
 
     private unsafe void OnSetup(string addonName)
     {

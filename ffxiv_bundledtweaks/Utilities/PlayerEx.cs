@@ -103,12 +103,7 @@ public static unsafe class PlayerEx
         module->InputTimer = 0;
         module->Unk1C = 0;
         if (Player.OnlineStatus == 17) // away from keyboard
-        {
-            if (Service.Memory.ClearAfkStatus is { } func)
-                func(InfoProxyDetail.Instance());
-            else
-                Chat.SendMessage("/afk off");
-        }
+            InfoProxyDetail.Instance()->RefreshOnlineStatus();
     }
 
     public static bool InteractWith(ulong instanceId)

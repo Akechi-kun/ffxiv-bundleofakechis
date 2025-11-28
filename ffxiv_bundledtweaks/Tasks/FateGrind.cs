@@ -90,7 +90,7 @@ public sealed class FateGrind(DateWithDestinyConfiguration config) : CommonTasks
     {
         using var scope = BeginScope($"{nameof(ResurrectAndReturn)}");
         (var lastZone, var lastPos) = (Player.Territory, Player.Position);
-        Service.Memory.ExecuteCommand?.Invoke((int)ExecuteCommandFlag.Revive, 8); // TODO: it's either 8 or 5 depending on what GameMain.field_4095 is
+        GameMain.ExecuteCommand((int)ExecuteCommandFlag.Revive, 8); // TODO: it's either 8 or 5 depending on what GameMain.field_4095 is
         await WaitUntilTerritory(Player.HomeAetheryteTerritory);
         await TeleportTo(lastZone, lastPos);
     }
@@ -180,7 +180,7 @@ public sealed class FateGrind(DateWithDestinyConfiguration config) : CommonTasks
             if (Player.Level > fate.MaxLevel)
             {
                 Status = "Syncing to Fate";
-                Service.Memory.ExecuteCommand?.Invoke((int)ExecuteCommandFlag.FateLevelSync, fate.FateId, 1);
+                GameMain.ExecuteCommand((int)ExecuteCommandFlag.FateLevelSync, fate.FateId, 1);
                 Service.BossMod.SetActive("AI");
             }
         }

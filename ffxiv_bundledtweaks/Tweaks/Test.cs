@@ -36,10 +36,10 @@ public unsafe partial class DebugLogging : Tweak
 
     private readonly uint[] _blacklist = [1, 4, 31, 32, 96, 97, 98, 99, 101, 104, 105, 106, 142, 144, 148, 1003, 1005, 1006, 1007, 1008]; // these are checked every frame
 
-    [SigHook(Memory.Signatures.HasPermission)]
-    internal unsafe bool CheckPermission(Conditions* thisPtr, uint permissionId, int excludedCondition1 = 0, int excludedCondition2 = 0)
+    [AddressHook<Conditions>(nameof(Conditions.MemberFunctionPointers.HasPermission))]
+    internal unsafe bool HasPermission(Conditions* thisPtr, uint permissionId, int excludedCondition1 = 0, int excludedCondition2 = 0)
     {
-        var ret = CheckPermissionHook.Original(thisPtr, permissionId, excludedCondition1, excludedCondition2);
+        var ret = HasPermissionHook.Original(thisPtr, permissionId, excludedCondition1, excludedCondition2);
         if (!_blacklist.Contains(permissionId))
             MethodBase.GetCurrentMethod()?.Log([(nint)thisPtr, permissionId, excludedCondition1, excludedCondition2], ret);
         return ret;

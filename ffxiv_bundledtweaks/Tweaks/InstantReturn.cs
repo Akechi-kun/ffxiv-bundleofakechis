@@ -14,11 +14,11 @@ public unsafe partial class InstantReturn : Tweak
     public override void Enable() => Svc.AddonLifecycle.RegisterListener(AddonEvent.PostSetup, "SelectYesno", HandleReturn);
     public override void Disable() => Svc.AddonLifecycle.UnregisterListener(HandleReturn);
 
-    [SigHook(Memory.Signatures.AgentReturnReceiveEvent)]
-    private byte AgentReturn_InvokeAction(AgentInterface* agent)
+    [AddressHook<AgentReturn>(nameof(AgentReturn.MemberFunctionPointers.Return))]
+    private byte AgentReturn_Return(AgentInterface* agent)
     {
         if (ActionManager.Instance()->GetActionStatus(ActionType.GeneralAction, 6) != 0 || Player.IsInPvP)
-            return AgentReturn_InvokeActionHook.Original(agent);
+            return AgentReturn_ReturnHook.Original(agent);
 
         if (Svc.Party.Length > 1)
         {
@@ -28,7 +28,7 @@ public unsafe partial class InstantReturn : Tweak
                 Chat.SendMessage("/leave");
         }
 
-        Svc.Memory.ExecuteCommand?.Invoke((int)ExecuteCommandFlag.InstantReturn);
+        GameMain.ExecuteCommand((int)ExecuteCommandFlag.InstantReturn);
         return 1;
     }
 

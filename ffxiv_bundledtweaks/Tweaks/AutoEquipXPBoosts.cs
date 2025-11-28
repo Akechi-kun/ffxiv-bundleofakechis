@@ -1,6 +1,7 @@
 ﻿using ComplexTweaks.Tasks;
 using ECommons;
 using ECommons.ExcelServices;
+using FFXIVClientStructs.FFXIV.Client.Game;
 using FFXIVClientStructs.FFXIV.Client.System.Framework;
 using FFXIVClientStructs.FFXIV.Component.Excel;
 using Lumina.Excel;
@@ -63,7 +64,7 @@ internal class AutoEquipXPBoosts : Tweak
             {
                 unsafe
                 {
-                    if (Service.Memory.CanEquip?.Invoke(expItem.Item.RowId, Player.Race, Player.Sex, (ushort)Player.Level, (byte)Player.JobId, (byte)Player.GrandCompany, Player.PvPRank, expItem.Row) ?? false)
+                    if (InventoryManager.CanEquip(expItem.Item.RowId, Player.Race, Player.Sex, (ushort)Player.Level, (byte)Player.JobId, (byte)Player.GrandCompany, Player.PvPRank, expItem.Row) != 0)
                     {
                         Log($"Can't equip [#{expItem.Item.RowId}] {expItem.Item.Value.Name}");
                         continue;
