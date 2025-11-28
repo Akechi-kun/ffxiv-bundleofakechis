@@ -17,10 +17,17 @@ internal sealed class HookGenerator : IIncrementalGenerator
                 static (node, _) => node is MethodDeclarationSyntax { AttributeLists.Count: > 0 },
                 static (context, token) =>
                 {
+                    var containingType = context.TargetSymbol.ContainingType;
+                    if (containingType == null)
+                        return null;
+
+                    if (InheritsFromTaskBase(containingType))
+                        return null;
+
                     var classSyntax = (ClassDeclarationSyntax)context.TargetNode.Parent!;
 
                     var hierarchy = new List<string>();
-                    for (var parent = context.TargetSymbol.ContainingType; parent is not null; parent = parent.ContainingType)
+                    for (var parent = containingType; parent is not null; parent = parent.ContainingType)
                         hierarchy.Add(parent.ToDisplayString(SymbolDisplayFormat.MinimallyQualifiedFormat));
 
                     var methodSyntax = (MethodDeclarationSyntax)context.TargetNode;
@@ -28,7 +35,7 @@ internal sealed class HookGenerator : IIncrementalGenerator
 
                     return new HookInfo(
                         new ClassInfo(
-                            context.TargetSymbol.ContainingType.ToDisplayString(),
+                            containingType.ToDisplayString(),
                             methodSymbol.ContainingNamespace.ToDisplayString(
                                 new SymbolDisplayFormat(typeQualificationStyle: SymbolDisplayTypeQualificationStyle.NameAndContainingTypesAndNamespaces)),
                             [.. hierarchy]
@@ -38,7 +45,7 @@ internal sealed class HookGenerator : IIncrementalGenerator
                             methodSyntax.Modifiers.ToString(),
                             methodSymbol.ReturnType.GetFullyQualifiedName(),
                             methodSymbol.IsStatic,
-                            methodSymbol.Parameters.Select(ParseParameter).ToArray()
+                            [.. methodSymbol.Parameters.Select(ParseParameter)]
                         ));
                 });
 
@@ -48,10 +55,17 @@ internal sealed class HookGenerator : IIncrementalGenerator
                 static (node, _) => node is MethodDeclarationSyntax { AttributeLists.Count: > 0 },
                 static (context, token) =>
                 {
+                    var containingType = context.TargetSymbol.ContainingType;
+                    if (containingType == null)
+                        return null;
+
+                    if (InheritsFromTaskBase(containingType))
+                        return null;
+
                     var classSyntax = (ClassDeclarationSyntax)context.TargetNode.Parent!;
 
                     var hierarchy = new List<string>();
-                    for (var parent = context.TargetSymbol.ContainingType; parent is not null; parent = parent.ContainingType)
+                    for (var parent = containingType; parent is not null; parent = parent.ContainingType)
                         hierarchy.Add(parent.ToDisplayString(SymbolDisplayFormat.MinimallyQualifiedFormat));
 
                     var methodSyntax = (MethodDeclarationSyntax)context.TargetNode;
@@ -62,7 +76,7 @@ internal sealed class HookGenerator : IIncrementalGenerator
 
                     return new HookInfo(
                         new ClassInfo(
-                            context.TargetSymbol.ContainingType.ToDisplayString(),
+                            containingType.ToDisplayString(),
                             methodSymbol.ContainingNamespace.ToDisplayString(
                                 new SymbolDisplayFormat(typeQualificationStyle: SymbolDisplayTypeQualificationStyle.NameAndContainingTypesAndNamespaces)),
                             [.. hierarchy]
@@ -72,7 +86,7 @@ internal sealed class HookGenerator : IIncrementalGenerator
                             methodSyntax.Modifiers.ToString(),
                             methodSymbol.ReturnType.GetFullyQualifiedName(),
                             methodSymbol.IsStatic,
-                            methodSymbol.Parameters.Select(ParseParameter).ToArray()
+                            [.. methodSymbol.Parameters.Select(ParseParameter)]
                         ),
                         addressName);
                 });
@@ -83,10 +97,17 @@ internal sealed class HookGenerator : IIncrementalGenerator
                 static (node, _) => node is MethodDeclarationSyntax { AttributeLists.Count: > 0 },
                 static (context, token) =>
                 {
+                    var containingType = context.TargetSymbol.ContainingType;
+                    if (containingType == null)
+                        return null;
+
+                    if (InheritsFromTaskBase(containingType))
+                        return null;
+
                     var classSyntax = (ClassDeclarationSyntax)context.TargetNode.Parent!;
 
                     var hierarchy = new List<string>();
-                    for (var parent = context.TargetSymbol.ContainingType; parent is not null; parent = parent.ContainingType)
+                    for (var parent = containingType; parent is not null; parent = parent.ContainingType)
                         hierarchy.Add(parent.ToDisplayString(SymbolDisplayFormat.MinimallyQualifiedFormat));
 
                     var methodSyntax = (MethodDeclarationSyntax)context.TargetNode;
@@ -97,7 +118,7 @@ internal sealed class HookGenerator : IIncrementalGenerator
 
                     return new HookInfo(
                         new ClassInfo(
-                            context.TargetSymbol.ContainingType.ToDisplayString(),
+                            containingType.ToDisplayString(),
                             methodSymbol.ContainingNamespace.ToDisplayString(
                                 new SymbolDisplayFormat(typeQualificationStyle: SymbolDisplayTypeQualificationStyle.NameAndContainingTypesAndNamespaces)),
                             [.. hierarchy]
@@ -107,7 +128,7 @@ internal sealed class HookGenerator : IIncrementalGenerator
                             methodSyntax.Modifiers.ToString(),
                             methodSymbol.ReturnType.GetFullyQualifiedName(),
                             methodSymbol.IsStatic,
-                            methodSymbol.Parameters.Select(ParseParameter).ToArray()
+                            [.. methodSymbol.Parameters.Select(ParseParameter)]
                         ),
                         addressName);
                 });
@@ -118,10 +139,17 @@ internal sealed class HookGenerator : IIncrementalGenerator
                 static (node, _) => node is MethodDeclarationSyntax { AttributeLists.Count: > 0 },
                 static (context, token) =>
                 {
+                    var containingType = context.TargetSymbol.ContainingType;
+                    if (containingType == null)
+                        return null;
+
+                    if (InheritsFromTaskBase(containingType))
+                        return null;
+
                     var classSyntax = (ClassDeclarationSyntax)context.TargetNode.Parent!;
 
                     var hierarchy = new List<string>();
-                    for (var parent = context.TargetSymbol.ContainingType; parent is not null; parent = parent.ContainingType)
+                    for (var parent = containingType; parent is not null; parent = parent.ContainingType)
                         hierarchy.Add(parent.ToDisplayString(SymbolDisplayFormat.MinimallyQualifiedFormat));
 
                     var methodSyntax = (MethodDeclarationSyntax)context.TargetNode;
@@ -133,7 +161,7 @@ internal sealed class HookGenerator : IIncrementalGenerator
 
                     return new HookInfo(
                         new ClassInfo(
-                            context.TargetSymbol.ContainingType.ToDisplayString(),
+                            containingType.ToDisplayString(),
                             methodSymbol.ContainingNamespace.ToDisplayString(
                                 new SymbolDisplayFormat(typeQualificationStyle: SymbolDisplayTypeQualificationStyle.NameAndContainingTypesAndNamespaces)),
                             [.. hierarchy]
@@ -143,7 +171,7 @@ internal sealed class HookGenerator : IIncrementalGenerator
                             methodSyntax.Modifiers.ToString(),
                             methodSymbol.ReturnType.GetFullyQualifiedName(),
                             methodSymbol.IsStatic,
-                            methodSymbol.Parameters.Select(ParseParameter).ToArray()
+                            [.. methodSymbol.Parameters.Select(ParseParameter)]
                         ),
                         addressName);
                 });
@@ -157,11 +185,24 @@ internal sealed class HookGenerator : IIncrementalGenerator
             .Combine(addressHooks)
             .Combine(vtblHooks)
             .Combine(sigHooks)
-            .Select((tuple, _) => tuple.Left.Left.Left.Concat(tuple.Left.Left.Right).Concat(tuple.Left.Right).Concat(tuple.Right));
+            .Select(static (tuple, _) =>
+            {
+                var result = new List<HookInfo>();
+                foreach (var h in tuple.Left.Left.Left)
+                    if (h != null) result.Add(h);
+                foreach (var h in tuple.Left.Left.Right)
+                    if (h != null) result.Add(h);
+                foreach (var h in tuple.Left.Right)
+                    if (h != null) result.Add(h);
+                foreach (var h in tuple.Right)
+                    if (h != null) result.Add(h);
+                return result;
+            });
 
         var addressHookInfoByClass = allHooks
-            .SelectMany((items, _) => items.GroupBy(item => item.ClassInfo.Name))
-            .Where(items => items.Any());
+            .SelectMany(static (items, _) => items.GroupBy(static item => item.ClassInfo.Name))
+            .Collect()
+            .SelectMany(static (items, _) => items);
 
         context.RegisterSourceOutput(addressHookInfoByClass,
             static (sourceContext, item) => { sourceContext.AddSource($"{item.Key}.AddressHookGenerator.g.cs", RenderHookInfos(item)); });
@@ -172,6 +213,24 @@ internal sealed class HookGenerator : IIncrementalGenerator
         parameterSymbol.Type.GetFullyQualifiedName(),
         parameterSymbol.GetDefaultValueString(),
         parameterSymbol.RefKind);
+
+    private static bool InheritsFromTaskBase(INamedTypeSymbol? typeSymbol)
+    {
+        if (typeSymbol == null)
+            return false;
+
+        const string AutoTaskBaseType = "ComplexTweaks.Services.AutoTask";
+        const string CommonTasksBaseType = "ComplexTweaks.Tasks.CommonTasks";
+
+        var current = typeSymbol;
+        while (current != null)
+        {
+            if (current.HasFullyQualifiedMetadataName(AutoTaskBaseType) || current.HasFullyQualifiedMetadataName(CommonTasksBaseType))
+                return true;
+            current = current.BaseType;
+        }
+        return false;
+    }
 
     private static string RenderHookInfos(IGrouping<string, HookInfo> items)
     {

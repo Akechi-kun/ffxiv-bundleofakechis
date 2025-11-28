@@ -66,6 +66,14 @@ public abstract class AutoTask
         Svc.Framework.Run(async () =>
         {
             _activeTask.Value = this;
+
+            if (this is IAutoTaskHooks hookable)
+            {
+                hookable.SetupHooks();
+                hookable.EnableHooks();
+                RegisterCleanup(new AutoTaskHookCleanup(hookable));
+            }
+
             var task = Execute();
             await task.ConfigureAwait(ConfigureAwaitOptions.SuppressThrowing); // we don't really care about cancelation...
             if (task.IsFaulted)
@@ -191,6 +199,23 @@ public abstract class AutoTask
     {
         if (condition)
             Error(message);
+    }
+}
+
+internal interface IAutoTaskHooks
+{
+    void SetupHooks();
+    void EnableHooks();
+    void DisableHooks();
+    void DisposeHooks();
+}
+
+internal sealed class AutoTaskHookCleanup(IAutoTaskHooks hooks) : IDisposable
+{
+    public void Dispose()
+    {
+        hooks.DisableHooks();
+        hooks.DisposeHooks();
     }
 }
 

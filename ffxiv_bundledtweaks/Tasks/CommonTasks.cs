@@ -2,7 +2,6 @@
 using FFXIVClientStructs.FFXIV.Client.UI.Agent;
 using Lumina.Excel.Sheets;
 using System.Threading.Tasks;
-using Achievement = FFXIVClientStructs.FFXIV.Client.Game.UI.Achievement;
 
 namespace ComplexTweaks.Tasks;
 
@@ -46,7 +45,6 @@ public enum UiSkipOptions
 public abstract class CommonTasks : AutoTask
 {
     private readonly OverrideMovement movement = new();
-    private readonly Memory.AchievementProgress achv = new();
 
     private async Task NavmeshReady()
     {
@@ -224,18 +222,6 @@ public abstract class CommonTasks : AutoTask
     {
         using var scope = BeginScope("WaitUntilTerritory");
         await WaitUntil(() => Player.Territory == territoryId && Game.IsTerritoryLoaded() && Player.Interactable, "WaitingForTerritory");
-    }
-
-    protected async Task<(uint, uint)> GetAchievementProgress(uint achievementId, string scopeName)
-    {
-        using var scope = BeginScope(scopeName);
-        achv.ReceiveAchievementProgressHook.Enable();
-        unsafe { Achievement.Instance()->RequestAchievementProgress(achievementId); }
-        static unsafe bool IsState(Achievement.AchievementState state) => Achievement.Instance()->ProgressRequestState == state;
-        await WaitUntil(() => IsState(Achievement.AchievementState.Requested), "WaitingForRequestStart");
-        await WaitUntil(() => IsState(Achievement.AchievementState.Loaded), "WaitingForRequestFinish");
-        achv.ReceiveAchievementProgressHook.Disable();
-        return achv.LastId == achievementId ? (achv.LastCurrent, achv.LastMax) : throw new Exception($"Expected data for achievement [#{achievementId}], got [#{achv.LastId}]");
     }
 
     protected async Task BuyFromShop(ulong vendorInstanceId, uint shopId, uint itemId, int count, Game.ShopType shopType = Game.ShopType.None)

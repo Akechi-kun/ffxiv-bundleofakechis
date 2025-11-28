@@ -1,16 +1,28 @@
 ﻿using Dalamud.Bindings.ImGui;
 using Dalamud.Game.ClientState.Fates;
+using Dalamud.Game.Inventory;
 using Dalamud.Game.NativeWrapper;
+using ECommons;
 using ECommons.ImGuiMethods;
+using FFXIVClientStructs.FFXIV.Client.Game;
 using FFXIVClientStructs.FFXIV.Client.Game.Fate;
 using FFXIVClientStructs.FFXIV.Component.GUI;
+using Lumina.Excel;
+using Lumina.Excel.Sheets;
 
 namespace ComplexTweaks.Utilities.Extensions;
 
 public static unsafe class DalamudExtensions
 {
+    extension(GameInventoryItem item)
+    {
+        public RowRef<Item> GameData => GetGameData(item);
+        private RowRef<Item> GetGameData() => GenericHelpers.CreateRowRef<Item>(item.BaseItemId);
+    }
+
     public static AtkUnitBase* ToPtr(this AddonArgs args) => (AtkUnitBase*)args.Addon.Address;
     public static AtkUnitBase* ToPtr(this AtkUnitBasePtr wrapper) => (AtkUnitBase*)wrapper.Address;
+    public static InventoryItem* ToPtr(this GameInventoryItem item) => (InventoryItem*)item.Address;
 
     public static AtkEvent* GenerateEvent(this AddonArgs args)
     {
