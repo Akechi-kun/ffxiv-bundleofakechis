@@ -130,7 +130,7 @@ public partial class Commands : Tweak<CommandsConfiguration>
         var agent = ActionManager.Instance();
         if (agent == null) return;
 
-        agent->UseAction(itemId >= 2_000_000 ? ActionType.KeyItem : ActionType.Item, itemId, extraParam: 65535);
+        agent->UseAction(itemId >= 2_000_000 ? ActionType.EventItem : ActionType.Item, itemId, extraParam: 65535);
     }
     #endregion
 
