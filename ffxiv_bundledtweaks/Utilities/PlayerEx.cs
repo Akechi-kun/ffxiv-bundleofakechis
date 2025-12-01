@@ -9,6 +9,7 @@ using FFXIVClientStructs.FFXIV.Client.Game.UI;
 using FFXIVClientStructs.FFXIV.Client.UI;
 using FFXIVClientStructs.FFXIV.Client.UI.Agent;
 using FFXIVClientStructs.FFXIV.Client.UI.Info;
+using FFXIVClientStructs.FFXIV.Component.Exd;
 using Lumina.Excel;
 using Lumina.Excel.Sheets;
 using PlayerController = ComplexTweaks.Utilities.Structs.PlayerController;
@@ -26,6 +27,7 @@ public static unsafe class PlayerEx
         public static byte Race => Player.Character->DrawData.CustomizeData.Race;
         public static byte Sex => Player.Character->Sex;
         public static byte PvPRank => PvPProfile.Instance()->GetPvPRank();
+        public static Role Role => (Role)ExdModule.GetRoleForClassJobId(Player.JobId);
 
         public static bool ReadyAndLoaded => !Player.IsBusy && Game.IsTerritoryLoaded();
         public static float Speed { get => Player.Controller->MoveControllerWalk.BaseMovementSpeed; set => Memory.SetSpeed(6 * value); }
@@ -47,6 +49,14 @@ public static unsafe class PlayerEx
     {
         public static RowRef<T> CreateRowRef<T>(uint rowId, ClientLanguage? language = null) where T : struct, IExcelRow<T>
             => new(Svc.Data.Excel, rowId, (language ?? Svc.ClientState.ClientLanguage).ToLumina());
+    }
+
+    public enum Role
+    {
+        Other = 0,
+        Tank = 1,
+        Dps = 2,
+        Healer = 3,
     }
 
     public static Vector3 Position { get => Svc.ClientState.LocalPlayer.Position; set => Player.GameObject->SetPosition(value.X, value.Y, value.Z); }

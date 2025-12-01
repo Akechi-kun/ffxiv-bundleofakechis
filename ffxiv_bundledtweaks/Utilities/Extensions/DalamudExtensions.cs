@@ -17,7 +17,7 @@ public static unsafe class DalamudExtensions
     extension(GameInventoryItem item)
     {
         public RowRef<Item> GameData => GetGameData(item);
-        private RowRef<Item> GetGameData() => GenericHelpers.CreateRowRef<Item>(item.BaseItemId);
+        internal RowRef<Item> GetGameData() => GenericHelpers.CreateRowRef<Item>(item.BaseItemId);
     }
 
     public static AtkUnitBase* ToPtr(this AddonArgs args) => (AtkUnitBase*)args.Addon.Address;
@@ -46,6 +46,7 @@ public static unsafe class DalamudExtensions
 
     public static uint? EventItem(this IFate fate) => fate.GameData.Value.EventItem.RowId is not 0 ? fate.GameData.Value.EventItem.RowId : null;
     public static int EventItemInventoryCount(this IFate fate) => fate.EventItem() is { } item ? Inventory.GetItemCount(item) : 0;
+    public static DGameObject? GetMotivationNpc(this IFate fate) => Svc.Objects.FirstOrDefault(o => o.EntityId == fate.Struct()->MotivationNpc);
 
     public static void Print(this IFate fate)
     {
