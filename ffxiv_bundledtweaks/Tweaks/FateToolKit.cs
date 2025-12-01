@@ -100,8 +100,10 @@ public partial class FateToolKit : Tweak<FateToolKitConfig, FateToolKitWindow> {
                 EnableEventHandlers();
                 Service.Automation.Start(new FateGrind(this));
             }
-            else
+            else {
                 DisableEventHandlers();
+                Svc.Automation.Stop();
+            }
         }
     }
 
@@ -130,8 +132,11 @@ public partial class FateToolKit : Tweak<FateToolKitConfig, FateToolKitWindow> {
         Service.Automation.Start(new FateGrind(this));
     }
 
-    [TweakEvent(TweakEvent.Died, AutoEnable = false)]
-    private void OnDeath(Type _, EventArgs __) => Service.Automation.Start(new FateGrind(this));
+    [TweakEvent(TweakEvent.Died | TweakEvent.Revived, AutoEnable = false)]
+    private void OnUnconsciousChange(Type type, EventArgs __) {
+        Log($"{nameof(OnUnconsciousChange)}: {type.Name}");
+        Service.Automation.Start(new FateGrind(this));
+    }
 
     internal bool IsBlacklisted(PublicEvent f)
         => Config.Blacklist.TryGetValue(f.FateType, out var set) && set.Contains(f.Id);
@@ -176,7 +181,7 @@ public partial class FateToolKit : Tweak<FateToolKitConfig, FateToolKitWindow> {
                 });
             }
             catch (Exception ex) {
-                Error(ex.ToString());
+                Log($"Error: {ex}");
                 tweak.Running = false;
             }
         }
@@ -220,17 +225,16 @@ public partial class FateToolKit : Tweak<FateToolKitConfig, FateToolKitWindow> {
         private async Task Revive() {
             using var scope = BeginScope(nameof(Revive));
             await WaitUntil(() => Player.Revivable, "WaitForRevivable");
+            (var lastZone, var lastPos) = (Player.Territory, Player.Position);
             if (Svc.Party.Length is 0) {
-                (var lastZone, var lastPos) = (Player.Territory, Player.Position);
                 GameMain.ExecuteCommand((int)ExecuteCommandFlag.Revive, 8); // a1=8 for returns
-                await WaitUntilTerritory(Player.HomeAetheryteTerritory);
-                await TeleportTo(lastZone, lastPos);
             }
             else {
                 await WaitUntil(() => Player.ReviveState is 2, "WaitingForRaise"); // 1 = return, 2 = raise
                 GameMain.ExecuteCommand((int)ExecuteCommandFlag.Revive, 5); // a1=5 for raises
-                await WaitWhile(() => Player.IsBusy, "WaitingForNotBusy");
             }
+            await WaitWhile(() => Svc.Condition[ConditionFlag.Unconscious], "WaitForAlive");
+            await TeleportTo(lastZone, lastPos);
         }
 
         private async Task MoveToFate() {
