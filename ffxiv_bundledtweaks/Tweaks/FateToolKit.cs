@@ -129,13 +129,18 @@ public partial class FateToolKit : Tweak<FateToolKitConfig, FateToolKitWindow> {
     private void OnFateLeft(Type _, EventArgs __) {
         _nextFateId = null;
         Service.BossMod.ClearActive();
+        if (!Svc.Condition[ConditionFlag.Unconscious]) // we only want natural leavings to retrigger the grind, otherwise it would conflict with reviving
+            Service.Automation.Start(new FateGrind(this));
+    }
+
+    [TweakEvent(TweakEvent.Died, AutoEnable = false)]
+    private void OnDeath(Type _, EventArgs __) {
         Service.Automation.Start(new FateGrind(this));
     }
 
-    [TweakEvent(TweakEvent.Died | TweakEvent.Revived, AutoEnable = false)]
-    private void OnUnconsciousChange(Type type, EventArgs __) {
-        Log($"{nameof(OnUnconsciousChange)}: {type.Name}");
-        Service.Automation.Start(new FateGrind(this));
+    [TweakEvent(TweakEvent.Revived, AutoEnable = false)]
+    private void OnRevived(Type senderType, EventArgs __) {
+        Service.Automation.Start(new FateGrind(this), queue: true);
     }
 
     internal bool IsBlacklisted(PublicEvent f)
@@ -201,10 +206,11 @@ public partial class FateToolKit : Tweak<FateToolKitConfig, FateToolKitWindow> {
                 if (Svc.Condition[ConditionFlag.Unconscious])
                     return FateState.Unconscious;
 
+                // Always engage current fate, even if it doesn't meet conditions anymore (e.g., raised and fate progressed while dead)
                 if (PublicEvent.CurrentFate is { })
                     return FateState.Engaging;
 
-                if (PublicEvent.CurrentFate is not { } && AvailableFates.FirstOrDefault() is { })
+                if (AvailableFates.FirstOrDefault() is { })
                     return FateState.Moving;
 
                 if (!AvailableFates.Any())
@@ -234,7 +240,10 @@ public partial class FateToolKit : Tweak<FateToolKitConfig, FateToolKitWindow> {
                 GameMain.ExecuteCommand((int)ExecuteCommandFlag.Revive, 5); // a1=5 for raises
             }
             await WaitWhile(() => Svc.Condition[ConditionFlag.Unconscious], "WaitForAlive");
-            await TeleportTo(lastZone, lastPos);
+
+            if (Player.Territory != lastZone) {
+                await TeleportTo(lastZone, lastPos);
+            }
         }
 
         private async Task MoveToFate() {
