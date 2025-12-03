@@ -186,7 +186,7 @@ public partial class FateToolKit : Tweak<FateToolKitConfig, FateToolKitWindow> {
                 });
             }
             catch (Exception ex) {
-                Log($"Error: {ex}");
+                Error($"Error: {ex}");
                 tweak.Running = false;
             }
         }
@@ -292,7 +292,7 @@ public partial class FateToolKit : Tweak<FateToolKitConfig, FateToolKitWindow> {
         }
 
         private uint GetRandomSameExpacZone() {
-            var rows = FindRows<TerritoryType>(x => x.ExVersion.RowId == GetRow<TerritoryType>(Player.Territory)!.Value.ExVersion.RowId);
+            var rows = FindRows<TerritoryType>(x => x.Unknown10 && x.ExVersion.RowId == GetRow<TerritoryType>(Player.Territory)!.Value.ExVersion.RowId); // Unknown10 is probably InUse
             return rows[new Random().Next(rows.Length)].RowId;
         }
     }

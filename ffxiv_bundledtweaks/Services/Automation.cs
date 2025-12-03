@@ -168,7 +168,7 @@ public abstract class AutoTask {
 
     // abort a task unconditionally
     protected void Error(string message) {
-        Log($"Error: {message}");
+        PluginLog.Error($"Error: {message}");
         throw new Exception($"[{GetType().Name}] [{string.Join(" > ", _debugContext)}] {message}");
     }
 
