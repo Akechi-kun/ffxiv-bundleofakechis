@@ -158,7 +158,7 @@ public static class Enums {
         Retainer = 9003
     }
 
-    public enum ExecuteCommandComplexFlag {
+    public enum ExecuteLocationCommandFlag {
         Dismount = 101,
         PlaceMarker = 301,
         Emote = 500,
