@@ -8,8 +8,7 @@ using FFXIVClientStructs.FFXIV.Client.Game;
 
 namespace ComplexTweaks.Tweaks;
 
-public class AutoFollowConfiguration
-{
+public class AutoFollowConfiguration {
     //[EnumConfig] public MovementType MovementType;
 
     [IntConfig(DefaultValue = 3)] public int DistanceToKeep = 3;
@@ -21,8 +20,7 @@ public class AutoFollowConfiguration
 }
 
 [Tweak]
-public unsafe class AutoFollow : Tweak<AutoFollowConfiguration>
-{
+public unsafe class AutoFollow : Tweak<AutoFollowConfiguration> {
     public override string Name => "Auto Follow";
     public override string Description
         => "True Auto Follow. Trigger with command while targeting someone. Use it with no target to wipe the current master.\n" +
@@ -34,19 +32,15 @@ public unsafe class AutoFollow : Tweak<AutoFollowConfiguration>
     private string? _masterName;
 
     [CommandHandler("/autofollow", "Enable AutoFollow")]
-    internal void OnCommand(string command, string arguments)
-    {
-        if (!arguments.IsNullOrEmpty())
-        {
-            if (Svc.Objects.FirstOrDefault(o => o.Name.TextValue.ToLowerInvariant().Contains(arguments, StringComparison.InvariantCultureIgnoreCase)) is { } obj)
-            {
+    internal void OnCommand(string command, string arguments) {
+        if (!arguments.IsNullOrEmpty()) {
+            if (Svc.Objects.FirstOrDefault(o => o.Name.TextValue.ToLowerInvariant().Contains(arguments, StringComparison.InvariantCultureIgnoreCase)) is { } obj) {
                 _masterId = obj.EntityId;
                 _masterName = obj.Name.TextValue;
                 Svc.Toasts.ShowNormal($"Auto following {obj.Name}");
                 return;
             }
-            else
-            {
+            else {
                 _masterName = arguments;
                 return;
             }
@@ -57,30 +51,24 @@ public unsafe class AutoFollow : Tweak<AutoFollowConfiguration>
             ClearMaster();
     }
 
-    public override void Enable()
-    {
+    public override void Enable() {
         Svc.Framework.Update += Follow;
         Svc.Chat.ChatMessage += OnChatMessage;
     }
 
-    public override void Disable()
-    {
+    public override void Disable() {
         Svc.Framework.Update -= Follow;
         Svc.Chat.ChatMessage -= OnChatMessage;
     }
 
-    private void SetMaster()
-    {
-        try
-        {
-            if (Svc.Targets.Target is { } target)
-            {
+    private void SetMaster() {
+        try {
+            if (Svc.Targets.Target is { } target) {
                 _masterId = target.EntityId;
                 _masterName = target.Name.TextValue;
                 Svc.Toasts.ShowNormal($"Auto following {Svc.Targets.Target.Name}");
             }
-            else
-            {
+            else {
                 _masterId = null;
                 Svc.Toasts.ShowNormal("Auto following off");
             }
@@ -88,16 +76,14 @@ public unsafe class AutoFollow : Tweak<AutoFollowConfiguration>
         catch { return; }
     }
 
-    private void ClearMaster()
-    {
+    private void ClearMaster() {
         _masterId = null;
         _masterName = null;
         movement.Enabled = false;
         Svc.Toasts.ShowNormal("Auto following off");
     }
 
-    private void Follow(IFramework framework)
-    {
+    private void Follow(IFramework framework) {
         if (!Player.Available || TaskManager.IsBusy) return;
         if (_masterId == null && Config.AutoFollowName.IsNullOrEmpty() && string.IsNullOrEmpty(_masterName)) return; // always try to follow if temp or permanent name is set
 
@@ -111,8 +97,7 @@ public unsafe class AutoFollow : Tweak<AutoFollowConfiguration>
         if (Config.ExcludeCombat && Svc.Condition[ConditionFlag.InCombat]) { movement.Enabled = false; return; }
         if (Svc.Condition[ConditionFlag.InFlight]) { TaskManager.Abort(); }
 
-        if (master.ObjectKind == Dalamud.Game.ClientState.Objects.Enums.ObjectKind.Player)
-        {
+        if (master.ObjectKind == Dalamud.Game.ClientState.Objects.Enums.ObjectKind.Player) {
             // prioritise riding pillion
             //if (Svc.Party.Any(p => p.ObjectId == master.GameObjectId) && GetRow<Mount>(master.Character()->Mount.MountId)?.ExtraSeats > 0)
             //{
@@ -140,16 +125,14 @@ public unsafe class AutoFollow : Tweak<AutoFollowConfiguration>
             //}
 
             // mount
-            if (master.Character()->IsMounted() && CanMount())
-            {
+            if (master.Character()->IsMounted() && CanMount()) {
                 movement.Enabled = false;
                 ActionManager.Instance()->UseAction(ActionType.GeneralAction, 9);
                 return;
             }
 
             // fly
-            if (Config.MountAndFly && ((Structs.Character*)master.Address)->IsFlying != 0 && !Svc.Condition[ConditionFlag.InFlight] && Svc.Condition[ConditionFlag.Mounted])
-            {
+            if (Config.MountAndFly && master.Character()->MovementState is FFXIVClientStructs.FFXIV.Client.Game.Character.MovementStateOptions.Flying && !Svc.Condition[ConditionFlag.InFlight] && Svc.Condition[ConditionFlag.Mounted]) {
                 movement.Enabled = false;
                 TaskManager.Enqueue(() => ActionManager.Instance()->UseAction(ActionType.GeneralAction, 2));
                 TaskManager.EnqueueDelay(50);
@@ -158,8 +141,7 @@ public unsafe class AutoFollow : Tweak<AutoFollowConfiguration>
             }
 
             // dismount
-            if (!master.Character()->IsMounted() && Svc.Condition[ConditionFlag.Mounted])
-            {
+            if (!master.Character()->IsMounted() && Svc.Condition[ConditionFlag.Mounted]) {
                 movement.Enabled = false;
                 ActionManager.Instance()->UseAction(ActionType.GeneralAction, 23);
                 return;
@@ -174,23 +156,18 @@ public unsafe class AutoFollow : Tweak<AutoFollowConfiguration>
 
     private static bool CanMount() => !Svc.Condition[ConditionFlag.Mounted] && !Svc.Condition[ConditionFlag.Mounting] && !Svc.Condition[ConditionFlag.InCombat] && !Svc.Condition[ConditionFlag.Casting];
 
-    private void OnChatMessage(XivChatType type, int timestamp, ref SeString sender, ref SeString message, ref bool isHandled)
-    {
+    private void OnChatMessage(XivChatType type, int timestamp, ref SeString sender, ref SeString message, ref bool isHandled) {
         if (type != XivChatType.Party) return;
         var player = sender.Payloads.SingleOrDefault(x => x is PlayerPayload) as PlayerPayload;
-        if (message.TextValue.ToLowerInvariant().Contains("autofollow"))
-        {
+        if (message.TextValue.ToLowerInvariant().Contains("autofollow")) {
             if (int.TryParse(message.TextValue.Split("autofollow")[1], out var distance))
                 Config.DistanceToKeep = distance;
             else if (message.TextValue.ToLowerInvariant().Contains("autofollow off"))
                 ClearMaster();
-            else
-            {
-                foreach (var actor in Svc.Objects)
-                {
+            else {
+                foreach (var actor in Svc.Objects) {
                     if (actor == null) continue;
-                    if (actor.Name.TextValue.Equals(player?.PlayerName))
-                    {
+                    if (actor.Name.TextValue.Equals(player?.PlayerName)) {
                         Svc.Targets.Target = actor;
                         SetMaster();
                     }

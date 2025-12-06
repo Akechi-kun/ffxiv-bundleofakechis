@@ -45,11 +45,6 @@ public static unsafe class Structs {
         [FieldOffset(0x9C)] public float AngularAscent;
     }
 
-    [StructLayout(LayoutKind.Explicit, Size = 0x1BD0)]
-    public unsafe partial struct Character {
-        [FieldOffset(0x386)] public byte IsFlying;
-    }
-
     [StructLayout(LayoutKind.Explicit)]
     public struct AgentWorldTravel {
         [FieldOffset(0)]
