@@ -18,8 +18,8 @@ public class ARSwitcher : Tweak {
         _dtrBarEntry = Svc.DtrBar.Get("Character Index", "Unknown Character Index");
         _dtrBarEntry.OnClick = (DtrInteractionEvent @event) => {
             unsafe {
-                var homeWorldId = Svc.ClientState.LocalPlayer?.HomeWorld.RowId;
-                var currentWorldId = Svc.ClientState.LocalPlayer?.CurrentWorld.RowId;
+                var homeWorldId = Svc.PlayerState.HomeWorld.RowId;
+                var currentWorldId = Svc.PlayerState.CurrentWorld.RowId;
                 if (homeWorldId == currentWorldId) {
                     var target = FindCharacter(@event.ClickType is MouseClickType.Left ? 1 : -1);
                     SwitchCharacter(target);
@@ -42,13 +42,13 @@ public class ARSwitcher : Tweak {
             return;
 
         try {
-            var currentWorld = Svc.ClientState.LocalPlayer?.CurrentWorld.Value.Name.ToString();
-            var homeWorld = Svc.ClientState.LocalPlayer?.HomeWorld.Value.Name.ToString();
+            var currentWorld = Svc.PlayerState.CurrentWorld.Value.Name.ToString();
+            var homeWorld = Svc.PlayerState.HomeWorld.Value.Name.ToString();
             var characterIds = Service.AutoRetainerApi.GetRegisteredCharacters() ?? [];
             var characterIdsOnHomeWorld = characterIds
                 .Where(x => Service.AutoRetainerApi.GetOfflineCharacterData(x)?.World == homeWorld).ToList();
 
-            var seIconChar = SeIconChar.Instance1 + characterIdsOnHomeWorld.IndexOf(Svc.ClientState.LocalContentId);
+            var seIconChar = SeIconChar.Instance1 + characterIdsOnHomeWorld.IndexOf(Svc.PlayerState.ContentId);
             if (currentWorld == homeWorld) {
                 _dtrBarEntry.Text = seIconChar.ToIconString();
 
@@ -81,7 +81,7 @@ public class ARSwitcher : Tweak {
             Verbose($"Switching characters ({direction})");
 
             var characterIds = Service.AutoRetainerApi.GetRegisteredCharacters();
-            var index = characterIds.IndexOf(Svc.ClientState.LocalContentId);
+            var index = characterIds.IndexOf(Svc.PlayerState.ContentId);
             if (index < 0) {
                 if (showError)
                     ModuleMessage("Current character not known.");
@@ -92,7 +92,7 @@ public class ARSwitcher : Tweak {
             do {
                 index = (index + direction + characterIds.Count) % characterIds.Count;
                 target = Service.AutoRetainerApi.GetOfflineCharacterData(characterIds[index]);
-                if (target?.CID == Svc.ClientState.LocalContentId) {
+                if (target?.CID == Svc.PlayerState.ContentId) {
                     if (showError)
                         ModuleMessage("No character to switch to found.");
                     return null;

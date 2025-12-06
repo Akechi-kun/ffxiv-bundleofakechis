@@ -19,7 +19,7 @@ public unsafe partial class InstantReturn : Tweak {
             return AgentReturn_ReturnHook.Original(agent);
 
         if (Svc.Party.Length > 1) {
-            if (Svc.Party[0]?.Name == Svc.ClientState.LocalPlayer?.Name)
+            if (Svc.Party[0]?.Name.TextValue == Svc.PlayerState.CharacterName)
                 Chat.SendMessage("/partycmd breakup");
             else
                 Chat.SendMessage("/leave");

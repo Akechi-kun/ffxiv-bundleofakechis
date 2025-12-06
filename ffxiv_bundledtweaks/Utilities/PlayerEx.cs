@@ -1,7 +1,6 @@
 ﻿using Dalamud.Game;
 using Dalamud.Utility;
 using ECommons;
-using ECommons.Automation;
 using FFXIVClientStructs.FFXIV.Client.Game;
 using FFXIVClientStructs.FFXIV.Client.Game.Control;
 using FFXIVClientStructs.FFXIV.Client.Game.Object;
@@ -22,8 +21,6 @@ public static unsafe class PlayerEx {
         public static unsafe Camera* Camera => CameraManager.Instance()->GetActiveCamera();
         public static PlayerController* Controller => (PlayerController*)Svc.SigScanner.GetStaticAddressFromSig(Memory.Signatures.PlayerController);
 
-        public static byte Race => Player.Character->DrawData.CustomizeData.Race;
-        public static byte Sex => Player.Character->Sex;
         public static byte PvPRank => PvPProfile.Instance()->GetPvPRank();
         public static Role Role => (Role)ExdModule.GetRoleForClassJobId(Player.JobId);
 
@@ -55,7 +52,7 @@ public static unsafe class PlayerEx {
         Healer = 3,
     }
 
-    public static Vector3 Position { get => Svc.ClientState.LocalPlayer.Position; set => Player.GameObject->SetPosition(value.X, value.Y, value.Z); }
+    public static Vector3 Position { get => Svc.Objects.LocalPlayer.Position; set => Player.GameObject->SetPosition(value.X, value.Y, value.Z); }
     public static List<MapMarkerData> QuestLocations => [.. FFXIVClientStructs.FFXIV.Client.Game.UI.Map.Instance()->QuestMarkers.ToArray().SelectMany(i => i.MarkerData.ToList())];
 
     private static int EquipAttemptLoops = 0;

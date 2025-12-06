@@ -332,7 +332,7 @@ public class DateWithDestiny : Tweak<DateWithDestinyConfiguration, DateWithDesti
         .ThenBy(x => (x as ICharacter)?.CurrentHp)
         .FirstOrDefault();
 
-    private unsafe uint CurrentCompanion => Svc.ClientState.LocalPlayer!.Character()->CompanionObject->Character.GameObject.BaseId;
+    private unsafe uint CurrentCompanion => Player.Character->CompanionObject->Character.GameObject.BaseId;
     private unsafe bool CompanionUnlocked(uint id) => UIState.Instance()->IsCompanionUnlocked(id);
     private unsafe bool HasWatchEquipped() => InventoryManager.Instance()->GetInventoryContainer(InventoryType.EquippedItems)->GetInventorySlot(10)->ItemId == YokaiWatch;
     private unsafe bool HaveYokaiMinionsMissing() => Yokai.Any(x => CompanionUnlocked(x.Minion));
@@ -340,8 +340,8 @@ public class DateWithDestiny : Tweak<DateWithDestinyConfiguration, DateWithDesti
 
     private unsafe FateContext* CurrentFate => FateManager.Instance()->GetFateById(nextFateID);
 
-    private unsafe float DistanceToFate() => Vector3.Distance(CurrentFate->Location, Svc.ClientState.LocalPlayer!.Position);
-    private unsafe float DistanceToTarget() => Vector3.Distance(TargetPos, Svc.ClientState.LocalPlayer!.Position);
+    private unsafe float DistanceToFate() => Vector3.Distance(CurrentFate->Location, Svc.Objects.LocalPlayer!.Position);
+    private unsafe float DistanceToTarget() => Vector3.Distance(TargetPos, Svc.Objects.LocalPlayer!.Position);
 
     //Will be negative if inside hitbox
     private unsafe float DistanceToHitboxEdge(float hitboxRadius) => DistanceToTarget() - hitboxRadius;
