@@ -1,6 +1,5 @@
 using Dalamud.Bindings.ImGui;
 using Dalamud.Interface.Textures.TextureWraps;
-using ECommons.Reflection;
 using FFXIVClientStructs.FFXIV.Client.System.Framework;
 using FFXIVClientStructs.FFXIV.Component.GUI;
 
@@ -9,32 +8,11 @@ namespace ComplexTweaks.Utilities;
 public static class Utils {
     public static IDalamudTextureWrap? GetIcon(uint iconId) => iconId != 0 ? Svc.Texture?.GetFromGameIcon(iconId).GetWrapOrEmpty() : null;
 
-    public static bool HasPlugin(string name) => DalamudReflector.TryGetDalamudPlugin(name, out _, false, true);
-
     public static unsafe bool IsClickingInGameWorld()
         => !ImGui.IsWindowHovered(ImGuiHoveredFlags.AnyWindow)
         && !ImGui.GetIO().WantCaptureMouse
         && AtkStage.Instance()->RaptureAtkUnitManager->AtkUnitManager.FocusedUnitsList.Count == 0
         && Framework.Instance()->Cursor->ActiveCursorType == 0;
-
-    public static Vector3 RotatePoint(float cx, float cy, float angle, Vector3 p) {
-        if (angle == 0f) return p;
-        var s = (float)Math.Sin(angle);
-        var c = (float)Math.Cos(angle);
-
-        // translate point back to origin:
-        p.X -= cx;
-        p.Z -= cy;
-
-        // rotate point
-        var xnew = p.X * c - p.Z * s;
-        var ynew = p.X * s + p.Z * c;
-
-        // translate point back:
-        p.X = xnew + cx;
-        p.Z = ynew + cy;
-        return p;
-    }
 
     //public static bool KeybindIsPressed(string name)
     //{

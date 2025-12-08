@@ -30,5 +30,26 @@ public static class NumberExtensions {
     }
 
     public static Vector3 OnMesh(this Vector3 position) => Service.Navmesh.NearestPoint(position, 5, 5) ?? position;
+
+    public static Vector3 RotatePoint(this Vector3 p, float cx, float cy, float angle) {
+        if (angle == 0f) return p;
+        var s = (float)Math.Sin(angle);
+        var c = (float)Math.Cos(angle);
+
+        // translate point back to origin:
+        p.X -= cx;
+        p.Z -= cy;
+
+        // rotate point
+        var xnew = p.X * c - p.Z * s;
+        var ynew = p.X * s + p.Z * c;
+
+        // translate point back:
+        p.X = xnew + cx;
+        p.Z = ynew + cy;
+        return p;
+    }
+
+    public static Vector3 Add(this Vector3 x, Vector3 y) => x + y;
     #endregion
 }

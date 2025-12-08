@@ -14,8 +14,7 @@ namespace ComplexTweaks.Utilities.Extensions;
 
 public static unsafe class DalamudExtensions {
     extension(GameInventoryItem item) {
-        public RowRef<Item> GameData => GetGameData(item);
-        internal RowRef<Item> GetGameData() => GenericHelpers.CreateRowRef<Item>(item.BaseItemId);
+        public RowRef<Item> GameData => Item.GetRef(item.BaseItemId);
     }
 
     public static AtkUnitBase* ToPtr(this AddonArgs args) => (AtkUnitBase*)args.Addon.Address;
