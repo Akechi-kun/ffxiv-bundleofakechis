@@ -3,7 +3,7 @@ using FFXIVClientStructs.FFXIV.Client.Game.Character;
 using FFXIVClientStructs.FFXIV.Client.Game.Object;
 using FFXIVClientStructs.FFXIV.Client.UI.Info;
 
-namespace Automaton.Tweaks;
+namespace ComplexTweaks.Tweaks;
 
 [Tweak]
 public unsafe partial class AutoBusy : Tweak {
