@@ -2,7 +2,7 @@
 
 namespace ComplexTweaks.Tweaks;
 
-[Tweak]
+[Tweak(outdated: true, disabledReason: "Now natively in AutoRetainer!")]
 [Requires(Ipc.AutoRetainer | Ipc.Lifestream | Ipc.Navmesh)]
 internal class ARCeruleum : ARTweak {
     public override string Name => "AutoRetainer x Ceruleum";
