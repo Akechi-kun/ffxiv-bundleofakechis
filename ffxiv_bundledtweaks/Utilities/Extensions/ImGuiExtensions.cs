@@ -301,5 +301,21 @@ public static class ImGuiExtensions {
             ImGui.Separator();
             ImGui.Spacing();
         }
+
+        public static bool ToggleableCheckmark(string id, ref bool enabled) {
+            var icon = enabled ? FontAwesomeIcon.Check : FontAwesomeIcon.Times;
+            var color = enabled ? EzColor.GreenBright : EzColor.RedBright;
+
+            if (!id.StartsWith("##")) id = "##" + id;
+
+            using var _ = ImRaii.PushColor(ImGuiCol.Text, color.Vector4).Push(ImGuiCol.Button, 0).Push(ImGuiCol.ButtonActive, 0).Push(ImGuiCol.ButtonHovered, 0);
+            using (ImRaii.PushFont(UiBuilder.IconFont)) {
+                var clicked = ImGui.Button(icon.ToIconString() + id);
+                if (clicked)
+                    enabled = !enabled;
+
+                return clicked;
+            }
+        }
     }
 }
