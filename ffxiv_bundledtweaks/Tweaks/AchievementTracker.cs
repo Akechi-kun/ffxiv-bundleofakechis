@@ -50,7 +50,7 @@ public unsafe partial class AchievementTracker : Tweak<AchievementTrackerConfigu
 
     public void RequestUpdate(uint id = 0) {
         if (id == 0)
-            Config.Achievements.Where(a => !a.Completed).ToList().ForEach(achv => Achievement.Instance()->RequestAchievementProgress(achv.ID));
+            Config.Achievements.Where(a => !a.Completed).ForEach(achv => Achievement.Instance()->RequestAchievementProgress(achv.ID));
         else
             Achievement.Instance()->RequestAchievementProgress(id);
     }
