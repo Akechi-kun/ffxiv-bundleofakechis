@@ -16,7 +16,7 @@ public class ARSwitcher : Tweak {
 
     public override void Enable() {
         _dtrBarEntry = Svc.DtrBar.Get("Character Index", "Unknown Character Index");
-        _dtrBarEntry.OnClick = (DtrInteractionEvent @event) => {
+        _dtrBarEntry.OnClick = @event => {
             unsafe {
                 var homeWorldId = Svc.PlayerState.HomeWorld.RowId;
                 var currentWorldId = Svc.PlayerState.CurrentWorld.RowId;
@@ -28,7 +28,8 @@ public class ARSwitcher : Tweak {
                     Svc.Commands.ProcessCommand("/li");
             }
         };
-        UpdateDtrBar();
+        if (Svc.ClientState.IsLoggedIn)
+            UpdateDtrBar();
         Svc.ClientState.Login += UpdateDtrBar;
     }
 
@@ -38,15 +39,14 @@ public class ARSwitcher : Tweak {
     }
 
     private void UpdateDtrBar() {
-        if (_dtrBarEntry.UserHidden)
+        if (_dtrBarEntry.UserHidden || !Svc.PlayerState.CurrentWorld.IsValid || !Svc.PlayerState.HomeWorld.IsValid)
             return;
 
         try {
             var currentWorld = Svc.PlayerState.CurrentWorld.Value.Name.ToString();
             var homeWorld = Svc.PlayerState.HomeWorld.Value.Name.ToString();
             var characterIds = Service.AutoRetainerApi.GetRegisteredCharacters() ?? [];
-            var characterIdsOnHomeWorld = characterIds
-                .Where(x => Service.AutoRetainerApi.GetOfflineCharacterData(x)?.World == homeWorld).ToList();
+            var characterIdsOnHomeWorld = characterIds.Where(x => Service.AutoRetainerApi.GetOfflineCharacterData(x)?.World == homeWorld).ToList();
 
             var seIconChar = SeIconChar.Instance1 + characterIdsOnHomeWorld.IndexOf(Svc.PlayerState.ContentId);
             if (currentWorld == homeWorld) {
