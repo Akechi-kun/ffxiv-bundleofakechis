@@ -33,6 +33,6 @@ public unsafe partial class InstantReturn : Tweak {
         var agent = AgentModule.Instance()->GetAgentByInternalId(AgentId.Return);
         if (agent is null || agent->AddonId != args.Addon.Id) return;
 
-        args.ReceiveEvent(AtkEventType.ButtonClick, 0, args.GenerateEvent(), args.GenerateEventData());
+        args.ReceiveEvent(AtkEventType.ButtonClick, 0);
     }
 }
