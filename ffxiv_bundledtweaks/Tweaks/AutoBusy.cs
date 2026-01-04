@@ -1,4 +1,5 @@
 ﻿using FFXIVClientStructs.FFXIV.Client.Game;
+using FFXIVClientStructs.FFXIV.Client.Game.Object;
 using FFXIVClientStructs.FFXIV.Client.UI.Info;
 
 namespace ComplexTweaks.Tweaks;
@@ -8,13 +9,10 @@ public unsafe partial class AutoBusy : Tweak {
     public override string Name => "Auto Busy";
     public override string Description => "Toggles busy while you're teleporting.";
 
-    private bool _teleportCast;
-
     [AddressHook<ActionManager>(nameof(ActionManager.MemberFunctionPointers.UseAction))]
     private bool UseAction(ActionManager* self, ActionType actionType, uint actionId, ulong targetId, uint extraParam, ActionManager.UseActionMode mode, uint comboRouteId, bool* outOptAreaTargeted) {
         if (actionType is ActionType.Action && actionId is 5 && Player.OnlineStatus.RowId is not 12) {
             Log($"Casting teleport. Busy status on");
-            _teleportCast = true;
             InfoProxyDetail.Instance()->SendOnlineStatusUpdate(12);
         }
         return UseActionHook.Original(self, actionType, actionId, targetId, extraParam, mode, comboRouteId, outOptAreaTargeted);
@@ -25,16 +23,28 @@ public unsafe partial class AutoBusy : Tweak {
         if (actorID == Player.Object?.EntityId && _teleportCast && Player.OnlineStatus.RowId is 12) {
             if (category is 15) { // CancelCast
                 Log($"Teleport cancelled. Busy status off");
-                _teleportCast = false;
                 InfoProxyDetail.Instance()->RefreshOnlineStatus();
             }
-            if (category is 263) { // I think this is like TerritoryTransportFadeIn even though that's not from the dissector
-                Log($"Teleport cast finished. Busy status off");
-                _teleportCast = false;
-                InfoProxyDetail.Instance()->RefreshOnlineStatus();
-            }
+            // This is too late if you're travelling between zones since online status can't be refreshed then. Only works if you're teleporting within the same zone
+            //if (category is 263) { // I think this is like TerritoryTransportFadeIn even though that's not from the dissector
+            //    Log($"Teleport cast finished. Busy status off");
+            //    _teleportCast = false;
+            //    InfoProxyDetail.Instance()->RefreshOnlineStatus();
+            //}
         }
+        if (actorID == Player.Object?.EntityId)
+            Log($"{actorID} {category} {p1} {p2}");
         ProcessPacketActorControlHook.Original(actorID, category, p1, p2, p3, p4, p5, p6, p7, p8, targetID, replaying);
+    }
+
+    // Supposedly too early? I don't know how that'd be possible
+    [SigHook("E8 ?? ?? ?? ?? 41 0F B6 56 ?? 44 0F 28 8C 24 ?? ?? ?? ??")]
+    private void* Character_CompleteCast(GameObject* thisPtr, ActionType actionType, uint actionId, int a4, GameObjectId objectId, float* a6, float value, ushort a8, int a9, uint entityId) {
+        if (thisPtr->GetGameObjectId() == Player.GameObject->GetGameObjectId() && actionType is ActionType.Action && actionId is 5 && Player.OnlineStatus.RowId is 12) {
+            Log($"Teleport cast finished. Busy status off");
+            InfoProxyDetail.Instance()->RefreshOnlineStatus();
+        }
+        return Character_CompleteCastHook.Original(thisPtr, actionType, actionId, a4, objectId, a6, value, a8, a9, entityId);
     }
 
     // triggers too early
@@ -44,15 +54,5 @@ public unsafe partial class AutoBusy : Tweak {
     //        InfoProxyDetail.Instance()->RefreshOnlineStatus();
     //    }
     //    ProcessPacketActionEffectHook.Original(casterID, casterObj, targetPos, header, effects, targets);
-    //}
-
-    // I like this one the best but supposedly it's also too early
-    //[SigHook("E8 ?? ?? ?? ?? 41 0F B6 56 ?? 44 0F 28 8C 24 ?? ?? ?? ??")]
-    //private void* Character_CompleteCast(GameObject* thisPtr, ActionType actionType, uint actionId, int a4, GameObjectId objectId, float* a6, float value, ushort a8, int a9, uint entityId) {
-    //    if (thisPtr->GetGameObjectId() == Player.GameObject->GetGameObjectId() && actionType is ActionType.Action && actionId is 5 && Player.OnlineStatus.RowId is 12) {
-    //        Log($"Teleport cast finished. Busy status off");
-    //        InfoProxyDetail.Instance()->RefreshOnlineStatus();
-    //    }
-    //    return Character_CompleteCastHook.Original(thisPtr, actionType, actionId, a4, objectId, a6, value, a8, a9, entityId);
     //}
 }
