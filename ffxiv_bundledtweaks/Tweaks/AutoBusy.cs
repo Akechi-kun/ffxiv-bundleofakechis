@@ -20,7 +20,7 @@ public unsafe partial class AutoBusy : Tweak {
 
     [SigHook("E8 ?? ?? ?? ?? 0F B7 0B 83 E9 64")]
     internal void ProcessPacketActorControl(uint actorID, uint category, uint p1, uint p2, uint p3, uint p4, uint p5, uint p6, uint p7, uint p8, ulong targetID, byte replaying) {
-        if (actorID == Player.Object?.EntityId && _teleportCast && Player.OnlineStatus.RowId is 12) {
+        if (actorID == Player.Object?.EntityId && Player.OnlineStatus.RowId is 12) {
             if (category is 15) { // CancelCast
                 Log($"Teleport cancelled. Busy status off");
                 InfoProxyDetail.Instance()->RefreshOnlineStatus();
