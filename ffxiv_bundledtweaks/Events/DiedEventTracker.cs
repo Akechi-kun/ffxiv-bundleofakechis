@@ -1,4 +1,4 @@
-namespace Automaton.Events;
+namespace ComplexTweaks.Events;
 
 public class DiedEventArgs : EventArgs {
     public ConditionFlag Flag { get; set; }

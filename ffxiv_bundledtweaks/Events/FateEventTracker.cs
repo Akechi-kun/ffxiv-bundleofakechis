@@ -2,7 +2,7 @@ using Dalamud.Game.ClientState.Fates;
 using FFXIVClientStructs.FFXIV.Client.Game.Character;
 using FFXIVClientStructs.FFXIV.Client.Game.Fate;
 
-namespace Automaton.Events;
+namespace ComplexTweaks.Events;
 
 public class FateEventArgs : EventArgs {
     public ushort FateId { get; set; }

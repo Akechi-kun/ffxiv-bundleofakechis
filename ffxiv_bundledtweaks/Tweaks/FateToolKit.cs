@@ -1,4 +1,4 @@
-﻿using Automaton.Events;
+﻿using ComplexTweaks.Events;
 using ECommons;
 using FFXIVClientStructs.FFXIV.Client.Game;
 using FFXIVClientStructs.FFXIV.Client.UI.Agent;
@@ -185,6 +185,9 @@ public partial class FateToolKit : Tweak<FateToolKitConfig, FateToolKitWindow> {
                     FateState.WaitingForFates => HandleNoFates(),
                     _ => NextFrame(),
                 });
+            }
+            catch (OperationCanceledException) {
+                throw; // expected, don't log
             }
             catch (Exception ex) {
                 Error($"Error: {ex}");
