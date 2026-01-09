@@ -17,8 +17,11 @@ public class AutoMerge : Tweak {
 
             var incompleteStacks = InventoryType.Bags
                 .SelectMany(container => inv->GetItems(container))
-                .Select(item => item)
-                .Where(handle => handle.ItemId != 0 && !handle.IsCollectible && handle.ItemLocation!.GetInventoryItem()->Quantity < handle.GameData.ValueNullable?.StackSize)
+                .Where(handle => handle.ItemId != 0
+                    && !handle.IsCollectible
+                    && handle.ItemLocation != null
+                    && handle.ItemLocation.GetInventoryItem() != null
+                    && handle.ItemLocation.GetInventoryItem()->Quantity < handle.GameData.ValueNullable?.StackSize)
                 .GroupBy(handle => new { handle.ItemId, handle.IsHighQuality })
                 .Where(group => group.Count() > 1);
 
