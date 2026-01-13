@@ -1,5 +1,6 @@
 ﻿using ECommons.Automation;
 using FFXIVClientStructs.FFXIV.Client.Game;
+using FFXIVClientStructs.FFXIV.Client.Game.Group;
 using FFXIVClientStructs.FFXIV.Client.UI.Agent;
 using FFXIVClientStructs.FFXIV.Component.GUI;
 
@@ -19,7 +20,7 @@ public unsafe partial class InstantReturn : Tweak {
             return AgentReturn_ReturnHook.Original(agent);
 
         if (Svc.Party.Length > 1) {
-            if (Svc.Party[0]?.Name.TextValue == Svc.PlayerState.CharacterName)
+            if (GroupManager.Instance()->MainGroup.IsEntityIdPartyLeader(Svc.PlayerState.EntityId))
                 Chat.SendMessage("/partycmd breakup");
             else
                 Chat.SendMessage("/leave");

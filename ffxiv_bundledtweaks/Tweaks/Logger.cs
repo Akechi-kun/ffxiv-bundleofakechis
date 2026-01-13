@@ -8,7 +8,7 @@ public unsafe partial class DebugLogging : Tweak {
     public override string Name => "Logger";
     public override string Description => "It just logs random hooks.";
 
-    private readonly uint[] _blacklist = [1, 4, 31, 32, 96, 97, 98, 99, 101, 104, 105, 106, 110, 142, 144, 148, 1003, 1005, 1006, 1007, 1008]; // these are checked every frame
+    private readonly uint[] _blacklist = [1, 3, 4, 31, 32, 96, 97, 98, 99, 101, 104, 105, 106, 110, 142, 144, 148, 1003, 1005, 1006, 1007, 1008]; // these are checked every frame
 
     [AddressHook<Conditions>(nameof(Conditions.MemberFunctionPointers.HasPermission))]
     internal unsafe bool HasPermission(Conditions* thisPtr, uint permissionId, int excludedCondition1 = 0, int excludedCondition2 = 0) {
