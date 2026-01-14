@@ -88,7 +88,6 @@ public unsafe class GlamourSetsWindow : Window {
 
     private readonly GlamourSets _tweak;
     private readonly ReadOnlyCollection<GlamourSet> _glamourSets;
-    private readonly Dictionary<uint, int> _ownedCurrencies = [];
 
     public GlamourSetsWindow(GlamourSets tweak) : base($"Glamour Sets Tracker##{nameof(GlamourSetsWindow)}") {
         _tweak = tweak;
@@ -102,19 +101,6 @@ public unsafe class GlamourSetsWindow : Window {
         if (agent is null) {
             ImGui.Text("You are not logged in.");
             return;
-        }
-
-        unsafe {
-            var inventoryManager = InventoryManager.Instance();
-            if (inventoryManager != null) {
-                _ownedCurrencies[ItemMgp] = inventoryManager->GetItemCountInContainer(ItemMgp, InventoryType.Currency);
-                _ownedCurrencies[ItemWolfMarks] = (int)inventoryManager->GetWolfMarks();
-                _ownedCurrencies[ItemTrophyCrystals] = inventoryManager->GetInventoryItemCount(ItemTrophyCrystals);
-                foreach (var (itemId, _) in AlliedSocietyCurrencies)
-                    _ownedCurrencies[itemId] = inventoryManager->GetInventoryItemCount(itemId);
-            }
-            else
-                _ownedCurrencies.Clear();
         }
 
         var ownedSets = _glamourSets.Where(x => agent->GlamourDresserItemIds.Contains(x.ItemId)).ToList();
@@ -180,21 +166,41 @@ public unsafe class GlamourSetsWindow : Window {
     private void DrawMissingItemHeader(List<GlamourSet> glamourSets, ESetType setType, List<GlamourSet> ownedSets,
         HashSet<uint> ownedItems) {
         var missingItems = glamourSets.Except(ownedSets).SelectMany(x => x.Items).Where(x => !ownedItems.Contains(x.ItemId)).ToList();
-        if (setType == ESetType.PvP) {
-            ImGui.Text($"Wolf Marks: {_ownedCurrencies.GetValueOrDefault(ItemWolfMarks):N0} / {missingItems.Where(x => x is { ShopItem.CostItemId: ItemWolfMarks }).Sum(x => x.ShopItem!.CostQuantity):N0}");
-            ImGui.Text($"Trophy Crystals: {_ownedCurrencies.GetValueOrDefault(ItemTrophyCrystals):N0} / {missingItems.Where(x => x is { ShopItem.CostItemId: ItemTrophyCrystals }).Sum(x => x.ShopItem!.CostQuantity):N0}");
-            ImGui.Separator();
-        }
-        else if (setType is ESetType.MGP or ESetType.Special) {
-            ImGui.Text($"MGP: {_ownedCurrencies.GetValueOrDefault(ItemMgp):N0} / {missingItems.Where(x => x is { ShopItem.CostItemId: ItemMgp }).Sum(x => x.ShopItem!.CostQuantity):N0}");
-            ImGui.Separator();
-        }
-        else if (setType == ESetType.AlliedSociety) {
-            foreach (var (itemId, name) in AlliedSocietyCurrencies)
-                ImGui.Text($"{name}: {_ownedCurrencies.GetValueOrDefault(itemId):N0} / {missingItems.Where(x => x is { ShopItem: { } shopItem } && shopItem.CostItemId == itemId).Sum(x => x.ShopItem!.CostQuantity):N0}");
-            ImGui.Separator();
-        }
+        DrawCurrencyTotals(missingItems);
     }
+
+    private void DrawCurrencyTotals(List<GlamourItem> missingItems) {
+        var currencyGroups = missingItems
+            .Where(x => x.ShopItem != null)
+            .GroupBy(x => x.ShopItem!.CostItemId)
+            .Select(g => {
+                var firstItem = g.First().ShopItem!;
+                return new {
+                    CostItemId = g.Key,
+                    CostName = GetCurrencyName(g.Key, firstItem.CostName),
+                    TotalRequired = g.Sum(x => x.ShopItem!.CostQuantity),
+                    ShopItem = firstItem
+                };
+            })
+            .Where(x => x.TotalRequired > 0)
+            .OrderBy(x => x.CostName)
+            .ToList();
+
+        if (!currencyGroups.Any())
+            return;
+
+        foreach (var currency in currencyGroups) {
+            ImGui.Text($"{currency.CostName}: {currency.ShopItem.GetOwnedCount():N0} / {currency.TotalRequired:N0}");
+        }
+        ImGui.Separator();
+    }
+
+    private static string GetCurrencyName(uint itemId, string fallbackName) => itemId switch {
+        ItemWolfMarks => "Wolf Marks",
+        ItemMgp => "MGP",
+        ItemTrophyCrystals => "Trophy Crystals",
+        _ => AlliedSocietyCurrencies.FirstOrDefault(x => x.ItemId == itemId).Name ?? fallbackName
+    };
 
     private void DrawSetRange(List<GlamourSet> glamourSets, List<GlamourSet> ownedSets, HashSet<uint> ownedItems) {
         foreach (var glamourSet in glamourSets) {
@@ -216,7 +222,7 @@ public unsafe class GlamourSetsWindow : Window {
                         if (ownedItems.Contains(item.ItemId))
                             ImGui.TextColored(ImGuiColors.ParsedGreen, item.Name);
                         else if (item.ShopItem is { } shopItem)
-                            ImGui.Text($"{item.Name} ({shopItem.CostQuantity:N0}x {shopItem.CostName})");
+                            ImGui.Text($"{item.Name} ({shopItem.GetCost()})");
                         else
                             ImGui.Text(item.Name);
 
@@ -331,7 +337,7 @@ public unsafe class GlamourSetsWindow : Window {
             (item.Feet.ValueNullable?.Singular.ToString().Contains(name, StringComparison.OrdinalIgnoreCase) ?? false);
 
     private bool CanAffordAllMissingGearPieces(GlamourSet glamourSet, HashSet<uint> ownedItems) {
-        uint costItemId = 0;
+        SpecialShopItem? firstShopItem = null;
         uint costQuantity = 0;
         foreach (var item in glamourSet.Items) {
             if (ownedItems.Contains(item.ItemId))
@@ -340,11 +346,14 @@ public unsafe class GlamourSetsWindow : Window {
             if (item.ShopItem == null)
                 return false;
 
-            costItemId = item.ShopItem.CostItemId;
+            firstShopItem ??= item.ShopItem;
             costQuantity += item.ShopItem.CostQuantity;
         }
 
-        return costQuantity <= _ownedCurrencies.GetValueOrDefault(costItemId);
+        if (firstShopItem == null)
+            return false;
+
+        return costQuantity <= firstShopItem.GetOwnedCount();
     }
 
     private static Dictionary<uint, SpecialShopItem> BuildSpecialShopItems()
@@ -353,12 +362,16 @@ public unsafe class GlamourSetsWindow : Window {
             .SelectMany(x => x.Item.SelectMany(y =>
                 y.ReceiveItems.Select(z => new SpecialShopItem {
                     ItemId = z.Item.RowId,
-                    CostItemId = y.ItemCosts[0].ItemCost.Value.RowId,
+                    CostItemId = y.ItemCosts[0].ItemCost.RowId,
                     CostType = y.ItemCosts[0].ItemCost.Value.ItemUICategory.RowId,
-                    CostName = y.ItemCosts[0].ItemCost.Value.Name.ToString(),
+                    CostName = y.ItemCosts[0].HqCost switch {
+                        3 => GetRow<Item>(CurrencyManager.Instance()->GetItemIdBySpecialId((byte)y.ItemCosts[0].ItemCost.RowId))?.Name.ToString() ?? string.Empty,
+                        _ => y.ItemCosts[0].ItemCost.Value.Name.ToString(),
+                    },
                     CostQuantity = y.ItemCosts[0].CurrencyCost,
+                    IdType = (SpecialShopItem.IdTypeEnum)y.ItemCosts[0].HqCost
                 })
-                    .Where(z => z.ItemId > 0 && (z.CostItemId < 100 || z.CostType == 100))))
+            .Where(z => z.ItemId > 0 && (z.CostItemId < 100 || z.CostType == 100))))
             .GroupBy(x => x.ItemId)
             .ToDictionary(x => x.Key, x => x.First());
 
@@ -381,6 +394,40 @@ public unsafe class GlamourSetsWindow : Window {
         public required uint CostType { get; init; }
         public required string CostName { get; init; }
         public required uint CostQuantity { get; init; }
+        public required IdTypeEnum IdType { get; init; }
+
+        public uint AdjustedCostItemId => IdType switch {
+            IdTypeEnum.SpecialBucketItem => CurrencyManager.Instance()->GetItemIdBySpecialId((byte)CostItemId),
+            _ => CostItemId
+        };
+
+        public enum IdTypeEnum {
+            Item = 1,
+            TomestoneItem = 2,
+            SpecialBucketItem = 3,
+        }
+
+        public string GetCost() => IdType switch {
+            IdTypeEnum.TomestoneItem => $"{CostQuantity:N0}x {CostName} [*]", // this will probably be wrong but right now we don't have any items with this id (I think)
+            _ => $"{CostQuantity:N0}x {CostName}",
+        };
+
+        public unsafe int GetOwnedCount() {
+            var inventoryManager = InventoryManager.Instance();
+            if (inventoryManager == null)
+                return 0;
+
+            if (IdType == IdTypeEnum.SpecialBucketItem) {
+                return (int)CurrencyManager.Instance()->SpecialItemBucket[AdjustedCostItemId].Count;
+            }
+
+            return CostItemId switch {
+                ItemWolfMarks => (int)inventoryManager->GetWolfMarks(),
+                ItemMgp => inventoryManager->GetItemCountInContainer(ItemMgp, InventoryType.Currency),
+                ItemTrophyCrystals => inventoryManager->GetInventoryItemCount(ItemTrophyCrystals),
+                _ => inventoryManager->GetInventoryItemCount(CostItemId)
+            };
+        }
     }
 
     private enum ESetType {
