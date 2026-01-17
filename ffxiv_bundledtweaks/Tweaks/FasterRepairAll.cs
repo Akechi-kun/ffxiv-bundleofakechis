@@ -44,7 +44,7 @@ public partial class FasterRepairAll : Tweak {
     }
 
     private unsafe void RepairAll() {
-        if (AgentRepair.Instance()->IsSelfRepairOpen) { // TODO: offset on this might be wrong or it's the wrong thing entirely to check for
+        if (AgentRepair.Instance()->IsSelfRepairOpen) {
             GameMain.ExecuteCommand(CommandFlag.RepairEquippedItems.Value, InventoryType.EquippedItems.Value);
             RepairCategory.Values.ForEach(inv => GameMain.ExecuteCommand(CommandFlag.RepairAllItems.Value, inv.Value));
         }

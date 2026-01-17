@@ -226,7 +226,7 @@ public unsafe class GlamourSetsWindow : Window {
                         else
                             ImGui.Text(item.Name);
 
-                        if (ImGui.IsItemClicked()) {
+                        if (ImGui.IsItemClicked(ImGuiMouseButton.Left)) {
                             try {
                                 Svc.Chat.Print(SeString.CreateItemLink(item.ItemId, false));
                             }
@@ -234,6 +234,8 @@ public unsafe class GlamourSetsWindow : Window {
                                 // doesn't matter, just nice-to-have
                             }
                         }
+                        else if (ImGui.IsItemClicked(ImGuiMouseButton.Right))
+                            Svc.ItemVendorLocation.OpenVendorResults(item.ItemId);
                     }
                 }
             }

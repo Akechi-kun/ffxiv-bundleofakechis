@@ -13,6 +13,7 @@ public enum Ipc {
     Dropbox = 1 << 7,
     Visibility = 1 << 8,
     PandorasBox = 1 << 9,
-    QoLBar = 1 << 10
+    QoLBar = 1 << 10,
+    ItemVendorLocation = 1 << 11,
 }
 

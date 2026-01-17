@@ -16,14 +16,13 @@ public sealed class KillFlag(string world) : TaskBase {
         if (!world.IsNullOrEmpty())
             await HandleWorldTravel();
 
-        await TeleportTo(Player.MapFlag.TerritoryId, Player.MapFlag.ToVector3());
         await MoveTo(
-            Player.MapFlag.ToVector3(),
+            Player.MapFlag,
             MovementConfig.Default.WithOptions(MovementOptions.Mount | (Player.MapFlag.TerritoryId != 180 ? MovementOptions.Fly : MovementOptions.None)),
             stopCondition: () => FindHuntTarget() is not null,
             onStopReached: async () => {
                 if (FindHuntTarget() is DGameObject target)
-                    await MoveTo(target.Position, MovementConfig.Default);
+                    await MoveTo(target.Position, MovementConfig.Default.WithTolerance(TARGET_APPROACH_DISTANCE + 2f));
             }
         );
         using var stop = new OnDispose(() => Service.BossMod.ClearActive());

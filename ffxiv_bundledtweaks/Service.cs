@@ -9,6 +9,7 @@ public class Service {
     public static AutoRetainerIPC AutoRetainerIPC { get; private set; } = null!;
     public static BossModIPC BossMod { get; private set; } = null!;
     public static GearsetterIPC Gearsetter { get; private set; } = null!;
+    public static ItemVendorLocation ItemVendorLocation { get; private set; } = null!;
     public static LifestreamIPC Lifestream { get; private set; } = null!;
     public static NavmeshIPC Navmesh { get; private set; } = null!;
     public static QuestionableIPC Questionable { get; private set; } = null!;
