@@ -354,7 +354,7 @@ public unsafe class GlamourSetsWindow : Window {
                 return [prioritizedCost];
         }
 
-        return [costs[0]];
+        return [.. costs];
     }
 
     private unsafe int GetOwnedCountForCost(uint costItemId)
