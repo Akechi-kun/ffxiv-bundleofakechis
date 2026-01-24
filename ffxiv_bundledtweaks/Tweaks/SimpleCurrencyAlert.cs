@@ -148,15 +148,7 @@ public class SimpleCurrencyAlert : Tweak<SimpleCurrencyAlertConfig> {
         var items = new List<CurrencyEntry>();
 
         foreach (var tomestoneItem in Svc.Data.GetExcelSheet<TomestonesItem>().Where(r => r.Tomestones.IsValid && r.Tomestones.RowId > 1 && r.Item.RowId != 0)) {
-
-            var displayName = tomestoneItem.Tomestones.RowId switch {
-                2 => "Unlimited Tomestone",
-                3 => "Limited Tomestone",
-                4 => "Discontinued Tomestone",
-                _ => GetRow<Item>(tomestoneItem.Item.RowId)?.Name.ToString() ?? $"Tomestone (ID: {tomestoneItem.Item.RowId})",
-            };
-
-            items.Add(new CurrencyEntry(SpecialCurrencyType.Tomestone, tomestoneItem.Tomestones.RowId, tomestoneItem.Item.RowId, displayName));
+            items.Add(new CurrencyEntry(SpecialCurrencyType.Tomestone, tomestoneItem.Tomestones.RowId, tomestoneItem.Item.RowId, GetTomestoneDisplayName(tomestoneItem.Tomestones.RowId)));
         }
 
         var currencyManager = CurrencyManager.Instance();
@@ -176,7 +168,7 @@ public class SimpleCurrencyAlert : Tweak<SimpleCurrencyAlertConfig> {
             }
         }
 
-        return items;
+        return [.. items.OrderBy(i => i.ItemId)];
     }
 
     private unsafe int GetAlertCount(Alert alert) {
@@ -192,7 +184,7 @@ public class SimpleCurrencyAlert : Tweak<SimpleCurrencyAlertConfig> {
         var alerts = Config.Alerts.Where(a => types.Contains(a.Type)).ToList();
 
         if (alerts.Count == 0) {
-            ImGui.TextColored(new Vector4(0.7f, 0.7f, 0.7f, 1f), "No alerts configured");
+            ImGui.TextColored(Colors.Grey3, "No alerts configured");
             return;
         }
 
@@ -200,10 +192,8 @@ public class SimpleCurrencyAlert : Tweak<SimpleCurrencyAlertConfig> {
         var totalFixedWidth = ImGui.IconUnitHeight() + thresholdWidth + ImGui.IconUnitWidth() * 2 + ImGui.GetStyle().ItemSpacing.X * 4 + ImGui.GetStyle().FramePadding.X * 2 + ImGui.GetStyle().WindowPadding.X * 2;
         var nameWidth = Math.Max(100f, ImGui.GetContentRegionAvail().X - totalFixedWidth);
 
-        for (var i = 0; i < alerts.Count; i++) {
-            var alert = alerts[i];
-            var uniqueId = $"{alert.Type}_{alert.LogicalId}_{alert.ItemId}_{i}";
-            using var id = ImRaii.PushId(uniqueId);
+        foreach (var (alert, idx) in alerts.WithIndex()) {
+            using var id = ImRaii.PushId($"{alert.Type}_{alert.LogicalId}_{alert.ItemId}_{idx}");
 
             if (alert.Icon != 0) {
                 if (Svc.Texture.GetFromGameIcon(new GameIconLookup { IconId = alert.Icon }).GetWrapOrDefault() is { Handle: var handle }) {
