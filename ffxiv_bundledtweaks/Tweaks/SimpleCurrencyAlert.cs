@@ -213,11 +213,10 @@ public class SimpleCurrencyAlert : Tweak<SimpleCurrencyAlertConfig> {
             }
 
             var nameText = alert.DisplayName;
-            var nameTextSize = ImGui.CalcTextSize(nameText);
             var showTooltip = false;
 
             // truncate long names
-            if (nameTextSize.X > nameWidth) {
+            if (ImGui.CalcTextSize(alert.DisplayName).X > nameWidth) {
                 var ellipsis = "...";
                 var truncatedName = nameText;
                 while (ImGui.CalcTextSize(truncatedName).X > (nameWidth - ImGui.CalcTextSize(ellipsis).X) && truncatedName.Length > 0) {
@@ -229,10 +228,8 @@ public class SimpleCurrencyAlert : Tweak<SimpleCurrencyAlertConfig> {
 
             using (ImRaii.PushStyle(ImGuiStyleVar.ButtonTextAlign, new Vector2(0, 0.5f)))
             using (ImRaii.PushColor(ImGuiCol.Button, 0).Push(ImGuiCol.ButtonHovered, 0).Push(ImGuiCol.ButtonActive, 0)) {
-                ImGui.Button(nameText, new Vector2(nameWidth, 0)); // Button does nothing, just for truncating
-                if (showTooltip && ImGui.IsItemHovered()) {
-                    ImGui.SetTooltip(alert.DisplayName);
-                }
+                ImGui.Button(nameText, new Vector2(nameWidth, 0)); // Button does nothing, just for unform width
+                ImGui.TooltipOnHover(showTooltip, alert.DisplayName);
             }
             ImGui.SameLine();
 
@@ -240,20 +237,14 @@ public class SimpleCurrencyAlert : Tweak<SimpleCurrencyAlertConfig> {
             ImGui.InputInt($"##Threshold", ref alert.Threshold, 0);
             ImGui.SameLine();
 
-            var levelIcon = alert.Level == Level.Over ? FontAwesomeIcon.ArrowUp : FontAwesomeIcon.ArrowDown;
-            var levelTooltip = alert.Level == Level.Over ? "Alert when above threshold (click to toggle)" : "Alert when under threshold (click to toggle)";
-            if (ImGuiComponents.IconButton($"##Level", levelIcon)) {
+            if (ImGuiComponents.IconButton($"##Level", alert.Level == Level.Over ? FontAwesomeIcon.ArrowUp : FontAwesomeIcon.ArrowDown))
                 alert.Level = alert.Level == Level.Over ? Level.Under : Level.Over;
-            }
-            if (ImGui.IsItemHovered())
-                ImGui.SetTooltip(levelTooltip);
+            ImGui.TooltipOnHover(alert.Level == Level.Over ? "Alert when above threshold" : "Alert when under threshold");
             ImGui.SameLine();
 
-            if (ImGuiComponents.IconButton($"##Delete", FontAwesomeIcon.Trash)) {
+            if (ImGuiComponents.IconButton($"##Delete", FontAwesomeIcon.Trash))
                 Config.Alerts.Remove(alert);
-            }
-            if (ImGui.IsItemHovered())
-                ImGui.SetTooltip("Remove alert");
+            ImGui.TooltipOnHover("Remove Alert");
         }
     }
 }
