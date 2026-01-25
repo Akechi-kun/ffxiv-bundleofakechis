@@ -4,8 +4,10 @@ using Dalamud.Game.Text.SeStringHandling;
 using Dalamud.Interface.Colors;
 using Dalamud.Interface.Utility.Raii;
 using Dalamud.Interface.Windowing;
+using Dalamud.Memory;
 using Dalamud.Utility;
 using FFXIVClientStructs.FFXIV.Client.Game;
+using FFXIVClientStructs.FFXIV.Client.UI.Agent;
 using FFXIVClientStructs.FFXIV.Client.UI.Misc;
 using Lumina.Excel.Sheets;
 using LuminaSupplemental.Excel.Model;
@@ -301,8 +303,13 @@ public unsafe class GlamourSetsWindow : Window {
 
     private void DrawSetRange(List<GlamourSet> glamourSets, HashSet<GlamourSet> ownedSets, HashSet<uint> ownedItems) {
         foreach (var glamourSet in glamourSets) {
-            if (ownedSets.Contains(glamourSet))
+            if (ownedSets.Contains(glamourSet)) {
                 ImGui.TextColored(ImGuiColors.ParsedGreen, glamourSet.Name);
+                if (ImGui.IsItemClickedWithModifier(ImGuiMouseButton.Left, ImGuiModFlags.Shift)) {
+                    MemoryHelper.WriteField(AgentTryon.Instance(), 0x366, true); // save/delete outfit toggle
+                    glamourSet.Items.ForEach(i => AgentTryon.TryOn(0, i));
+                }
+            }
             else {
                 var ownedCount = 0;
                 foreach (var itemId in glamourSet.Items) {
@@ -319,6 +326,11 @@ public unsafe class GlamourSetsWindow : Window {
                 else
                     ImGui.Text(glamourSet.Name);
 
+                if (ImGui.IsItemClickedWithModifier(ImGuiMouseButton.Left, ImGuiModFlags.Shift)) {
+                    MemoryHelper.WriteField(AgentTryon.Instance(), 0x366, true); // save/delete outfit toggle
+                    glamourSet.Items.ForEach(i => AgentTryon.TryOn(0, i));
+                }
+
                 using (ImRaii.PushIndent()) {
                     foreach (var itemId in glamourSet.Items) {
                         var isOwned = ownedItems.Contains(itemId);
@@ -327,8 +339,7 @@ public unsafe class GlamourSetsWindow : Window {
                         }
                         else {
                             var itemName = _itemNames.GetValueOrDefault(itemId, $"Item {itemId}");
-                            var costDisplay = _costDisplays.GetValueOrDefault((itemId, glamourSet.CustomCategoryName));
-                            if (costDisplay != null) {
+                            if (_costDisplays.GetValueOrDefault((itemId, glamourSet.CustomCategoryName)) is { } costDisplay) {
                                 ImGui.Text($"{itemName} ({costDisplay})");
                             }
                             else {
@@ -336,7 +347,7 @@ public unsafe class GlamourSetsWindow : Window {
                             }
                         }
 
-                        if (ImGui.IsItemClicked(ImGuiMouseButton.Left)) {
+                        if (ImGui.IsItemClickedNoModifiers(ImGuiMouseButton.Left)) {
                             try {
                                 Svc.Chat.Print(SeString.CreateItemLink(itemId, false));
                             }
@@ -344,8 +355,10 @@ public unsafe class GlamourSetsWindow : Window {
                                 // doesn't matter, just nice-to-have
                             }
                         }
-                        else if (ImGui.IsItemClicked(ImGuiMouseButton.Right))
+                        else if (ImGui.IsItemClickedNoModifiers(ImGuiMouseButton.Right))
                             Svc.ItemVendorLocation.OpenVendorResults(itemId);
+                        else if (ImGui.IsItemClickedWithModifier(ImGuiMouseButton.Left, ImGuiModFlags.Shift))
+                            AgentTryon.TryOn(0, itemId);
                     }
                 }
             }
