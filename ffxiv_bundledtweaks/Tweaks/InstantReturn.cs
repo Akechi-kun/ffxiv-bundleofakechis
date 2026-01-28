@@ -1,13 +1,12 @@
-using ECommons.Automation;
 using FFXIVClientStructs.FFXIV.Client.Game;
 using FFXIVClientStructs.FFXIV.Client.UI.Agent;
 using FFXIVClientStructs.FFXIV.Client.UI.Info;
 using FFXIVClientStructs.FFXIV.Component.GUI;
-using System.Runtime.InteropServices;
 
 namespace ComplexTweaks.Tweaks;
 
 [Tweak(debug: true)]
+[RequiresClientStructs(7296)]
 public unsafe partial class InstantReturn : Tweak {
     public override string Name => "Quick Return";
     public override string Description => "Calls the return function directly";
