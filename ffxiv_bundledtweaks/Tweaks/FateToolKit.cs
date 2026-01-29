@@ -1,4 +1,4 @@
-﻿using ComplexTweaks.Events;
+using ComplexTweaks.Events;
 using ECommons;
 using FFXIVClientStructs.FFXIV.Client.Game;
 using FFXIVClientStructs.FFXIV.Client.UI.Agent;
@@ -31,9 +31,9 @@ public class FateToolKitConfig {
     [IntConfig(DefaultValue = 120)] public int MinTimeRemaining = 120;
     [IntConfig(DefaultValue = 90)] public int MaxProgress = 90;
     [BoolConfig] public bool SwapZones = true;
-    [StringConfig(DefaultValue = "[{Level}] {Name}")] public string DisplayNameFormat = "[{Level}] {Name}";
-    [ColorConfig] public Vector4 BarColour = new(0.404f, 0.259f, 0.541f, 1f);
 
+    public string DisplayNameFormat = "[{Level}] {Name}";
+    public Vector4 BarColour = new(0.404f, 0.259f, 0.541f, 1f);
     public Dictionary<FateType, HashSet<uint>> Blacklist = [];
     public List<FateSortOrder> SortOrder =
     [
@@ -86,23 +86,18 @@ public partial class FateToolKit : Tweak<FateToolKitConfig, FateToolKitWindow> {
 
         return ordered ?? source.OrderBy(_ => 0);
     }
-    private int PullSize => ExdModule.GetRoleForClassJobId(Player.ClassJob.RowId) switch {
-        1 => 0, // tank - unlimited
-        2 => 3, // dps
-        3 => 5, // healer
-        _ => 1, // non-combat
-    };
+    public string CurrentState { get; internal set; } = "Idle";
 
     public bool Running {
         get;
         private set {
             field = value;
             if (value) {
-                EnableEventHandlers();
                 Service.Automation.Start(new FateGrind(this));
             }
             else {
-                DisableEventHandlers();
+                _nextFateId = null;
+                Service.BossMod.ClearActive();
                 Svc.Automation.Stop();
             }
         }
@@ -111,38 +106,6 @@ public partial class FateToolKit : Tweak<FateToolKitConfig, FateToolKitWindow> {
     public void ToggleRunning() => Running ^= true;
     [CommandHandler(["/dwd", "/vfate"], "Opens the FATE tracker")]
     private void OnCommand(string _, string __) => Window<FateToolKitWindow>()?.Toggle();
-
-    [TweakEvent(TweakEvent.FateJoined, AutoEnable = false)]
-    private void OnFateJoined(Type _, EventArgs args) {
-        if (args is FateEventArgs { FateId: var id } && _nextFateId.HasValue && id != _nextFateId.Value) return;
-
-        if (Service.BossMod.GetActive() != _presetName) {
-            if (Service.BossMod.Get(_presetName) is null)
-                Service.BossMod.Create(_preset, true);
-            else
-                Service.BossMod.SetActive(_presetName);
-        }
-
-        Svc.BossMod.AddTransientStrategy(_presetName, "BossMod.Autorotation.MiscAI.AutoTarget", "MaxTargets", PullSize.ToString());
-    }
-
-    [TweakEvent(TweakEvent.FateLeft, AutoEnable = false)]
-    private void OnFateLeft(Type _, EventArgs __) {
-        _nextFateId = null;
-        Service.BossMod.ClearActive();
-        if (!Svc.Condition[ConditionFlag.Unconscious]) // we only want natural leavings to retrigger the grind, otherwise it would conflict with reviving
-            Service.Automation.Start(new FateGrind(this));
-    }
-
-    [TweakEvent(TweakEvent.Died, AutoEnable = false)]
-    private void OnDeath(Type _, EventArgs __) {
-        Service.Automation.Start(new FateGrind(this));
-    }
-
-    [TweakEvent(TweakEvent.Revived, AutoEnable = false)]
-    private void OnRevived(Type senderType, EventArgs __) {
-        Service.Automation.Start(new FateGrind(this), queue: true);
-    }
 
     internal bool IsBlacklisted(PublicEvent f)
         => Config.Blacklist.TryGetValue(f.FateType, out var set) && set.Contains(f.Id);
@@ -177,14 +140,42 @@ public partial class FateToolKit : Tweak<FateToolKitConfig, FateToolKitWindow> {
     }
 
     private sealed class FateGrind(FateToolKit tweak) : TaskBase {
+        private PublicEvent? _lastCurrentFate;
+
+        private int PullSize => Player.ClassJob.Value switch {
+            var cj when cj.IsTank => 0, // unlimited
+            var cj when cj.IsDps => 3,
+            var cj when cj.IsHealer => 5,
+            _ => 1,
+        };
+
         protected override async Task Execute() {
             try {
-                await (State switch {
-                    FateState.Unconscious => Revive(),
-                    FateState.Moving => MoveToFate(),
-                    FateState.WaitingForFates => HandleNoFates(),
-                    _ => NextFrame(),
-                });
+                while (!CancelToken.IsCancellationRequested && tweak.Running) {
+                    var state = State;
+                    tweak.CurrentState = state.ToString();
+
+                    switch (state) {
+                        case FateState.FateEntered:
+                            OnFateEntered();
+                            break;
+                        case FateState.FateLeft:
+                            OnFateLeft();
+                            break;
+                        case FateState.Unconscious:
+                            await Revive();
+                            break;
+                        case FateState.Moving:
+                            await MoveToFate();
+                            break;
+                        case FateState.WaitingForFates:
+                            await HandleNoFates();
+                            break;
+                        default:
+                            await NextFrame();
+                            break;
+                    }
+                }
             }
             catch (OperationCanceledException) {
                 throw; // expected, don't log
@@ -210,8 +201,22 @@ public partial class FateToolKit : Tweak<FateToolKitConfig, FateToolKitWindow> {
                 if (Svc.Condition[ConditionFlag.Unconscious])
                     return FateState.Unconscious;
 
+                var currentFate = PublicEvent.CurrentFate;
+
+                if (currentFate is { } && _lastCurrentFate is null) {
+                    _lastCurrentFate = currentFate;
+                    return FateState.FateEntered;
+                }
+
+                if (currentFate is null && _lastCurrentFate is { }) {
+                    _lastCurrentFate = null;
+                    return FateState.FateLeft;
+                }
+
+                _lastCurrentFate = currentFate;
+
                 // Always engage current fate, even if it doesn't meet conditions anymore (e.g., raised and fate progressed while dead)
-                if (PublicEvent.CurrentFate is { })
+                if (currentFate is { })
                     return FateState.Engaging;
 
                 if (AvailableFates.FirstOrDefault() is { })
@@ -230,6 +235,32 @@ public partial class FateToolKit : Tweak<FateToolKitConfig, FateToolKitWindow> {
             Moving,
             Engaging,
             Unconscious,
+            FateEntered,
+            FateLeft,
+        }
+
+        private void OnFateEntered() {
+            var fate = PublicEvent.CurrentFate;
+            if (fate is null)
+                return;
+
+            if (tweak._nextFateId.HasValue && fate.Id != tweak._nextFateId.Value)
+                return;
+
+            if (Service.BossMod.GetActive() != _presetName) {
+                if (Service.BossMod.Get(_presetName) is null)
+                    Service.BossMod.Create(_preset, true);
+                else
+                    Service.BossMod.SetActive(_presetName);
+            }
+
+            Svc.BossMod.AddTransientStrategy(_presetName, "BossMod.Autorotation.MiscAI.AutoTarget", "MaxTargets", PullSize.ToString());
+        }
+
+        private void OnFateLeft() {
+            tweak._nextFateId = null;
+            if (Service.BossMod.Get(_presetName) is not null)
+                Service.BossMod.ClearActive();
         }
 
         private async Task Revive() {
@@ -260,21 +291,20 @@ public partial class FateToolKit : Tweak<FateToolKitConfig, FateToolKitWindow> {
             Log($"NextFate Position: {NextFate.Position} -> {rnd} -> {msh}");
             await MoveTo(msh, MovementConfig.Everything);
             if (NextFate is { State: FFXIVClientStructs.FFXIV.Client.Game.Fate.FateState.Preparing })
-                await StartFate();
+                await ActivateFate();
         }
 
-        private async Task StartFate() {
-            using var scope = BeginScope(nameof(StartFate));
+        private async Task ActivateFate() {
+            using var scope = BeginScope(nameof(ActivateFate));
             if (NextFate?.MotivationNpc is not { } npc) return;
             await MoveTo(npc.Position, MovementConfig.InteractRange);
-            await InteractWith(npc, () => NextFate?.State == FFXIVClientStructs.FFXIV.Client.Game.Fate.FateState.Running);
+            await InteractWith(npc, () => NextFate?.State == FFXIVClientStructs.FFXIV.Client.Game.Fate.FateState.Running, skip: UiSkipOptions.Talk | UiSkipOptions.YesNo);
         }
 
         private async Task HandleNoFates() {
             if (tweak.Config.SwapZones) {
                 using var scope = BeginScope("SwapZones");
                 await TeleportTo(GetNextAchievementZone() ?? GetRandomSameExpacZone(), Vector3.Zero);
-                Svc.Automation.Start(new FateGrind(tweak)); // TODO: hacky
             }
             else {
                 using var scope = BeginScope("WaitForFates");

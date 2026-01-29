@@ -22,7 +22,7 @@ public class FateToolKitWindow : Window {
     public override bool DrawConditions() => Player.Available;
 
     public override void Draw() {
-        ImGui.TextUnformatted($"Status: {(_tweak.Running ? "Running" : "Stopped")}");
+        ImGui.TextUnformatted($"Status: {(_tweak.Running ? "Running" : "Stopped")} ({_tweak.CurrentState})");
         ImGui.SameLine();
         if (ImGuiComponents.IconButton(!_tweak.Running ? FontAwesomeIcon.Play : FontAwesomeIcon.Stop)) {
             _tweak.ToggleRunning();
