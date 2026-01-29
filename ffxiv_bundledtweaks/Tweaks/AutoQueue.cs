@@ -1,7 +1,7 @@
 using FFXIVClientStructs.FFXIV.Client.Game.UI;
 using FFXIVClientStructs.FFXIV.Client.System.Framework;
 using FFXIVClientStructs.FFXIV.Client.UI.Agent;
-using FFXIVClientStructs.STD;
+using static FFXIVClientStructs.FFXIV.Client.Game.UI.ContentsFinderQueueInfo.QueueStates;
 
 namespace ComplexTweaks.Tweaks;
 
@@ -17,28 +17,24 @@ internal class AutoQueue : Tweak {
     private unsafe void OnTerritoryChanged(ushort obj) {
         if (Player.IsInDuty || Player.IsPenalised) return;
         TaskManager.Enqueue(() => !Player.IsBusy);
-        TaskManager.Enqueue(() => Svc.Party.All(p => Svc.Condition.CanQueue()), "WaitAllPartyInOverworld");
-        TaskManager.Enqueue(() => Svc.Party.Any(p => p.Territory.RowId != Player.Territory.RowId) || Svc.Party.AllTargetable(), "WaitAllPartyNotWithPlayerOrTargetable");
+        TaskManager.Enqueue(() => Svc.Party.All(p => !p.Territory.Value.IsDuty), "WaitForPartyNotInDuty");
+        TaskManager.Enqueue(Svc.Condition.CanQueue, "WaitForQueueCondition");
         TaskManager.Enqueue(QueueSelectedDuty);
     }
 
     private unsafe bool QueueSelectedDuty() {
         var content = AgentContentsFinder.Instance()->SelectedContent;
-        if (content.Any(x => x.ContentType is ContentsId.ContentsType.Roulette)) {
-            ContentsFinder.Instance()->QueueInfo.QueueRoulette((byte)content.First().Id);
+        if (content.FirstOrNull(x => x.ContentType is ContentsId.ContentsType.Roulette) is { Id: var id }) {
+            ContentsFinder.Instance()->QueueInfo.QueueRoulette((byte)id);
             return true;
         }
         else {
-            ContentsFinder.Instance()->QueueInfo.QueueDuties(ToPtr(content), content.Count);
+            var ids = content.Select(x => x.Id).ToList();
+            var array = stackalloc uint[ids.Count];
+            for (var i = 0; i < ids.Count; i++)
+                array[i] = ids[i];
+            ContentsFinder.Instance()->QueueInfo.QueueDuties(array, ids.Count);
             return true;
         }
-    }
-
-    public static unsafe uint* ToPtr(StdVector<ContentsId> contentsIds) {
-        var ids = contentsIds.Select(x => x.Id).ToList();
-        var array = stackalloc uint[ids.Count];
-        for (var i = 0; i < ids.Count; i++)
-            array[i] = ids[i];
-        return array;
     }
 }
