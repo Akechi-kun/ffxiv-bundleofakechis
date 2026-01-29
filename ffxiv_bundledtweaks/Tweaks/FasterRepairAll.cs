@@ -45,12 +45,12 @@ public partial class FasterRepairAll : Tweak {
 
     private unsafe void RepairAll() {
         if (AgentRepair.Instance()->IsSelfRepairOpen) {
-            GameMain.ExecuteCommand(CommandFlag.RepairEquippedItems.Value, InventoryType.EquippedItems.Value);
-            RepairCategory.Values.ForEach(inv => GameMain.ExecuteCommand(CommandFlag.RepairAllItems.Value, inv.Value));
+            GameMain.ExecuteCommand(CommandFlag.RepairEquippedItems, (int)InventoryType.EquippedItems);
+            RepairCategory.Values.ForEach(inv => GameMain.ExecuteCommand(CommandFlag.RepairAllItems, (int)inv));
         }
         else {
-            GameMain.ExecuteCommand(CommandFlag.RepairEquippedItemsNPC.Value, InventoryType.EquippedItems.Value);
-            RepairCategory.Values.ForEach(inv => GameMain.ExecuteCommand(CommandFlag.RepairAllItemsNPC.Value, inv.Value));
+            GameMain.ExecuteCommand(CommandFlag.RepairEquippedItemsNPC, (int)InventoryType.EquippedItems);
+            RepairCategory.Values.ForEach(inv => GameMain.ExecuteCommand(CommandFlag.RepairAllItemsNPC, (int)inv));
         }
     }
 }
