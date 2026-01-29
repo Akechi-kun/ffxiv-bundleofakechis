@@ -1,8 +1,6 @@
-using ComplexTweaks.Events;
 using ECommons;
 using FFXIVClientStructs.FFXIV.Client.Game;
 using FFXIVClientStructs.FFXIV.Client.UI.Agent;
-using FFXIVClientStructs.FFXIV.Component.Exd;
 using Lumina.Excel;
 using Lumina.Excel.Sheets;
 using System.Threading.Tasks;
@@ -46,7 +44,7 @@ public class FateToolKitConfig {
 }
 
 [Tweak]
-[Requires(Ipc.Navmesh | Ipc.BossMod)]
+[Requires(Ipc.Navmesh | Ipc.BossMod | Ipc.TextAdvance)]
 public partial class FateToolKit : Tweak<FateToolKitConfig, FateToolKitWindow> {
     public override string Name => "Fate Tool Kit (Date With Destiny)";
     public override string Description => "Fate tracker with additional fate automations. This is a WIP v3 of Date With Destiny.";
@@ -196,7 +194,7 @@ public partial class FateToolKit : Tweak<FateToolKitConfig, FateToolKitWindow> {
             && (f.TimeRemaining < 0 || f.TimeRemaining > tweak.Config.MinTimeRemaining)
             && !tweak.IsBlacklisted(f);
 
-        private FateState State {
+        private unsafe FateState State {
             get {
                 if (Svc.Condition[ConditionFlag.Unconscious])
                     return FateState.Unconscious;
@@ -255,12 +253,17 @@ public partial class FateToolKit : Tweak<FateToolKitConfig, FateToolKitWindow> {
             }
 
             Svc.BossMod.AddTransientStrategy(_presetName, "BossMod.Autorotation.MiscAI.AutoTarget", "MaxTargets", PullSize.ToString());
+
+            if (PublicEvent.CurrentFate is { Rule: PublicEvent.FateRule.Collect })
+                Svc.TextAdvance.EnableExternalControl(Plugin.Name, new() { EnableTalkSkip = true, EnableRequestFill = true, EnableRequestHandin = true });
         }
 
         private void OnFateLeft() {
             tweak._nextFateId = null;
             if (Service.BossMod.Get(_presetName) is not null)
                 Service.BossMod.ClearActive();
+            if (Svc.TextAdvance.IsInExternalControl())
+                Svc.TextAdvance.DisableExternalControl(Plugin.Name);
         }
 
         private async Task Revive() {

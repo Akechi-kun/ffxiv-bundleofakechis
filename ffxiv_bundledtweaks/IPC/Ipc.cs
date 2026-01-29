@@ -15,5 +15,6 @@ public enum Ipc {
     PandorasBox = 1 << 9,
     QoLBar = 1 << 10,
     ItemVendorLocation = 1 << 11,
+    TextAdvance = 1 << 12,
 }
 

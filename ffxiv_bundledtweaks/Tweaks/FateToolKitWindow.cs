@@ -73,6 +73,7 @@ public class FateToolKitWindow : Window {
                 var tooltip = $"Name: {displayName}\n" +
                              $"ID: {fate.Id}\n" +
                              $"Type: {fate.FateType}\n" +
+                             $"Rule: {fate.Rule}\n" +
                              $"Level: {fate.Level}\n" +
                              $"Progress: {fate.Progress}%\n" +
                              $"Time Remaining: {(fate.TimeRemaining >= 0 ? TimeSpan.FromSeconds(fate.TimeRemaining).ToString(@"mm\:ss") : "∞")}\n" +

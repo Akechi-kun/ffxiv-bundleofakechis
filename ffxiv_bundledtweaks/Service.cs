@@ -1,4 +1,5 @@
-﻿using ECommons.Automation.NeoTaskManager;
+﻿using Automaton.IPC;
+using ECommons.Automation.NeoTaskManager;
 using System.Reflection;
 
 namespace ComplexTweaks.Services;
@@ -13,6 +14,7 @@ public class Service {
     public static LifestreamIPC Lifestream { get; private set; } = null!;
     public static NavmeshIPC Navmesh { get; private set; } = null!;
     public static QuestionableIPC Questionable { get; private set; } = null!;
+    public static TextAdvanceIpc TextAdvance { get; private set; } = null!;
 
     public static Automation Automation { get; private set; } = null!;
     public static IPCRegistry IPC { get; private set; } = null!;
