@@ -1,5 +1,4 @@
-﻿using ECommons;
-using ECommons.EzHookManager;
+﻿using ECommons.EzHookManager;
 using FFXIVClientStructs.FFXIV.Client.UI.Info;
 using System.Runtime.InteropServices;
 
@@ -7,8 +6,6 @@ namespace ComplexTweaks.Services;
 #pragma warning disable CS0649
 public unsafe class Memory {
     public static class Signatures {
-        internal const string BewitchProc = "40 53 48 83 EC 50 45 33 C0";
-        internal const string KnockbackProc = "E8 ?? ?? ?? ?? 48 8D 0D ?? ?? ?? ?? E8 ?? ?? ?? ?? FF C6";
         internal const string MoveController = "E8 ?? ?? ?? ?? 48 85 C0 74 AE 83 FD 05";
         internal const string PlayerController = "48 8D 0D ?? ?? ?? ?? E8 ?? ?? ?? ?? 0F 28 F0 45 0F 57 C0"; // bossmod (Client::Game::Control::InputManager)
         // If this changes again, since this involves relative offsets, if the instruction bytes change count (e.g. F3 0F 59 05 ?? ... = 4 to F3 44 0F 59 0D ?? ... = 5)
@@ -20,8 +17,6 @@ public unsafe class Memory {
 
     public static class Delegates {
         internal delegate void FreeCompanyDialogPacketReceiveDelegate(InfoProxyInterface* ptr, byte* packetData);
-        internal delegate long KbProcDelegate(long gameobj, float rot, float length, long a4, char a5, int a6);
-        internal delegate nint NoBewitchActionDelegate(CSGameObject* gameObj, float x, float y, float z, int a5, nint a6);
     }
 
     public Memory() => EzSignatureHelper.Initialize(this);
@@ -31,37 +26,6 @@ public unsafe class Memory {
     }
 
     public void Dispose() { }
-
-    #region Bewitch
-    public class BewitchProc : Hook {
-        [EzHook(Signatures.BewitchProc, false)]
-        internal readonly EzHook<Delegates.NoBewitchActionDelegate>? BewitchHook;
-
-        private unsafe nint BewitchDetour(CSGameObject* gameObj, float x, float y, float z, int a5, nint a6) {
-            try {
-                if (gameObj->IsCharacter()) {
-                    var chara = gameObj->BattleChara();
-                    if (chara->GetStatusManager()->HasStatus(3023) || chara->GetStatusManager()->HasStatus(3024))
-                        return nint.Zero;
-                }
-                return BewitchHook!.Original(gameObj, x, y, z, a5, a6);
-            }
-            catch (Exception ex) {
-                Svc.Log.Error(ex.Message, ex);
-                return BewitchHook!.Original(gameObj, x, y, z, a5, a6);
-            }
-        }
-    }
-    #endregion
-
-    #region Knockback
-    public class KnockbackProc : Hook {
-        [EzHook(Signatures.KnockbackProc, false)]
-        internal readonly EzHook<Delegates.KbProcDelegate>? KBProcHook;
-
-        internal long KBProcDetour(long gameobj, float rot, float length, long a4, char a5, int a6) => KBProcHook!.Original(gameobj, rot, 0f, a4, a5, a6);
-    }
-    #endregion
 
     #region Speed
     // this persists through LocalPlayer going null unlike setting via PMC
