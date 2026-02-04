@@ -1,5 +1,6 @@
 ﻿using FFXIVClientStructs.FFXIV.Client.Game;
 using FFXIVClientStructs.FFXIV.Client.Game.Object;
+using FFXIVClientStructs.FFXIV.Client.Network;
 using FFXIVClientStructs.FFXIV.Client.UI.Info;
 
 namespace ComplexTweaks.Tweaks;
@@ -18,9 +19,9 @@ public unsafe partial class AutoBusy : Tweak {
         return UseActionHook.Original(self, actionType, actionId, targetId, extraParam, mode, comboRouteId, outOptAreaTargeted);
     }
 
-    [SigHook("E8 ?? ?? ?? ?? 0F B7 0B 83 E9 64")]
-    internal void ProcessPacketActorControl(uint actorID, uint category, uint p1, uint p2, uint p3, uint p4, uint p5, uint p6, uint p7, uint p8, ulong targetID, byte replaying) {
-        if (actorID == Player.Object?.EntityId && Player.OnlineStatus.RowId is 12) {
+    [AddressHook<PacketDispatcher>(nameof(PacketDispatcher.MemberFunctionPointers.HandleActorControlPacket))]
+    internal void HandleActorControlPacket(uint entityId, uint category, uint a1, uint a2, uint a3, uint a4, uint a5, uint a6, uint a7, uint a8, GameObjectId targetId, bool isRecorded) {
+        if (entityId == Player.Object?.EntityId && Player.OnlineStatus.RowId is 12) {
             if (category is 15) { // CancelCast
                 Log($"Teleport cancelled. Busy status off");
                 InfoProxyDetail.Instance()->RefreshOnlineStatus();
@@ -32,7 +33,7 @@ public unsafe partial class AutoBusy : Tweak {
             //    InfoProxyDetail.Instance()->RefreshOnlineStatus();
             //}
         }
-        ProcessPacketActorControlHook.Original(actorID, category, p1, p2, p3, p4, p5, p6, p7, p8, targetID, replaying);
+        HandleActorControlPacketHook.Original(entityId, category, a1, a2, a3, a4, a5, a6, a7, a8, targetId, isRecorded);
     }
 
     // Supposedly too early? I don't know how that'd be possible
