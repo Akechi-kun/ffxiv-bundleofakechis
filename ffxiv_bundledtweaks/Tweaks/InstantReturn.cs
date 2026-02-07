@@ -7,16 +7,13 @@ using System.Runtime.InteropServices;
 namespace ComplexTweaks.Tweaks;
 
 [Tweak(debug: true)]
-[RequiresClientStructs(7296)]
+[RequiresClientStructs(7372)]
 public unsafe partial class InstantReturn : Tweak {
     public override string Name => "Quick Return";
     public override string Description => "Calls the return function directly";
 
     public override void Enable() => Svc.AddonLifecycle.RegisterListener(AddonEvent.PostSetup, "SelectYesno", HandleReturn);
     public override void Disable() => Svc.AddonLifecycle.UnregisterListener(HandleReturn);
-
-    private delegate void DisbandPartyDelegate(); // TODO: cs 7372
-    private readonly DisbandPartyDelegate DisbandParty = Marshal.GetDelegateForFunctionPointer<DisbandPartyDelegate>(Svc.SigScanner.ScanText("E8 ?? ?? ?? ?? 40 88 B7 ?? ?? ?? ?? EB 0B C6 87 ?? ?? ?? ?? ??"));
 
     [AddressHook<AgentReturn>(nameof(AgentReturn.MemberFunctionPointers.Return))]
     private byte AgentReturn_Return(AgentInterface* agent) {
@@ -25,9 +22,9 @@ public unsafe partial class InstantReturn : Tweak {
 
         if (InfoProxyCrossRealm.IsLocalPlayerInParty()) {
             if (InfoProxyCrossRealm.IsLocalPlayerPartyLeader())
-                DisbandParty();
+                InfoProxyPartyMember.Instance()->DisbandParty();
             else
-                Svc.Chat.ExecuteCommand("/leave");
+                InfoProxyPartyMember.Instance()->LeaveParty();
         }
 
         GameMain.ExecuteCommand(CommandFlag.InstantReturn.Value);
