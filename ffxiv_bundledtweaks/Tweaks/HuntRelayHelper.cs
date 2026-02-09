@@ -178,6 +178,7 @@ public class HuntRelayHelper : Tweak<HuntRelayHelperConfiguration> {
     }
 
     private void OnChatMessage(XivChatType type, int timestamp, ref SeString sender, ref SeString message, ref bool isHandled) {
+        if (!Svc.ClientState.IsLoggedIn) return; // messages sometimes trigger during login, but before fully logged in and thus stuff like checking player DC fails later
         if (sender.TextValue == Player.Name) return;
         var maplink = message.Payloads.FirstOrDefault(x => x is MapLinkPayload, null);
         if (maplink is not MapLinkPayload mlp) return;

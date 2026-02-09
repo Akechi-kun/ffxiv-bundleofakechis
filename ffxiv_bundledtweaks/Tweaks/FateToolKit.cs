@@ -1,5 +1,7 @@
+using Dalamud.Game.ClientState.Objects.Types;
 using ECommons;
 using FFXIVClientStructs.FFXIV.Client.Game;
+using FFXIVClientStructs.FFXIV.Client.Game.Fate;
 using FFXIVClientStructs.FFXIV.Client.UI.Agent;
 using Lumina.Excel;
 using Lumina.Excel.Sheets;
@@ -39,9 +41,28 @@ public class FateToolKitConfig {
         new() { Criteria = FateSortCriteria.Progress, Descending = true },
         new() { Criteria = FateSortCriteria.HasBonus, Descending = true },
         new() { Criteria = FateSortCriteria.TimeRemainingUrgent, Descending = false },
+        new() { Criteria = FateSortCriteria.TimeRemaining, Descending = false },
         new() { Criteria = FateSortCriteria.Distance, Descending = false },
     ];
 }
+
+/*
+ * TODO:
+ * announce next fate in party chat? might be good if you were multiboxing
+ * better handling of hitting a mob at the end of the fight (don't think I can do anything tbh, vbm needs to)
+ * identify fate chains and wait around for the next
+ * config: blacklist fate types
+ * gemstone spending or at least stop when full
+ * more dynamic pull sizes. Like if fates have a ton of enemies, they're generally low health and you could just pull them all
+ * fix status names: things like mounting don't show and last status shows once stopped
+ * better handling of new fates spawning on top of you
+ * 
+ * vbm:
+ * treat all engaged enemies as your own
+ * somehow fix engaging enemies as the fight is ending
+ * calculate enemies to kill/things to turn in by the fate progress step size
+ * 
+ */
 
 [Tweak]
 [Requires(Ipc.Navmesh | Ipc.BossMod | Ipc.TextAdvance)]
@@ -53,7 +74,6 @@ public partial class FateToolKit : Tweak<FateToolKitConfig, FateToolKitWindow> {
     private const string _presetCompressed = "G7sgAORUXTtl2E+e+WjPVqrAAflbPZILOMWW4oP+/v+fCkIhzvG84ACJWKy03g9QazmlsQdIscatVWu8Jo51H+IdQI2Y/jafAIgSBxI+iCh8ggeIT7FYvBsibX3oyQkfvp0RQITWOWlrLziwHS0ja2s8qV0VFM9HPOG4IxY+fP6kw98KhNFPI1ad8EGkwVOChw66yKpuovBBJAa3PdXiV+P/U9/QTEWMlgExR9Cf8OIautG+4TKoVL4zGi8uI4qkFB6axuHukAPbAVlXOxtgfEw9XpCtINLWwgfxuNcNLyDisW/8CtaMH5RgnRCYeNqpNjsWcKM8fSbI7mCRUV5IK5dOlU3x2ricRQ7tQ5R9bVl0XBvJx6P+2shwJsusDaZtJaYxsIme1BEBeCFKy5r2uezJsB6IcHQjyomPlVWsEYDlMZDsLi1LtpXZASsvGyVssFIWpVQFS1aGWtKdRYp1rMRqWdxblD76YHnNjbtYCR6fykdLqKzS+xY37ADDlfPFNqKC3F7oYl4DtbgPbFNttNtHdtiqFA8WFeuIOIlVVqge1O1LkemZde8EfSiPF1NRhvynbSTDEp7ReBE6plH48Pl9B+SEPY1B0WdEUk/UVIhCs6O6DPsJTQddZeT5LO04YC/tkQYyoQAsMTnWhnwckdPwBnnfaFMzuct8AvA/n/wD";
     private static readonly string _preset = _presetCompressed.FromBase64();
     private const int MinTimeToPrioritise = 240;
-    private uint? _nextFateId;
 
     private static readonly Dictionary<FateSortCriteria, Func<PublicEvent, IComparable>> SortKeys = new() {
         [FateSortCriteria.HasBonusWithTwist] = f => f.HasBonus && Player.Status.FirstOrDefault(x => DateWithDestiny.TwistOfFateStatusIDs.Contains(x.StatusId)) != null,
@@ -94,7 +114,7 @@ public partial class FateToolKit : Tweak<FateToolKitConfig, FateToolKitWindow> {
                 Service.Automation.Start(new FateGrind(this));
             }
             else {
-                _nextFateId = null;
+                CurrentState = "Idle";
                 Service.BossMod.ClearActive();
                 Svc.Automation.Stop();
             }
@@ -102,6 +122,7 @@ public partial class FateToolKit : Tweak<FateToolKitConfig, FateToolKitWindow> {
     }
 
     public void ToggleRunning() => Running ^= true;
+
     [CommandHandler(["/dwd", "/vfate"], "Opens the FATE tracker")]
     private void OnCommand(string _, string __) => Window<FateToolKitWindow>()?.Toggle();
 
@@ -138,8 +159,6 @@ public partial class FateToolKit : Tweak<FateToolKitConfig, FateToolKitWindow> {
     }
 
     private sealed class FateGrind(FateToolKit tweak) : TaskBase {
-        private PublicEvent? _lastCurrentFate;
-
         private int PullSize => Player.ClassJob.Value switch {
             var cj when cj.IsTank => 0, // unlimited
             var cj when cj.IsDps => 3,
@@ -154,20 +173,16 @@ public partial class FateToolKit : Tweak<FateToolKitConfig, FateToolKitWindow> {
                     var state = State;
                     tweak.CurrentState = state.ToString();
 
+                    HandleIntegrations();
+
                     switch (state) {
-                        case FateState.FateEntered:
-                            OnFateEntered();
-                            break;
-                        case FateState.FateLeft:
-                            OnFateLeft();
-                            break;
-                        case FateState.Unconscious:
+                        case GrindState.Unconscious:
                             await Revive();
                             break;
-                        case FateState.Moving:
+                        case GrindState.Moving:
                             await MoveToFate();
                             break;
-                        case FateState.WaitingForFates:
+                        case GrindState.WaitingForFates:
                             await HandleNoFates();
                             break;
                         default:
@@ -185,7 +200,7 @@ public partial class FateToolKit : Tweak<FateToolKitConfig, FateToolKitWindow> {
             }
         }
 
-        public PublicEvent? NextFate { get; set { field = value; tweak._nextFateId = field?.Id; } }
+        public PublicEvent? NextFate { get; set; }
 
         public unsafe IOrderedEnumerable<PublicEvent> AvailableFates => ApplySortOrder(PublicEvent.Fates.Where(FateConditions), tweak.Config.SortOrder);
 
@@ -195,76 +210,60 @@ public partial class FateToolKit : Tweak<FateToolKitConfig, FateToolKitWindow> {
             && (f.TimeRemaining < 0 || f.TimeRemaining > tweak.Config.MinTimeRemaining)
             && !tweak.IsBlacklisted(f);
 
-        private unsafe FateState State {
+        private unsafe GrindState State {
             get {
                 if (Svc.Condition[ConditionFlag.Unconscious])
-                    return FateState.Unconscious;
+                    return GrindState.Unconscious;
 
-                var currentFate = PublicEvent.CurrentFate;
-
-                if (currentFate is { } && _lastCurrentFate is null) {
-                    _lastCurrentFate = currentFate;
-                    return FateState.FateEntered;
+                if (PublicEvent.CurrentFate is { } current) {
+                    // treat completed collect fates as done and wait for out of combat/not busy before trying to move away
+                    if (current is { Rule: PublicEvent.FateRule.Collect, Progress: >= 100, Id: var id } && !Player.IsBusy)
+                        return AvailableFates.FirstOrDefault(f => f.Id != id) is { } ? GrindState.Moving : GrindState.WaitingForFates;
+                    return GrindState.Engaging;
                 }
-
-                if (currentFate is null && _lastCurrentFate is { }) {
-                    _lastCurrentFate = null;
-                    return FateState.FateLeft;
-                }
-
-                _lastCurrentFate = currentFate;
-
-                // Always engage current fate, even if it doesn't meet conditions anymore (e.g., raised and fate progressed while dead)
-                if (currentFate is { })
-                    return FateState.Engaging;
 
                 if (AvailableFates.FirstOrDefault() is { })
-                    return FateState.Moving;
+                    return GrindState.Moving;
 
                 if (!AvailableFates.Any())
-                    return FateState.WaitingForFates;
+                    return GrindState.WaitingForFates;
 
-                return FateState.Idle;
+                return GrindState.Idle;
             }
         }
 
-        private enum FateState {
+        private enum GrindState {
             Idle,
             WaitingForFates,
             Moving,
             Engaging,
             Unconscious,
-            FateEntered,
-            FateLeft,
         }
 
-        private void OnFateEntered() {
-            var fate = PublicEvent.CurrentFate;
-            if (fate is null)
-                return;
+        private void HandleIntegrations() {
+            if (PublicEvent.CurrentFate is { } fate) {
+                // only activate for the fate we're pathfinding to (or any if NextFate is null)
+                if (NextFate is { } next && fate.Id != next.Id)
+                    return;
 
-            if (tweak._nextFateId.HasValue && fate.Id != tweak._nextFateId.Value)
-                return;
+                if (Service.BossMod.GetActive() != _presetName) {
+                    if (Service.BossMod.Get(_presetName) is null)
+                        Service.BossMod.Create(_preset, true);
+                    else
+                        Service.BossMod.SetActive(_presetName);
+                }
+                Svc.BossMod.AddTransientStrategy(_presetName, "BossMod.Autorotation.MiscAI.AutoTarget", "MaxTargets", PullSize.ToString());
 
-            if (Service.BossMod.GetActive() != _presetName) {
-                if (Service.BossMod.Get(_presetName) is null)
-                    Service.BossMod.Create(_preset, true);
-                else
-                    Service.BossMod.SetActive(_presetName);
+                if (PublicEvent.CurrentFate is { Rule: PublicEvent.FateRule.Collect } && !Svc.TextAdvance.IsInExternalControl())
+                    Svc.TextAdvance.EnableExternalControl(Plugin.Name, new() { EnableTalkSkip = true, EnableRequestFill = true, EnableRequestHandin = true });
             }
-
-            Svc.BossMod.AddTransientStrategy(_presetName, "BossMod.Autorotation.MiscAI.AutoTarget", "MaxTargets", PullSize.ToString());
-
-            if (PublicEvent.CurrentFate is { Rule: PublicEvent.FateRule.Collect })
-                Svc.TextAdvance.EnableExternalControl(Plugin.Name, new() { EnableTalkSkip = true, EnableRequestFill = true, EnableRequestHandin = true });
-        }
-
-        private void OnFateLeft() {
-            tweak._nextFateId = null;
-            if (Service.BossMod.Get(_presetName) is not null)
-                Service.BossMod.ClearActive();
-            if (Svc.TextAdvance.IsInExternalControl())
-                Svc.TextAdvance.DisableExternalControl(Plugin.Name);
+            else {
+                NextFate = null;
+                if (Service.BossMod.Get(_presetName) is not null)
+                    Service.BossMod.ClearActive();
+                if (Svc.TextAdvance.IsInExternalControl())
+                    Svc.TextAdvance.DisableExternalControl(Plugin.Name);
+            }
         }
 
         private async Task Revive() {
@@ -287,24 +286,31 @@ public partial class FateToolKit : Tweak<FateToolKitConfig, FateToolKitWindow> {
 
         private async Task MoveToFate() {
             using var scope = BeginScope(nameof(MoveToFate));
-            if (AvailableFates.FirstOrDefault() is not { } nextFate) return;
+            // If current is a collect at 100% we're leaving it; pick a different fate
+            var candidates = PublicEvent.CurrentFate is { Rule: PublicEvent.FateRule.Collect, Progress: >= 100 } ? AvailableFates.Where(f => f.Id != PublicEvent.CurrentFate.Id) : AvailableFates;
+            if (candidates.FirstOrDefault() is not { } nextFate) return;
             NextFate = nextFate;
-            await WaitWhile(() => Player.IsBusy, "WaitingForNotBusy");
+            //await WaitWhile(() => Player.IsBusy, "WaitingForNotBusy");
+            //await WaitWhile(NearbyPendingMobs, "WaitForEngagedMobsToDisappear");
+
+            // TODO: if rnd=msh, retry?
             var rnd = NextFate.Position.RandomPoint(NextFate.Radius * 0.5f);
             var msh = rnd.OnMesh();
-            Log($"NextFate Position: {NextFate.Position} -> {rnd} -> {msh}");
+            WarningIf(rnd == msh, "Failed to find a random point on mesh. Destination might not land.");
+            Log($"[NextFate={NextFate.Position}] -> [rnd={rnd}] -> [mesh={msh}]");
 
             bool FateNoLongerValid() => NextFate is null || !FateConditions(NextFate);
-            bool ShouldSwitchToNpc() => NextFate?.MotivationNpc is { } && NextFate.State == FFXIVClientStructs.FFXIV.Client.Game.Fate.FateState.Preparing;
+            bool ShouldSwitchToNpc() => NextFate?.MotivationNpc is { } && NextFate.State == FateState.Preparing;
 
             await MoveTo(msh, MovementConfig.Everything.WithTolerance(3),
+                allowTeleportIfFaster: NextFate is { Progress: > 0 }, // in progress = urgent, otherwise I'd rather just waste a few extra seconds
                 stopCondition: () => FateNoLongerValid() || ShouldSwitchToNpc(),
                 onStopReached: async () => {
                     if (ShouldSwitchToNpc())
                         await ActivateFate();
                 });
 
-            if (NextFate is { State: FFXIVClientStructs.FFXIV.Client.Game.Fate.FateState.Preparing })
+            if (NextFate is { State: FateState.Preparing })
                 await ActivateFate();
         }
 
@@ -312,7 +318,7 @@ public partial class FateToolKit : Tweak<FateToolKitConfig, FateToolKitWindow> {
             using var scope = BeginScope(nameof(ActivateFate));
             if (NextFate?.MotivationNpc is not { } npc) return;
             await MoveTo(npc.Position, MovementConfig.InteractRange.WithOptions(MovementOptions.GetCurrent()));
-            await InteractWith(npc, () => NextFate?.State == FFXIVClientStructs.FFXIV.Client.Game.Fate.FateState.Running, skip: UiSkipOptions.Talk | UiSkipOptions.YesNo);
+            await InteractWith(npc, () => NextFate?.State == FateState.Running, skip: UiSkipOptions.Talk | UiSkipOptions.YesNo);
         }
 
         private async Task HandleNoFates() {
@@ -323,8 +329,21 @@ public partial class FateToolKit : Tweak<FateToolKitConfig, FateToolKitWindow> {
             else {
                 using var scope = BeginScope("WaitForFates");
                 Status = "Waiting for fates to spawn";
+                await Mount();
                 await NextFrame(60);
             }
+        }
+
+        // TODO: don't think this really does anything. Need better vbm support
+        private unsafe bool NearbyPendingMobs() {
+            return Svc.Objects.OfType<IBattleChara>().Where(o => o.BattleChara()->FateId != 0).Any(o => {
+                foreach (var effect in o.BattleChara()->ActionEffectHandler.IncomingEffects) {
+                    if (effect.GlobalSequence != 0 && effect.Source == Svc.Objects.LocalPlayer?.GameObjectId) {
+                        return true;
+                    }
+                }
+                return false;
+            });
         }
 
         private unsafe uint? GetNextAchievementZone() {
@@ -341,7 +360,7 @@ public partial class FateToolKit : Tweak<FateToolKitConfig, FateToolKitWindow> {
         }
 
         private uint GetRandomSameExpacZone() {
-            var rows = FindRows<TerritoryType>(x => x.IsInUse && (TerritoryIntendedUse)x.TerritoryIntendedUse.RowId is TerritoryIntendedUse.Overworld && x.ExVersion.RowId == Player.Territory.Value.ExVersion.RowId);
+            var rows = TerritoryType.Where(x => x.IsInUse && x.TerritoryIntendedUse.Value.StructsEnum is TerritoryIntendedUse.Overworld && x.ExVersion.RowId == Player.Territory.Value.ExVersion.RowId && !x.IsPvpZone);
             return rows[new Random().Next(rows.Length)].RowId;
         }
     }
