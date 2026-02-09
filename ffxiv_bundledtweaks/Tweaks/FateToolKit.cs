@@ -122,6 +122,7 @@ public partial class FateToolKit : Tweak<FateToolKitConfig, FateToolKitWindow> {
     }
 
     public void ToggleRunning() => Running ^= true;
+
     [CommandHandler(["/dwd", "/vfate"], "Opens the FATE tracker")]
     private void OnCommand(string _, string __) => Window<FateToolKitWindow>()?.Toggle();
 
@@ -295,6 +296,7 @@ public partial class FateToolKit : Tweak<FateToolKitConfig, FateToolKitWindow> {
             // TODO: if rnd=msh, retry?
             var rnd = NextFate.Position.RandomPoint(NextFate.Radius * 0.5f);
             var msh = rnd.OnMesh();
+            WarningIf(rnd == msh, "Failed to find a random point on mesh. Destination might not land.");
             Log($"[NextFate={NextFate.Position}] -> [rnd={rnd}] -> [mesh={msh}]");
 
             bool FateNoLongerValid() => NextFate is null || !FateConditions(NextFate);
