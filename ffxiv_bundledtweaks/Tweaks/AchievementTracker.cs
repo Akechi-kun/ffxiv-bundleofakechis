@@ -174,7 +174,7 @@ public unsafe class AchievementTrackerWindow(AchievementTracker tweak) : Window(
                 ImGui.Button($"[{achv.ID}] {achv.Name}", new Vector2(nameWidth, 0)); // prevent window drag
 
                 if (ImGui.IsItemClicked(ImGuiMouseButton.Right))
-                    ImGui.OpenPopup($"AchvContext##{achv.ID}_{originalIndex}");
+                    ImGui.OpenPopup($"AchvContext##{achv.ID}");
 
                 ImGui.DragDropSource(originalIndex, "ACHIEVEMENT_ITEM"u8, $"[{achv.ID}] {achv.Name}");
                 ImGui.DragDropTarget(originalIndex, "ACHIEVEMENT_ITEM"u8, tweak.Config.Achievements.Count, (sourceIndex, insertIndex) => {
@@ -215,9 +215,8 @@ public unsafe class AchievementTrackerWindow(AchievementTracker tweak) : Window(
         }
     }
 
-    private (uint Id, string Buffer)? _catBuffer;
     private void DrawContextMenu(AchievementTracker.Achv achv, int index) {
-        using var popup = ImRaii.Popup($"AchvContext##{achv.ID}_{index}");
+        using var popup = ImRaii.Popup($"AchvContext##{achv.ID}");
         if (!popup)
             return;
 
@@ -231,18 +230,9 @@ public unsafe class AchievementTrackerWindow(AchievementTracker tweak) : Window(
         ImGui.SameLine();
         ImGui.SetNextItemWidth(150f.Scale());
 
-        if (_catBuffer is not { } edit || edit.Id != achv.ID) {
-            _catBuffer = (achv.ID, achv.Category);
-        }
-
-        var buffer = _catBuffer.Value.Buffer;
-        if (ImGui.InputText("##CategoryInput", ref buffer, 64)) {
-            _catBuffer = (achv.ID, buffer);
-        }
-
-        if (ImGui.IsItemDeactivatedAfterEdit()) {
-            achv.Category = buffer.Trim();
-            _catBuffer = (achv.ID, achv.Category);
+        var category = achv.Category;
+        if (ImGui.InputText("##CategoryInput", ref category, 64, ImGuiInputTextFlags.EnterReturnsTrue)) {
+            achv.Category = category.Trim();
         }
 
         var existingCategories = tweak.Config.Achievements
@@ -255,10 +245,9 @@ public unsafe class AchievementTrackerWindow(AchievementTracker tweak) : Window(
         if (existingCategories.Count > 0) {
             ImGui.Spacing();
             ImGui.Text("Existing categories");
-            foreach (var category in existingCategories) {
-                if (ImGui.Selectable(category, category.Equals(achv.Category, StringComparison.CurrentCultureIgnoreCase))) {
-                    achv.Category = category;
-                    _catBuffer = (achv.ID, achv.Category);
+            foreach (var existing in existingCategories) {
+                if (ImGui.Selectable(existing, existing.Equals(achv.Category, StringComparison.CurrentCultureIgnoreCase))) {
+                    achv.Category = existing;
                 }
             }
         }
@@ -266,9 +255,9 @@ public unsafe class AchievementTrackerWindow(AchievementTracker tweak) : Window(
         if (!string.IsNullOrWhiteSpace(achv.Category)) {
             ImGui.Spacing();
             if (ImGui.Selectable("Clear category")) {
-                var category = achv.Category;
-                tweak.Config.Achievements.Where(a => !string.IsNullOrWhiteSpace(a.Category) && category.EqualsIgnoreCase(a.Category)).ForEach(a => a.Category = string.Empty);
-                _catBuffer = (achv.ID, string.Empty);
+                tweak.Config.Achievements
+                    .Where(a => !string.IsNullOrWhiteSpace(a.Category) && category.EqualsIgnoreCase(a.Category))
+                    .ForEach(a => a.Category = string.Empty);
             }
         }
     }
