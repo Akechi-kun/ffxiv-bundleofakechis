@@ -1,4 +1,4 @@
-﻿using Dalamud.Game.ClientState.Objects.Types;
+using Dalamud.Game.ClientState.Objects.Types;
 using FFXIVClientStructs.FFXIV.Client.Game;
 using FFXIVClientStructs.FFXIV.Client.Game.Fate;
 using FFXIVClientStructs.FFXIV.Client.UI.Agent;
@@ -24,6 +24,10 @@ internal sealed class FateGrind(FateToolKit tweak) : TaskBase {
         using var stop = new OnDispose(() => Svc.TextAdvance.DisableExternalControl(Name));
         try {
             while (!CancelToken.IsCancellationRequested && tweak.Running) {
+                tweak.StopIfNoRemaining();
+                if (!tweak.Running)
+                    break;
+
                 var state = State;
                 tweak.CurrentState = state.ToString();
 

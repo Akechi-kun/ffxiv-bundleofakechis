@@ -48,6 +48,11 @@ public class FateToolKitWindow : Window {
 
             ImGui.SameLine();
             DrawHeaderChip($"Completed: {_tweak.CompletedCount}", Colors.ChipInfo, Colors.Grey2);
+
+            if (_tweak.RemainingUntilCompleted is { } remaining && remaining > 0) {
+                ImGui.SameLine();
+                DrawHeaderChip($"Remaining: {remaining}", Colors.ChipInfo, Colors.Grey2);
+            }
         }
 
         ImGui.SpacedSeparator();

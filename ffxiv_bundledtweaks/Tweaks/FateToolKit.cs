@@ -43,19 +43,17 @@ public class FateToolKitConfig {
 /*
  * TODO:
  * announce next fate in party chat? might be good if you were multiboxing
- * better handling of hitting a mob at the end of the fight (don't think I can do anything tbh, vbm needs to)
+ * better handling of hitting a mob at the end of the fight (don't think I can do anything tbh, vbm needs to) // done?
  * identify fate chains and wait around for the next
  * config: blacklist fate types
  * gemstone spending or at least stop when full
  * more dynamic pull sizes. Like if fates have a ton of enemies, they're generally low health and you could just pull them all
- * fix status names: things like mounting don't show and last status shows once stopped
  * better handling of new fates spawning on top of you
  * 
  * vbm:
  * treat all engaged enemies as your own
  * somehow fix engaging enemies as the fight is ending
  * calculate enemies to kill/things to turn in by the fate progress step size
- * 
  */
 
 [Tweak]
@@ -65,6 +63,15 @@ public partial class FateToolKit : Tweak<FateToolKitConfig, FateToolKitWindow> {
     public override string Description => "Fate tracker with additional fate automations. This is a WIP v3 of Date With Destiny.";
 
     private const int MinTimeToPrioritise = 240;
+    private static readonly CommandRouter<FateToolKit> Router = new(
+        CommandNode<FateToolKit>
+            .Root()
+            .Default(tweak => tweak.Window<FateToolKitWindow>()?.Toggle())
+            .Sub("run", "Run until completed count target", node => node
+                .ArgInt("count", min: 1)
+                .Handle((tweak, args) => tweak.RunUntil(args.Get<int>("count"))))
+            .Sub("stop", $"Stops {nameof(FateGrind)} task", node => node.Handle((tweak, _) => tweak.Running = false))
+    );
 
     private static readonly Dictionary<FateSortCriteria, Func<PublicEvent, IComparable>> SortKeys = new() {
         [FateSortCriteria.HasBonusWithTwist] = f => f.HasBonus && Player.Status.FirstOrDefault(x => DateWithDestiny.TwistOfFateStatusIDs.Contains(x.StatusId)) != null,
@@ -79,6 +86,8 @@ public partial class FateToolKit : Tweak<FateToolKitConfig, FateToolKitWindow> {
 
     public string CurrentState { get; internal set; } = "Idle";
     public int CompletedCount { get; private set; }
+    public int? RunUntilCompleted { get; private set; }
+    public int? RemainingUntilCompleted => RunUntilCompleted is { } runUntil ? Math.Max(0, runUntil - CompletedCount) : null;
 
     public bool Running {
         get;
@@ -92,6 +101,7 @@ public partial class FateToolKit : Tweak<FateToolKitConfig, FateToolKitWindow> {
                 CurrentState = "Idle";
                 Service.BossMod.ClearActive();
                 Svc.Automation.Stop();
+                RunUntilCompleted = null;
             }
         }
     }
@@ -101,14 +111,45 @@ public partial class FateToolKit : Tweak<FateToolKitConfig, FateToolKitWindow> {
     public override void Disable() => Svc.AddonLifecycle.UnregisterListener(OnFateRewardPostSetup);
 
     private void OnFateRewardPostSetup(AddonEvent type, AddonArgs args) {
-        if (Running)
-            CompletedCount++;
+        if (!Running)
+            return;
+
+        CompletedCount++;
+        StopIfNoRemaining();
     }
 
-    public void ToggleRunning() => Running ^= true;
+    private void RunUntil(int runUntil) {
+        RunUntilCompleted = runUntil;
+        if (!Running)
+            Running = true;
+        else
+            StopIfNoRemaining();
+    }
+
+    internal void StopIfNoRemaining() {
+        if (RunUntilCompleted is { } runUntil && CompletedCount >= runUntil)
+            Running = false;
+    }
+
+    public void ToggleRunning() {
+        RunUntilCompleted = null;
+        Running ^= true;
+    }
 
     [CommandHandler(["/dwd", "/vfate"], "Opens the FATE tracker")]
-    private void OnCommand(string _, string __) => Window<FateToolKitWindow>()?.Toggle();
+    private void OnCommand(string _, string arguments) {
+        var result = Router.Execute(arguments, this, "/dwd");
+        if (!string.IsNullOrWhiteSpace(result.Help)) {
+            ModuleMessage(result.Help!);
+            return;
+        }
+
+        if (!result.Success) {
+            ModuleMessage(result.Error!);
+            if (!string.IsNullOrWhiteSpace(result.Usage))
+                ModuleMessage(result.Usage!);
+        }
+    }
 
     internal bool IsBlacklisted(PublicEvent f)
         => Config.Blacklist.TryGetValue(f.FateType, out var set) && set.Contains(f.Id);
