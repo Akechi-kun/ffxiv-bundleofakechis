@@ -44,22 +44,25 @@ public class FateToolKitWindow : Window {
 
             var availableWidth = ImGui.GetContentRegionAvail().X;
             var displayName = FormatDisplayName(fate);
-            var textSize = ImGui.CalcTextSize(displayName);
-            var maxNameWidth = Math.Min(400f.Scale(), availableWidth * 0.6f);
-            var nameWidth = Math.Min(textSize.X + ImGui.GetStyle().FramePadding.X * 2, maxNameWidth);
-            var progressWidth = availableWidth - nameWidth - ImGui.GetStyle().ItemSpacing.X * 3 - ImGui.IconUnitWidth() * 2;
-
-            if (fate.HasBonus) {
-                ImGui.Image(Svc.Texture.GetFromGameIcon(new Dalamud.Interface.Textures.GameIconLookup(65001)).GetWrapOrEmpty().Handle, new Vector2(ImGui.IconUnitHeight()));
-                ImGui.SameLine();
-            }
+            var nameWidth = Math.Min(200f.Scale(), availableWidth * 0.4f);
+            var progressWidth = Math.Max(1f, availableWidth - nameWidth - ImGui.GetStyle().ItemSpacing.X);
 
             using (var buttonStyle = ImRaii.PushStyle(ImGuiStyleVar.ButtonTextAlign, new Vector2(0, 0.5f)))
             using (var color = ImRaii.PushColor(ImGuiCol.Button, 0).Push(ImGuiCol.ButtonHovered, ImGui.GetColorU32(ImGuiCol.ButtonHovered)).Push(ImGuiCol.ButtonActive, ImGui.GetColorU32(ImGuiCol.ButtonActive))) {
                 var isBlacklisted = _tweak.IsBlacklisted(fate);
 
+                if (fate.HasBonus) {
+                    ImGui.Image(Svc.Texture.GetFromGameIcon(new Dalamud.Interface.Textures.GameIconLookup(65001)).GetWrapOrEmpty().Handle, new Vector2(ImGui.IconUnitHeight()));
+                    ImGui.SameLine(0f, 0f);
+                }
+
                 using (var nameCol = ImRaii.PushColor(ImGuiCol.Text, isAvailable && !isBlacklisted ? (uint)EzColor.White : Colors.Grey3)) {
-                    if (ImGui.Button(displayName, new Vector2(nameWidth, 0))) {
+                    if (ImGui.Button(displayName, new Vector2(
+                        fate.HasBonus
+                            ? Math.Max(1f, nameWidth - ImGui.IconUnitWidth())
+                            : nameWidth,
+                        0
+                    ))) {
                         if (Svc.Navmesh.IsRunning())
                             Svc.Navmesh.Stop();
                         else
@@ -92,15 +95,16 @@ public class FateToolKitWindow : Window {
 
             var cursorPos = ImGui.GetCursorPos();
             var labelSize = ImGui.CalcTextSize(progressLabel);
-            var textX = progressWidth - labelSize.X - 4f;
-
-            var textColor = ImGui.GetProgressBarTextColor(_tweak.Config.BarColour, ImGui.GetStyle().Colors[(int)ImGuiCol.FrameBg], percentage, textX, labelSize.X, progressWidth);
+            var textX = Math.Max(0f, progressWidth - labelSize.X - 4f);
 
             using (var color = ImRaii.PushColor(ImGuiCol.PlotHistogram, _tweak.Config.BarColour))
                 ImGui.ProgressBar(percentage, new Vector2(progressWidth, ImGui.GetFrameHeight()), "");
 
             ImGui.SetCursorPos(new Vector2(cursorPos.X + textX, cursorPos.Y + (ImGui.GetFrameHeight() - labelSize.Y) * 0.5f));
-            ImGui.TextColored(textColor, progressLabel);
+            ImGui.TextColored(
+                ImGui.GetProgressBarTextColor(_tweak.Config.BarColour, ImGui.GetStyle().Colors[(int)ImGuiCol.FrameBg], percentage, textX, labelSize.X, progressWidth),
+                progressLabel
+            );
 
             ImGui.SpacedSeparator();
         }
