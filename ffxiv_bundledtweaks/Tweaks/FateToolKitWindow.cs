@@ -28,6 +28,8 @@ public class FateToolKitWindow : Window {
             _tweak.ToggleRunning();
             Service.Navmesh.Stop();
         }
+        ImGui.SameLine();
+        ImGui.TextUnformatted($"Completed: {_tweak.CompletedCount}");
 
         ImGui.SpacedSeparator();
 
