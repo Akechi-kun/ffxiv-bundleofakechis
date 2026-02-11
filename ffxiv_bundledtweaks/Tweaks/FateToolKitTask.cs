@@ -59,6 +59,7 @@ internal sealed class FateGrind(FateToolKit tweak) : TaskBase {
     }
 
     public PublicEvent? NextFate { get; set; }
+    private uint? ReturnToFateId { get; set; } // when we die, if the fate we were in progressed enough to not qualify, we want to return to it anyway
 
     public unsafe IOrderedEnumerable<PublicEvent> AvailableFates => FateToolKit.ApplySortOrder(PublicEvent.Fates.Where(FateConditions), tweak.Config.SortOrder);
 
@@ -70,8 +71,11 @@ internal sealed class FateGrind(FateToolKit tweak) : TaskBase {
 
     private unsafe GrindState State {
         get {
-            if (Svc.Condition[ConditionFlag.Unconscious])
+            if (Svc.Condition[ConditionFlag.Unconscious]) {
+                if (PublicEvent.CurrentFate is { Id: var id, Progress: < 100 })
+                    ReturnToFateId = id;
                 return GrindState.Unconscious;
+            }
 
             if (PublicEvent.CurrentFate is { } current) {
                 // treat completed collect fates as done and wait for out of combat/not busy before trying to move away
@@ -147,9 +151,21 @@ internal sealed class FateGrind(FateToolKit tweak) : TaskBase {
 
     private async Task MoveToFate() {
         using var scope = BeginScope(nameof(MoveToFate));
-        // If current is a collect at 100% we're leaving it; pick a different fate
-        var candidates = PublicEvent.CurrentFate is { Rule: PublicEvent.FateRule.Collect, Progress: >= 100 } ? AvailableFates.Where(f => f.Id != PublicEvent.CurrentFate.Id) : AvailableFates;
-        if (candidates.FirstOrDefault() is not { } nextFate) return;
+        PublicEvent? nextFate = null;
+        if (ReturnToFateId is { } returnFateId) {
+            if (PublicEvent.GetFateById(returnFateId) is { Progress: < 100 } returnFate)
+                nextFate = returnFate;
+            else
+                ReturnToFateId = null;
+        }
+
+        if (nextFate is null) {
+            // If current is a collect at 100% we're leaving it; pick a different fate
+            var candidates = PublicEvent.CurrentFate is { Rule: PublicEvent.FateRule.Collect, Progress: >= 100 } ? AvailableFates.Where(f => f.Id != PublicEvent.CurrentFate.Id) : AvailableFates;
+            if (candidates.FirstOrDefault() is not { } candidate) return;
+            nextFate = candidate;
+        }
+
         NextFate = nextFate;
         //await WaitWhile(() => Player.IsBusy, "WaitingForNotBusy");
         //await WaitWhile(NearbyPendingMobs, "WaitForEngagedMobsToDisappear");
@@ -160,7 +176,15 @@ internal sealed class FateGrind(FateToolKit tweak) : TaskBase {
         WarningIf(rnd == msh, "Failed to find a random point on mesh. Destination might not land.");
         Log($"[NextFate={NextFate.Position}] -> [rnd={rnd}] -> [mesh={msh}]");
 
-        bool FateNoLongerValid() => NextFate is null || !FateConditions(NextFate);
+        bool FateNoLongerValid() {
+            if (NextFate is null)
+                return true;
+            if (PublicEvent.GetFateById(NextFate.Id) is not { } current)
+                return true;
+
+            NextFate = current; // keep nextfate fresh in case an unactivated fate disappears while pathing to it
+            return ReturnToFateId == current.Id ? current.Progress >= 100 : !FateConditions(current);
+        }
         bool ShouldSwitchToNpc() => NextFate?.MotivationNpc is { } && NextFate.State == FateState.Preparing;
 
         await MoveTo(msh, MovementConfig.Everything.WithTolerance(3),
@@ -171,7 +195,7 @@ internal sealed class FateGrind(FateToolKit tweak) : TaskBase {
                     await ActivateFate();
             });
 
-        if (NextFate is { State: FateState.Preparing })
+        if (NextFate is { State: FateState.Preparing } && PublicEvent.Fates.Any(f => f.Id == NextFate.Id))
             await ActivateFate();
     }
 
