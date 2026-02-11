@@ -3,6 +3,7 @@ using Dalamud.Interface;
 using Dalamud.Interface.Components;
 using Dalamud.Interface.Utility.Raii;
 using Dalamud.Interface.Windowing;
+using ComplexTweaks.Utilities;
 using ECommons.ImGuiMethods;
 
 namespace ComplexTweaks.Tweaks;
@@ -22,14 +23,32 @@ public class FateToolKitWindow : Window {
     public override bool DrawConditions() => Player.Available;
 
     public override void Draw() {
-        ImGui.TextUnformatted($"Status: {(_tweak.Running ? "Running" : "Stopped")} ({_tweak.CurrentState})");
-        ImGui.SameLine();
-        if (ImGuiComponents.IconButton(!_tweak.Running ? FontAwesomeIcon.Play : FontAwesomeIcon.Stop)) {
-            _tweak.ToggleRunning();
-            Service.Navmesh.Stop();
+        using (var rounding = ImRaii.PushStyle(ImGuiStyleVar.FrameRounding, 6f))
+        using (var runButtonColor = ImRaii.PushColor(ImGuiCol.Button, _tweak.Running ? (uint)Colors.Negative : (uint)Colors.Positive)
+            .Push(ImGuiCol.ButtonHovered, _tweak.Running ? (uint)Colors.NegativeHover : (uint)Colors.PositiveHover)
+            .Push(ImGuiCol.ButtonActive, _tweak.Running ? (uint)Colors.NegativeActive : (uint)Colors.PositiveActive)) {
+            if (ImGui.Button(_tweak.Running ? "Stop" : "Start")) {
+                _tweak.ToggleRunning();
+                Service.Navmesh.Stop();
+            }
+
+            ImGui.SameLine();
+            DrawHeaderChip(
+                $"Automation: {(_tweak.Running ? Service.Automation.Status : "Stopped")}",
+                _tweak.Running ? Colors.ChipGold : Colors.ChipMuted,
+                Colors.Grey2
+            );
+
+            ImGui.SameLine();
+            DrawHeaderChip(
+                $"State: {_tweak.CurrentState}",
+                _tweak.Running && !_tweak.CurrentState.Equals("Idle", StringComparison.OrdinalIgnoreCase) ? Colors.ChipGold : Colors.ChipMuted,
+                Colors.Grey2
+            );
+
+            ImGui.SameLine();
+            DrawHeaderChip($"Completed: {_tweak.CompletedCount}", Colors.ChipInfo, Colors.Grey2);
         }
-        ImGui.SameLine();
-        ImGui.TextUnformatted($"Completed: {_tweak.CompletedCount}");
 
         ImGui.SpacedSeparator();
 
@@ -110,6 +129,14 @@ public class FateToolKitWindow : Window {
 
             ImGui.SpacedSeparator();
         }
+    }
+
+    private static void DrawHeaderChip(string text, EzColor background, EzColor textColor) {
+        using var chipColor = ImRaii.PushColor(ImGuiCol.Button, (uint)background)
+            .Push(ImGuiCol.ButtonHovered, (uint)background)
+            .Push(ImGuiCol.ButtonActive, (uint)background)
+            .Push(ImGuiCol.Text, (uint)textColor);
+        ImGui.Button(text);
     }
 
     private void DrawSettings() {

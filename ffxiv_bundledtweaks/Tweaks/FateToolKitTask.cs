@@ -33,7 +33,7 @@ internal sealed class FateGrind(FateToolKit tweak) : TaskBase {
                     case GrindState.Unconscious:
                         await Revive();
                         break;
-                    case GrindState.Moving:
+                    case GrindState.BetweenFates:
                         await MoveToFate();
                         break;
                     case GrindState.WaitingForFates:
@@ -72,12 +72,13 @@ internal sealed class FateGrind(FateToolKit tweak) : TaskBase {
             if (PublicEvent.CurrentFate is { } current) {
                 // treat completed collect fates as done and wait for out of combat/not busy before trying to move away
                 if (current is { Rule: PublicEvent.FateRule.Collect, Progress: >= 100, Id: var id } && !Player.IsBusy)
-                    return AvailableFates.FirstOrDefault(f => f.Id != id) is { } ? GrindState.Moving : GrindState.WaitingForFates;
+                    return AvailableFates.FirstOrDefault(f => f.Id != id) is { } ? GrindState.BetweenFates : GrindState.WaitingForFates;
+                Status = "Engaging";
                 return GrindState.Engaging;
             }
 
             if (AvailableFates.FirstOrDefault() is { })
-                return GrindState.Moving;
+                return GrindState.BetweenFates;
 
             if (!AvailableFates.Any())
                 return GrindState.WaitingForFates;
@@ -89,7 +90,7 @@ internal sealed class FateGrind(FateToolKit tweak) : TaskBase {
     private enum GrindState {
         Idle,
         WaitingForFates,
-        Moving,
+        BetweenFates,
         Engaging,
         Unconscious,
     }
@@ -109,14 +110,14 @@ internal sealed class FateGrind(FateToolKit tweak) : TaskBase {
             Svc.BossMod.AddTransientStrategy(_presetName, "BossMod.Autorotation.MiscAI.AutoTarget", "MaxTargets", PullSize.ToString());
 
             if (PublicEvent.CurrentFate is { Rule: PublicEvent.FateRule.Collect } && !Svc.TextAdvance.IsInExternalControl())
-                Svc.TextAdvance.EnableExternalControl(Plugin.Name, new() { EnableTalkSkip = true, EnableRequestFill = true, EnableRequestHandin = true });
+                Svc.TextAdvance.EnableExternalControl(Name, new() { EnableTalkSkip = true, EnableRequestFill = true, EnableRequestHandin = true });
         }
         else {
             NextFate = null;
             if (Service.BossMod.Get(_presetName) is not null)
                 Service.BossMod.ClearActive();
             if (Svc.TextAdvance.IsInExternalControl())
-                Svc.TextAdvance.DisableExternalControl(Plugin.Name);
+                Svc.TextAdvance.DisableExternalControl(Name);
         }
     }
 
@@ -125,9 +126,11 @@ internal sealed class FateGrind(FateToolKit tweak) : TaskBase {
         await WaitUntil(() => Player.Revivable, "WaitForRevivable");
         (var lastZone, var lastPos) = (Player.Territory, Player.Position);
         if (Svc.Party.Length is 0) {
+            Status = "Reviving";
             GameMain.ExecuteCommand(CommandFlag.Revive.Value, AgentReviveOp.Return.Value);
         }
         else {
+            Status = "Waiting For Raise";
             await WaitUntil(() => Player.ReviveState is 2, "WaitingForRaise"); // 1 = return, 2 = raise
             GameMain.ExecuteCommand(CommandFlag.Revive.Value, AgentReviveOp.AcceptRevive.Value); // a1=5 for raises
         }
