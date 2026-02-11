@@ -62,6 +62,7 @@ internal sealed class FateGrind(FateToolKit tweak) : TaskBase {
     private uint? ReturnToFateId { get; set; } // when we die, if the fate we were in progressed enough to not qualify, we want to return to it anyway
 
     public unsafe IOrderedEnumerable<PublicEvent> AvailableFates => FateToolKit.ApplySortOrder(PublicEvent.Fates.Where(FateConditions), tweak.Config.SortOrder);
+    private bool HasTwistOfFate => Player.Status.Any(status => DateWithDestiny.TwistOfFateStatusIDs.Contains(status.StatusId));
 
     private bool FateConditions(PublicEvent f)
         => f.Duration <= tweak.Config.MaxDuration
@@ -176,6 +177,39 @@ internal sealed class FateGrind(FateToolKit tweak) : TaskBase {
         WarningIf(rnd == msh, "Failed to find a random point on mesh. Destination might not land.");
         Log($"[NextFate={NextFate.Position}] -> [rnd={rnd}] -> [mesh={msh}]");
 
+        var lastProgressPosition = Player.Position;
+        var lastProgressAt = Environment.TickCount64;
+        var retryPos = Vector3.Zero;
+        var retriedOnce = false;
+        var teleportToFate = false;
+        bool Stuck() {
+            if (Svc.Navmesh.PathfindInProgress()) {
+                lastProgressPosition = Player.Position;
+                lastProgressAt = Environment.TickCount64;
+                return false;
+            }
+
+            if (Vector3.Distance(Player.Position, lastProgressPosition) > 1.5f) {
+                lastProgressPosition = Player.Position;
+                lastProgressAt = Environment.TickCount64;
+                return false;
+            }
+
+            if (Environment.TickCount64 - lastProgressAt < 2000)
+                return false;
+
+            if (retriedOnce && Vector3.Distance(Player.Position, retryPos) <= 3f) {
+                Warning("Stuck again; teleporting instead");
+                teleportToFate = true;
+                return true;
+            }
+
+            Warning("Stuck on the way to fate. Retrying from current position");
+            retryPos = Player.Position;
+            retriedOnce = true;
+            return true;
+        }
+
         bool FateNoLongerValid() {
             if (NextFate is null)
                 return true;
@@ -185,15 +219,23 @@ internal sealed class FateGrind(FateToolKit tweak) : TaskBase {
             NextFate = current; // keep nextfate fresh in case an unactivated fate disappears while pathing to it
             return ReturnToFateId == current.Id ? current.Progress >= 100 : !FateConditions(current);
         }
-        bool ShouldSwitchToNpc() => NextFate?.MotivationNpc is { } && NextFate.State == FateState.Preparing;
+
+        bool ShouldSwitchToNpc() => NextFate?.MotivationNpc is { IsTargetable: true } && NextFate.State == FateState.Preparing;
 
         await MoveTo(msh, MovementConfig.Everything.WithTolerance(3),
-            allowTeleportIfFaster: NextFate is { Progress: > 0 }, // in progress = urgent, otherwise I'd rather just waste a few extra seconds
-            stopCondition: () => FateNoLongerValid() || ShouldSwitchToNpc(),
+            allowTeleportIfFaster: NextFate is { Progress: > 0 } && !HasTwistOfFate, // in progress = urgent, otherwise I'd rather just waste a few extra seconds. Also never drop the buff
+            stopCondition: () => FateNoLongerValid() || ShouldSwitchToNpc() || Stuck(),
             onStopReached: async () => {
                 if (ShouldSwitchToNpc())
                     await ActivateFate();
             });
+
+        if (teleportToFate && NextFate is { Id: var fateId } && PublicEvent.GetFateById(fateId) is { } currentFate) {
+            NextFate = currentFate;
+            Status = "Teleporting to fate";
+            await TeleportTo(Player.Territory.RowId, currentFate.Position, allowSameZoneTeleport: true);
+            return;
+        }
 
         if (NextFate is { State: FateState.Preparing } && PublicEvent.Fates.Any(f => f.Id == NextFate.Id))
             await ActivateFate();
@@ -201,19 +243,19 @@ internal sealed class FateGrind(FateToolKit tweak) : TaskBase {
 
     private async Task ActivateFate() {
         using var scope = BeginScope(nameof(ActivateFate));
-        if (NextFate?.MotivationNpc is not { } npc) return;
+        if (NextFate?.MotivationNpc is not { IsTargetable: true } npc) return;
         await MoveTo(npc.Position, MovementConfig.InteractRange.WithOptions(MovementOptions.GetCurrent()));
         await InteractWith(npc, () => NextFate?.State == FateState.Running, skip: UiSkipOptions.Talk | UiSkipOptions.YesNo);
     }
 
     private async Task HandleNoFates() {
-        if (tweak.Config.SwapZones) {
+        if (tweak.Config.SwapZones && !HasTwistOfFate) {
             using var scope = BeginScope("SwapZones");
             await TeleportTo(GetNextAchievementZone() ?? GetRandomSameExpacZone(), Vector3.Zero);
         }
         else {
             using var scope = BeginScope("WaitForFates");
-            Status = "Waiting for fates to spawn";
+            Status = HasTwistOfFate ? "Waiting for fates (preserving Twist of Fate)" : "Waiting for fates to spawn";
             await Mount();
             await NextFrame(60);
         }

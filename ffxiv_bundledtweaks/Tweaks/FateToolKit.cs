@@ -49,6 +49,7 @@ public class FateToolKitConfig {
  * gemstone spending or at least stop when full
  * more dynamic pull sizes. Like if fates have a ton of enemies, they're generally low health and you could just pull them all
  * better handling of new fates spawning on top of you
+ * watch gear durability. Either self repair or just stop if I cba
  * 
  * vbm:
  * treat all engaged enemies as your own
