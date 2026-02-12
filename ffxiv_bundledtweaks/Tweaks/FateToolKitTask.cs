@@ -37,6 +37,9 @@ internal sealed class FateGrind(FateToolKit tweak) : TaskBase {
                     case GrindState.Unconscious:
                         await Revive();
                         break;
+                    case GrindState.WaitingForFollowUp:
+                        await NextFrame(100);
+                        break;
                     case GrindState.BetweenFates:
                         await MoveToFate();
                         break;
@@ -60,6 +63,10 @@ internal sealed class FateGrind(FateToolKit tweak) : TaskBase {
 
     public PublicEvent? NextFate { get; set; }
     private uint? ReturnToFateId { get; set; } // when we die, if the fate we were in progressed enough to not qualify, we want to return to it anyway
+    private uint? LastStuckFateId { get; set; }
+    private int ConsecutiveStuckRetries { get; set; }
+    private uint? FollowUpFateId { get; set; } // id to store to check if NextFate is a follow up to this
+    private long FollowUpWatchUntilMs { get; set; }
 
     public unsafe IOrderedEnumerable<PublicEvent> AvailableFates => FateToolKit.ApplySortOrder(PublicEvent.Fates.Where(FateConditions), tweak.Config.SortOrder);
     private bool HasTwistOfFate => Player.Status.Any(status => DateWithDestiny.TwistOfFateStatusIDs.Contains(status.StatusId));
@@ -75,16 +82,25 @@ internal sealed class FateGrind(FateToolKit tweak) : TaskBase {
             if (Svc.Condition[ConditionFlag.Unconscious]) {
                 if (PublicEvent.CurrentFate is { Id: var id, Progress: < 100 })
                     ReturnToFateId = id;
+                FollowUpFateId = null;
                 return GrindState.Unconscious;
             }
 
             if (PublicEvent.CurrentFate is { } current) {
+                if (current.Progress >= 100)
+                    StartFollowUpWatch(current.Id);
+                else if (FollowUpFateId == current.Id)
+                    FollowUpFateId = null;
+
                 // treat completed collect fates as done and wait for out of combat/not busy before trying to move away
                 if (current is { Rule: PublicEvent.FateRule.Collect, Progress: >= 100, Id: var id } && !Player.IsBusy)
                     return AvailableFates.FirstOrDefault(f => f.Id != id) is { } ? GrindState.BetweenFates : GrindState.WaitingForFates;
                 Status = "Engaging";
                 return GrindState.Engaging;
             }
+
+            if (ShouldWaitForFollowUp())
+                return GrindState.WaitingForFollowUp;
 
             if (AvailableFates.FirstOrDefault() is { })
                 return GrindState.BetweenFates;
@@ -99,6 +115,7 @@ internal sealed class FateGrind(FateToolKit tweak) : TaskBase {
     private enum GrindState {
         Idle,
         WaitingForFates,
+        WaitingForFollowUp,
         BetweenFates,
         Engaging,
         Unconscious,
@@ -116,23 +133,51 @@ internal sealed class FateGrind(FateToolKit tweak) : TaskBase {
     private sealed class MoveTracker(Vector3 initialPosition, long initialTick) {
         private Vector3 LastProgressPosition { get; set; } = initialPosition;
         private long LastProgressAt { get; set; } = initialTick;
+        private long LastPathActivityAt { get; set; } = initialTick;
         private Vector3 RetryPosition { get; set; }
         private bool RetriedOnce { get; set; }
+        private bool WasRunning { get; set; }
 
         public MoveStopReason CheckStuck(Vector3 currentPosition) {
-            if (Svc.Navmesh.PathfindInProgress()) {
+            var now = Environment.TickCount64;
+            var isRunning = Svc.Navmesh.IsRunning();
+            var isPathfinding = Svc.Navmesh.PathfindInProgress();
+
+            if (isRunning || isPathfinding)
+                LastPathActivityAt = now;
+
+            if (!isRunning) {
+                WasRunning = false;
                 LastProgressPosition = currentPosition;
-                LastProgressAt = Environment.TickCount64;
+                LastProgressAt = now;
+
+                // if vnav hard fails then it'll go back to being idle while MoveTo is waiting for it
+                if (!isPathfinding && now - LastPathActivityAt >= 1500) {
+                    if (RetriedOnce && Vector3.Distance(currentPosition, RetryPosition) <= 3f)
+                        return MoveStopReason.StuckTeleport;
+
+                    RetryPosition = currentPosition;
+                    RetriedOnce = true;
+                    return MoveStopReason.StuckRetry;
+                }
+
+                return MoveStopReason.None;
+            }
+
+            if (!WasRunning) {
+                WasRunning = true;
+                LastProgressPosition = currentPosition;
+                LastProgressAt = now;
                 return MoveStopReason.None;
             }
 
             if (Vector3.Distance(currentPosition, LastProgressPosition) > 1.5f) {
                 LastProgressPosition = currentPosition;
-                LastProgressAt = Environment.TickCount64;
+                LastProgressAt = now;
                 return MoveStopReason.None;
             }
 
-            if (Environment.TickCount64 - LastProgressAt < 2000)
+            if (now - LastProgressAt < 2000)
                 return MoveStopReason.None;
 
             if (RetriedOnce && Vector3.Distance(currentPosition, RetryPosition) <= 3f)
@@ -141,32 +186,6 @@ internal sealed class FateGrind(FateToolKit tweak) : TaskBase {
             RetryPosition = currentPosition;
             RetriedOnce = true;
             return MoveStopReason.StuckRetry;
-        }
-    }
-
-    private void HandleIntegrations() {
-        if (PublicEvent.CurrentFate is { } fate) {
-            // only activate for the fate we're pathfinding to (or any if NextFate is null)
-            if (NextFate is { } next && fate.Id != next.Id)
-                return;
-
-            if (Service.BossMod.GetActive() != _presetName) {
-                if (Service.BossMod.Get(_presetName) is null)
-                    Service.BossMod.Create(_preset, true);
-                else
-                    Service.BossMod.SetActive(_presetName);
-            }
-            Svc.BossMod.AddTransientStrategy(_presetName, "BossMod.Autorotation.MiscAI.AutoTarget", "MaxTargets", PullSize.ToString());
-
-            if (PublicEvent.CurrentFate is { Rule: PublicEvent.FateRule.Collect } && !Svc.TextAdvance.IsInExternalControl())
-                Svc.TextAdvance.EnableExternalControl(Name, new() { EnableTalkSkip = true, EnableRequestFill = true, EnableRequestHandin = true });
-        }
-        else {
-            NextFate = null;
-            if (Service.BossMod.Get(_presetName) is not null)
-                Service.BossMod.ClearActive();
-            if (Svc.TextAdvance.IsInExternalControl())
-                Svc.TextAdvance.DisableExternalControl(Name);
         }
     }
 
@@ -256,7 +275,7 @@ internal sealed class FateGrind(FateToolKit tweak) : TaskBase {
             return true;
         }
 
-        bool ShouldSwitchToNpc() => NextFate?.MotivationNpc is { IsTargetable: true } && NextFate.State == FateState.Preparing;
+        bool ShouldSwitchToNpc() => NextFate is { State: FateState.Preparing } fate && TryGetValidMotivationNpc(fate, out _);
 
         bool ShouldStopMove() {
             // preserve the first reason so it can't be overwritten by a later check.
@@ -301,11 +320,33 @@ internal sealed class FateGrind(FateToolKit tweak) : TaskBase {
                     await ActivateFate();
             });
 
+        Log($"{nameof(MoveToFate)} finished with stopReason={stopReason} fate={NextFate?.Id}");
+
+        if (stopReason == MoveStopReason.StuckRetry && NextFate is { Id: var stuckFateId }) {
+            if (LastStuckFateId == stuckFateId)
+                ConsecutiveStuckRetries++;
+            else {
+                LastStuckFateId = stuckFateId;
+                ConsecutiveStuckRetries = 1;
+            }
+
+            if (ConsecutiveStuckRetries >= 2) {
+                Warning($"Escalating repeated stuck retries to teleport for fate {stuckFateId}");
+                stopReason = MoveStopReason.StuckTeleport;
+            }
+        }
+        else if (stopReason != MoveStopReason.StuckTeleport) {
+            LastStuckFateId = null;
+            ConsecutiveStuckRetries = 0;
+        }
+
         if (stopReason == MoveStopReason.HigherPriority)
             return;
 
         if (stopReason == MoveStopReason.StuckTeleport && NextFate is { Id: var fateId } && PublicEvent.GetFateById(fateId) is { } currentFate) {
             NextFate = currentFate;
+            LastStuckFateId = null;
+            ConsecutiveStuckRetries = 0;
             Status = "Teleporting to fate";
             await Mount();
             await TeleportTo(Player.Territory.RowId, currentFate.Position, allowSameZoneTeleport: true);
@@ -319,8 +360,11 @@ internal sealed class FateGrind(FateToolKit tweak) : TaskBase {
 
     private async Task ActivateFate() {
         using var scope = BeginScope(nameof(ActivateFate));
-        if (NextFate?.MotivationNpc is not { IsTargetable: true } npc) return;
+        if (NextFate is not { } fate || !TryGetValidMotivationNpc(fate, out var npc))
+            return;
+        Log($"ActivateFate start: fate={NextFate.Id} npc={npc.EntityId} npcPos={npc.Position} playerPos={Player.Position} dist={Player.DistanceTo(npc.Position):F2} inRange={npc.IsInInteractRange()}");
         await MoveTo(npc.Position, MovementConfig.InteractRange.WithOptions(MovementOptions.GetCurrent()));
+        Log($"ActivateFate after MoveTo: npc={npc.EntityId} playerPos={Player.Position} dist={Player.DistanceTo(npc.Position):F2} inRange={npc.IsInInteractRange()}");
         await InteractWith(npc, () => NextFate?.State == FateState.Running, skip: UiSkipOptions.Talk | UiSkipOptions.YesNo);
     }
 
@@ -344,6 +388,102 @@ internal sealed class FateGrind(FateToolKit tweak) : TaskBase {
             await Mount();
             await NextFrame(60);
         }
+    }
+
+    private void HandleIntegrations() {
+        if (PublicEvent.CurrentFate is { } fate) {
+            // when we leave collect fates early, it's still CurrentFate, so we need to ignore that and deactivate anyway
+            if (fate is { Rule: PublicEvent.FateRule.Collect, Progress: >= 100 } && (NextFate is null || NextFate.Id != fate.Id)) {
+                DeactivateIntegrations(clearNextFate: false);
+                return;
+            }
+
+            // only activate for the fate we're pathfinding to (or any if NextFate is null)
+            if (NextFate is { } next && fate.Id != next.Id) {
+                DeactivateIntegrations(clearNextFate: false);
+                return;
+            }
+
+            if (Service.BossMod.GetActive() != _presetName) {
+                if (Service.BossMod.Get(_presetName) is null)
+                    Service.BossMod.Create(_preset, true);
+                else
+                    Service.BossMod.SetActive(_presetName);
+            }
+            Svc.BossMod.AddTransientStrategy(_presetName, "BossMod.Autorotation.MiscAI.AutoTarget", "MaxTargets", PullSize.ToString());
+
+            if (PublicEvent.CurrentFate is { Rule: PublicEvent.FateRule.Collect } && !Svc.TextAdvance.IsInExternalControl())
+                Svc.TextAdvance.EnableExternalControl(Name, new() { EnableTalkSkip = true, EnableRequestFill = true, EnableRequestHandin = true });
+        }
+        else {
+            DeactivateIntegrations(clearNextFate: true);
+        }
+    }
+
+    private void DeactivateIntegrations(bool clearNextFate) {
+        if (clearNextFate)
+            NextFate = null;
+
+        Service.BossMod.ClearActive();
+        if (Svc.TextAdvance.IsInExternalControl())
+            Svc.TextAdvance.DisableExternalControl(Name);
+    }
+
+    private bool TryGetValidMotivationNpc(PublicEvent fate, out IGameObject npc) {
+        npc = null!;
+        var distanceToFate = Player.DistanceTo(fate.Position);
+        if (distanceToFate > 50) // half the object table range
+            return false;
+
+        if (fate.MotivationNpc is not { IsTargetable: true } candidate)
+            return false;
+
+        // TODO: see if this is still needed after objectkind change
+        if (candidate.Position == Player.Position) {
+            Warning($"[{fate.Id}] npc {candidate} [{candidate.Position}] has same position as player");
+            return false;
+        }
+
+        if (Vector3.Distance(candidate.Position, fate.Position) > Math.Max(fate.Radius + 20f, 40f)) {
+            Warning($"[{fate.Id}] npc {candidate} [{candidate.Position}] way outside the fate [{fate.Position}]");
+            return false;
+        }
+
+        npc = candidate;
+        return true;
+    }
+
+    // TODO: find better shit for this
+    private const int FollowUpWaitLimit = 15_000;
+    private void StartFollowUpWatch(uint completedFateId) {
+        if (!Fate.GetRow(completedFateId).HasFollowUp)
+            return;
+
+        if (FollowUpFateId != completedFateId)
+            Log($"Watching for follow-up fate after {completedFateId} for {FollowUpWaitLimit / 1000}s");
+
+        FollowUpFateId = completedFateId;
+        FollowUpWatchUntilMs = Environment.TickCount64 + FollowUpWaitLimit;
+    }
+
+    private bool ShouldWaitForFollowUp() {
+        if (FollowUpFateId is not { } fateId)
+            return false;
+
+        var row = Fate.GetRow(fateId);
+        if (PublicEvent.Fates.Any(f => f.Id > fateId && Fate.GetRow(f.Id).Location == row.Location)) {
+            Log($"Detected follow-up fate for {fateId}, resuming routing");
+            FollowUpFateId = null;
+            return false;
+        }
+
+        if (Environment.TickCount64 >= FollowUpWatchUntilMs) {
+            FollowUpFateId = null;
+            return false;
+        }
+
+        Status = $"Waiting for follow-up fate ({(FollowUpWatchUntilMs - Environment.TickCount64) / 1000 + 1}s)";
+        return true;
     }
 
     private unsafe uint? GetNextAchievementZone() {
