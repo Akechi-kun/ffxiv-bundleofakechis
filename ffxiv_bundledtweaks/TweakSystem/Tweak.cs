@@ -582,3 +582,11 @@ public abstract partial class Tweak // Logging
         Svc.Chat.Print(message);
     }
 }
+
+internal static class TweakMessageExtensions {
+    internal static void ModuleMessage<T>(this string messageTemplate, T tweak) where T : Tweak
+        => tweak.ModuleMessage(messageTemplate);
+
+    internal static void ModuleMessage<T>(this SeString messageTemplate, T tweak) where T : Tweak
+        => tweak.ModuleMessage(messageTemplate);
+}

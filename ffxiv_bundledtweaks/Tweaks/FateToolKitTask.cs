@@ -104,6 +104,46 @@ internal sealed class FateGrind(FateToolKit tweak) : TaskBase {
         Unconscious,
     }
 
+    private enum MoveStopReason {
+        None,
+        FateInvalid,
+        HigherPriority,
+        NpcLoaded,
+        StuckRetry,
+        StuckTeleport,
+    }
+
+    private sealed class MoveTracker(Vector3 initialPosition, long initialTick) {
+        private Vector3 LastProgressPosition { get; set; } = initialPosition;
+        private long LastProgressAt { get; set; } = initialTick;
+        private Vector3 RetryPosition { get; set; }
+        private bool RetriedOnce { get; set; }
+
+        public MoveStopReason CheckStuck(Vector3 currentPosition) {
+            if (Svc.Navmesh.PathfindInProgress()) {
+                LastProgressPosition = currentPosition;
+                LastProgressAt = Environment.TickCount64;
+                return MoveStopReason.None;
+            }
+
+            if (Vector3.Distance(currentPosition, LastProgressPosition) > 1.5f) {
+                LastProgressPosition = currentPosition;
+                LastProgressAt = Environment.TickCount64;
+                return MoveStopReason.None;
+            }
+
+            if (Environment.TickCount64 - LastProgressAt < 2000)
+                return MoveStopReason.None;
+
+            if (RetriedOnce && Vector3.Distance(currentPosition, RetryPosition) <= 3f)
+                return MoveStopReason.StuckTeleport;
+
+            RetryPosition = currentPosition;
+            RetriedOnce = true;
+            return MoveStopReason.StuckRetry;
+        }
+    }
+
     private void HandleIntegrations() {
         if (PublicEvent.CurrentFate is { } fate) {
             // only activate for the fate we're pathfinding to (or any if NextFate is null)
@@ -152,65 +192,47 @@ internal sealed class FateGrind(FateToolKit tweak) : TaskBase {
 
     private async Task MoveToFate() {
         using var scope = BeginScope(nameof(MoveToFate));
-        PublicEvent? nextFate = null;
-        if (ReturnToFateId is { } returnFateId) {
-            if (PublicEvent.GetFateById(returnFateId) is { Progress: < 100 } returnFate)
-                nextFate = returnFate;
-            else
-                ReturnToFateId = null;
+
+        IEnumerable<PublicEvent> GetCandidates() {
+            // If current is a collect at 100% we're leaving it; pick a different fate.
+            if (PublicEvent.CurrentFate is { Rule: PublicEvent.FateRule.Collect, Progress: >= 100, Id: var currentId })
+                return AvailableFates.Where(f => f.Id != currentId);
+            return AvailableFates;
         }
 
-        if (nextFate is null) {
-            // If current is a collect at 100% we're leaving it; pick a different fate
-            var candidates = PublicEvent.CurrentFate is { Rule: PublicEvent.FateRule.Collect, Progress: >= 100 } ? AvailableFates.Where(f => f.Id != PublicEvent.CurrentFate.Id) : AvailableFates;
-            if (candidates.FirstOrDefault() is not { } candidate) return;
-            nextFate = candidate;
+        bool TrySelectNextFate(out PublicEvent selected) {
+            if (ReturnToFateId is { } returnFateId) {
+                if (PublicEvent.GetFateById(returnFateId) is { Progress: < 100 } returnFate) {
+                    selected = returnFate;
+                    return true;
+                }
+
+                ReturnToFateId = null;
+            }
+
+            if (GetCandidates().FirstOrDefault() is { } candidate) {
+                selected = candidate;
+                return true;
+            }
+
+            selected = null!;
+            return false;
         }
+
+        if (!TrySelectNextFate(out var nextFate))
+            return;
 
         NextFate = nextFate;
-        //await WaitWhile(() => Player.IsBusy, "WaitingForNotBusy");
-        //await WaitWhile(NearbyPendingMobs, "WaitForEngagedMobsToDisappear");
-
         // TODO: if rnd=msh, retry?
         var rnd = NextFate.Position.RandomPoint(NextFate.Radius * 0.5f);
         var msh = rnd.OnMesh();
         WarningIf(rnd == msh, "Failed to find a random point on mesh. Destination might not land.");
         Log($"[NextFate={NextFate.Position}] -> [rnd={rnd}] -> [mesh={msh}]");
 
-        var lastProgressPosition = Player.Position;
-        var lastProgressAt = Environment.TickCount64;
-        var retryPos = Vector3.Zero;
-        var retriedOnce = false;
-        var teleportToFate = false;
-        bool Stuck() {
-            if (Svc.Navmesh.PathfindInProgress()) {
-                lastProgressPosition = Player.Position;
-                lastProgressAt = Environment.TickCount64;
-                return false;
-            }
+        var progress = new MoveTracker(Player.Position, Environment.TickCount64);
+        var stopReason = MoveStopReason.None;
 
-            if (Vector3.Distance(Player.Position, lastProgressPosition) > 1.5f) {
-                lastProgressPosition = Player.Position;
-                lastProgressAt = Environment.TickCount64;
-                return false;
-            }
-
-            if (Environment.TickCount64 - lastProgressAt < 2000)
-                return false;
-
-            if (retriedOnce && Vector3.Distance(Player.Position, retryPos) <= 3f) {
-                Warning("Stuck again; teleporting instead");
-                teleportToFate = true;
-                return true;
-            }
-
-            Warning("Stuck on the way to fate. Retrying from current position");
-            retryPos = Player.Position;
-            retriedOnce = true;
-            return true;
-        }
-
-        bool FateNoLongerValid() {
+        bool IsCurrentFateInvalid() {
             if (NextFate is null)
                 return true;
             if (PublicEvent.GetFateById(NextFate.Id) is not { } current)
@@ -220,24 +242,78 @@ internal sealed class FateGrind(FateToolKit tweak) : TaskBase {
             return ReturnToFateId == current.Id ? current.Progress >= 100 : !FateConditions(current);
         }
 
+        bool TrySwitchToHigherPriorityFate() {
+            // don't check if we're returning to a previous fate
+            if (ReturnToFateId is not null || NextFate is null)
+                return false;
+
+            var topCandidate = GetCandidates().FirstOrDefault();
+            if (topCandidate is null || topCandidate.Id == NextFate.Id)
+                return false;
+
+            Log($"Switching target fate {NextFate.Id} -> {topCandidate.Id} (higher priority)");
+            NextFate = topCandidate;
+            return true;
+        }
+
         bool ShouldSwitchToNpc() => NextFate?.MotivationNpc is { IsTargetable: true } && NextFate.State == FateState.Preparing;
+
+        bool ShouldStopMove() {
+            // preserve the first reason so it can't be overwritten by a later check.
+            if (stopReason != MoveStopReason.None)
+                return true;
+
+            stopReason = MoveStopReason.None;
+
+            if (IsCurrentFateInvalid()) {
+                stopReason = MoveStopReason.FateInvalid;
+                return true;
+            }
+
+            if (TrySwitchToHigherPriorityFate()) {
+                stopReason = MoveStopReason.HigherPriority;
+                return true;
+            }
+
+            if (ShouldSwitchToNpc()) {
+                stopReason = MoveStopReason.NpcLoaded;
+                return true;
+            }
+
+            if (progress.CheckStuck(Player.Position) is not MoveStopReason.None and var reason) {
+                if (reason == MoveStopReason.StuckTeleport)
+                    Warning("Stuck again; teleporting instead");
+                else
+                    Warning("Stuck on the way to fate. Retrying from current position");
+
+                stopReason = reason;
+                return true;
+            }
+
+            return false;
+        }
 
         await MoveTo(msh, MovementConfig.Everything.WithTolerance(3),
             allowTeleportIfFaster: NextFate is { Progress: > 0 } && !HasTwistOfFate, // in progress = urgent, otherwise I'd rather just waste a few extra seconds. Also never drop the buff
-            stopCondition: () => FateNoLongerValid() || ShouldSwitchToNpc() || Stuck(),
+            stopCondition: ShouldStopMove,
             onStopReached: async () => {
-                if (ShouldSwitchToNpc())
+                if (stopReason == MoveStopReason.NpcLoaded)
                     await ActivateFate();
             });
 
-        if (teleportToFate && NextFate is { Id: var fateId } && PublicEvent.GetFateById(fateId) is { } currentFate) {
+        if (stopReason == MoveStopReason.HigherPriority)
+            return;
+
+        if (stopReason == MoveStopReason.StuckTeleport && NextFate is { Id: var fateId } && PublicEvent.GetFateById(fateId) is { } currentFate) {
             NextFate = currentFate;
             Status = "Teleporting to fate";
+            await Mount();
             await TeleportTo(Player.Territory.RowId, currentFate.Position, allowSameZoneTeleport: true);
             return;
         }
 
-        if (NextFate is { State: FateState.Preparing } && PublicEvent.Fates.Any(f => f.Id == NextFate.Id))
+        // only activate after a normal arrival; if we explicitly stopped (e.g. npcloaded), let the loop re-handle
+        if (stopReason == MoveStopReason.None && NextFate is { State: FateState.Preparing } && PublicEvent.Fates.Any(f => f.Id == NextFate.Id))
             await ActivateFate();
     }
 
@@ -259,6 +335,7 @@ internal sealed class FateGrind(FateToolKit tweak) : TaskBase {
                 return;
             }
 
+            await Mount();
             await TeleportTo(destination, Vector3.Zero);
         }
         else {
@@ -267,18 +344,6 @@ internal sealed class FateGrind(FateToolKit tweak) : TaskBase {
             await Mount();
             await NextFrame(60);
         }
-    }
-
-    // TODO: don't think this really does anything. Need better vbm support
-    private unsafe bool NearbyPendingMobs() {
-        return Svc.Objects.OfType<IBattleChara>().Where(o => o.BattleChara()->FateId != 0).Any(o => {
-            foreach (var effect in o.BattleChara()->ActionEffectHandler.IncomingEffects) {
-                if (effect.GlobalSequence != 0 && effect.Source == Svc.Objects.LocalPlayer?.GameObjectId) {
-                    return true;
-                }
-            }
-            return false;
-        });
     }
 
     private unsafe uint? GetNextAchievementZone() {

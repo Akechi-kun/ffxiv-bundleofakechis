@@ -80,9 +80,12 @@ public partial class FateToolKit : Tweak<FateToolKitConfig, FateToolKitWindow> {
         [FateSortCriteria.HasBonusWithTwist] = f => f.HasBonus && Player.Status.FirstOrDefault(x => DateWithDestiny.TwistOfFateStatusIDs.Contains(x.StatusId)) != null,
         [FateSortCriteria.Progress] = f => f.Progress,
         [FateSortCriteria.HasBonus] = f => f.HasBonus,
-        [FateSortCriteria.TimeRemainingUrgent] = f => f.TimeRemaining < MinTimeToPrioritise,
+        // Unactivated fates report negative time; treat them as non-urgent.
+        [FateSortCriteria.TimeRemainingUrgent] = f => f.TimeRemaining is >= 0 and < MinTimeToPrioritise,
         [FateSortCriteria.Distance] = f => Player.DistanceTo(f.Position),
-        [FateSortCriteria.TimeRemaining] = f => f.TimeRemaining < 0 ? float.MaxValue : f.TimeRemaining,
+        // Only rank by remaining time for active + urgent fates.
+        // Non-urgent and unactivated fates tie here so later criteria (e.g. distance) can decide.
+        [FateSortCriteria.TimeRemaining] = f => f.TimeRemaining is >= 0 and < MinTimeToPrioritise ? f.TimeRemaining : MinTimeToPrioritise,
         [FateSortCriteria.Level] = f => f.Level,
         [FateSortCriteria.Name] = f => f.Name,
     };
@@ -183,14 +186,13 @@ public partial class FateToolKit : Tweak<FateToolKitConfig, FateToolKitWindow> {
     private void OnCommand(string _, string arguments) {
         var result = Router.Execute(arguments, this, "/dwd");
         if (!string.IsNullOrWhiteSpace(result.Help)) {
-            ModuleMessage(result.Help!);
+            ModuleMessage(result.Help);
             return;
         }
 
         if (!result.Success) {
-            ModuleMessage(result.Error!);
-            if (!string.IsNullOrWhiteSpace(result.Usage))
-                ModuleMessage(result.Usage!);
+            result.Error?.ModuleMessage(this);
+            result.Usage?.ModuleMessage(this);
         }
     }
 
@@ -233,10 +235,7 @@ public partial class FateToolKit : Tweak<FateToolKitConfig, FateToolKitWindow> {
         IOrderedEnumerable<PublicEvent>? ordered = null;
 
         foreach (var sort in sortOrder) {
-            var keySelector = sort.Criteria == FateSortCriteria.TimeRemaining && sort.Descending
-                ? (f => f.TimeRemaining < 0 ? float.MinValue : f.TimeRemaining)
-                : SortKeys.TryGetValue(sort.Criteria, out var key) ? key : (_ => 0);
-
+            var keySelector = SortKeys.TryGetValue(sort.Criteria, out var key) ? key : (_ => 0);
             ordered = ordered == null
                 ? sort.Descending ? source.OrderByDescending(keySelector) : source.OrderBy(keySelector)
                 : sort.Descending ? ordered.ThenByDescending(keySelector) : ordered.ThenBy(keySelector);
