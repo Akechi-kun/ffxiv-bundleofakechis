@@ -365,7 +365,17 @@ internal sealed class FateGrind(FateToolKit tweak) : TaskBase {
         Log($"ActivateFate start: fate={NextFate.Id} npc={npc.EntityId} npcPos={npc.Position} playerPos={Player.Position} dist={Player.DistanceTo(npc.Position):F2} inRange={npc.IsInInteractRange()}");
         await MoveTo(npc.Position, MovementConfig.InteractRange.WithOptions(MovementOptions.GetCurrent()));
         Log($"ActivateFate after MoveTo: npc={npc.EntityId} playerPos={Player.Position} dist={Player.DistanceTo(npc.Position):F2} inRange={npc.IsInInteractRange()}");
-        await InteractWith(npc, () => NextFate?.State == FateState.Running, skip: UiSkipOptions.Talk | UiSkipOptions.YesNo);
+        try {
+            await InteractWith(npc, () => NextFate?.State == FateState.Running, skip: UiSkipOptions.Talk | UiSkipOptions.YesNo);
+        }
+        catch (Exception ex) {
+            // will crash if we don't catch and it's fine if interact fails because the npc/fate disappeared before we could start
+            if (NextFate is null || !TryGetValidMotivationNpc(NextFate, out _) || NextFate.State != FateState.Preparing) {
+                Warning($"Skipping fate activation: npc/fate vanished before interact ({ex.Message})");
+                return;
+            }
+            throw;
+        }
     }
 
     private async Task HandleNoFates() {
