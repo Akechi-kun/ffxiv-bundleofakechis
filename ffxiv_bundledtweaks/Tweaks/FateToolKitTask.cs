@@ -213,7 +213,7 @@ internal sealed class FateGrind(FateToolKit tweak) : TaskBase {
     private async Task MoveToFate() {
         using var scope = BeginScope(nameof(MoveToFate));
 
-        IEnumerable<PublicEvent> GetCandidates() {
+        IEnumerable<PublicEvent> GetAvailableFates() {
             // If current is a collect at 100% we're leaving it; pick a different fate.
             if (PublicEvent.CurrentFate is { Rule: PublicEvent.FateRule.Collect, Progress: >= 100, Id: var currentId })
                 return AvailableFates.Where(f => f.Id != currentId);
@@ -230,7 +230,7 @@ internal sealed class FateGrind(FateToolKit tweak) : TaskBase {
                 ReturnToFateId = null;
             }
 
-            if (GetCandidates().FirstOrDefault() is { } candidate) {
+            if (GetAvailableFates().FirstOrDefault() is { } candidate) {
                 selected = candidate;
                 return true;
             }
@@ -267,12 +267,11 @@ internal sealed class FateGrind(FateToolKit tweak) : TaskBase {
             if (ReturnToFateId is not null || NextFate is null)
                 return false;
 
-            var topCandidate = GetCandidates().FirstOrDefault();
-            if (topCandidate is null || topCandidate.Id == NextFate.Id)
+            if (GetAvailableFates().FirstOrDefault() is not { } higherPrio || higherPrio.Id == NextFate.Id)
                 return false;
 
-            Log($"Switching target fate {NextFate.Id} -> {topCandidate.Id} (higher priority)");
-            NextFate = topCandidate;
+            Log($"Switching target fate {NextFate.Id} -> {higherPrio.Id} (higher priority)");
+            NextFate = higherPrio;
             return true;
         }
 
@@ -453,21 +452,21 @@ internal sealed class FateGrind(FateToolKit tweak) : TaskBase {
         if (Player.DistanceTo(fate.Position) > 50) // half the object table range
             return false;
 
-        if (fate.MotivationNpc is not { IsTargetable: true } candidate)
+        if (fate.MotivationNpc is not { IsTargetable: true } target)
             return false;
 
         // TODO: see if this is still needed after objectkind change
-        if (candidate.Position == Player.Position) {
-            Warning($"[{fate.Id}] npc {candidate} [{candidate.Position}] has same position as player");
+        if (target.Position == Player.Position) {
+            Warning($"[{fate.Id}] npc {target} [{target.Position}] has same position as player");
             return false;
         }
 
-        if (Vector3.Distance(candidate.Position, fate.Position) > Math.Max(fate.Radius + 20f, 40f)) {
-            Warning($"[{fate.Id}] npc {candidate} [{candidate.Position}] way outside the fate [{fate.Position}]");
+        if (Vector3.Distance(target.Position, fate.Position) > Math.Max(fate.Radius + 20f, 40f)) {
+            Warning($"[{fate.Id}] npc {target} [{target.Position}] way outside the fate [{fate.Position}]");
             return false;
         }
 
-        npc = candidate;
+        npc = target;
         return true;
     }
 
