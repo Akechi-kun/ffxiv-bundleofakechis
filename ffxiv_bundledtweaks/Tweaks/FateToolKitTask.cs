@@ -3,6 +3,7 @@ using FFXIVClientStructs.FFXIV.Client.Game;
 using FFXIVClientStructs.FFXIV.Client.Game.Fate;
 using FFXIVClientStructs.FFXIV.Client.UI.Agent;
 using Lumina.Excel.Sheets;
+using System.Diagnostics.CodeAnalysis;
 using System.Threading.Tasks;
 using TerritoryIntendedUse = FFXIVClientStructs.FFXIV.Client.Enums.TerritoryIntendedUse;
 
@@ -447,10 +448,9 @@ internal sealed class FateGrind(FateToolKit tweak) : TaskBase {
             Svc.TextAdvance.DisableExternalControl(Name);
     }
 
-    private bool TryGetValidMotivationNpc(PublicEvent fate, out IGameObject npc) {
-        npc = null!;
-        var distanceToFate = Player.DistanceTo(fate.Position);
-        if (distanceToFate > 50) // half the object table range
+    private bool TryGetValidMotivationNpc(PublicEvent fate, [NotNullWhen(true)] out IGameObject? npc) {
+        npc = null;
+        if (Player.DistanceTo(fate.Position) > 50) // half the object table range
             return false;
 
         if (fate.MotivationNpc is not { IsTargetable: true } candidate)
