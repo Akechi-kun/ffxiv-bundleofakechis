@@ -76,7 +76,8 @@ internal sealed class FateGrind(FateToolKit tweak) : TaskBase {
         => f.Duration <= tweak.Config.MaxDuration
         && f.Progress <= tweak.Config.MaxProgress
         && (f.TimeRemaining < 0 || f.TimeRemaining > tweak.Config.MinTimeRemaining)
-        && !tweak.IsBlacklisted(f);
+        && !tweak.IsBlacklisted(f)
+        && !f.IsPending;
 
     private GrindState State {
         get {
