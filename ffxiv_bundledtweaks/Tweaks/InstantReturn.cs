@@ -2,7 +2,6 @@ using FFXIVClientStructs.FFXIV.Client.Game;
 using FFXIVClientStructs.FFXIV.Client.UI.Agent;
 using FFXIVClientStructs.FFXIV.Client.UI.Info;
 using FFXIVClientStructs.FFXIV.Component.GUI;
-using System.Runtime.InteropServices;
 
 namespace ComplexTweaks.Tweaks;
 
@@ -16,9 +15,9 @@ public unsafe partial class InstantReturn : Tweak {
     public override void Disable() => Svc.AddonLifecycle.UnregisterListener(HandleReturn);
 
     [AddressHook<AgentReturn>(nameof(AgentReturn.MemberFunctionPointers.Return))]
-    private byte AgentReturn_Return(AgentInterface* agent) {
+    private void AgentReturn_Return(AgentReturn* agent) {
         if (ActionManager.Instance()->GetActionStatus(ActionType.GeneralAction, 6) != 0 || Player.IsInPvP)
-            return AgentReturn_ReturnHook.Original(agent);
+            AgentReturn_ReturnHook.Original(agent);
 
         if (InfoProxyCrossRealm.IsLocalPlayerInParty()) {
             if (InfoProxyCrossRealm.IsLocalPlayerPartyLeader())
@@ -28,7 +27,6 @@ public unsafe partial class InstantReturn : Tweak {
         }
 
         GameMain.ExecuteCommand(CommandFlag.InstantReturn.Value);
-        return 1;
     }
 
     private void HandleReturn(AddonEvent type, AddonArgs args) {

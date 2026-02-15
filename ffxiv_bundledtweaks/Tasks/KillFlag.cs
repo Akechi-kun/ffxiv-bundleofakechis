@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 namespace ComplexTweaks.Tasks;
 
 public sealed class KillFlag(string world) : TaskBase {
-    private const float HUNT_DETECTION_RADIUS = 15.0f;
+    private const float HUNT_DETECTION_RADIUS = 25.0f;
     private const float LOS_SEARCH_RADIUS = 5.0f;
     private const int LOS_SEARCH_POSITIONS = 8;
     private const float TARGET_APPROACH_DISTANCE = 3.0f;
@@ -16,14 +16,7 @@ public sealed class KillFlag(string world) : TaskBase {
         if (!world.IsNullOrEmpty())
             await HandleWorldTravel();
 
-        await MoveToFlag(
-            MovementConfig.Default.WithOptions(MovementOptions.Mount | (Player.MapFlag.TerritoryId != 180 ? MovementOptions.Fly : MovementOptions.None)).WithTolerance(5f),
-            stopCondition: () => FindHuntTarget() is not null,
-            onStopReached: async () => {
-                if (FindHuntTarget() is DGameObject target)
-                    await MoveTo(target.Position, MovementConfig.Default.WithTolerance(TARGET_APPROACH_DISTANCE + 2f));
-            }
-        );
+        await MoveToFlag(MovementConfig.Default.WithOptions(MovementOptions.Mount | (Player.MapFlag.TerritoryId != 180 ? MovementOptions.Fly : MovementOptions.None)).WithTolerance(5f));
         using var stop = new OnDispose(() => Service.BossMod.ClearActive());
         await Kill();
     }
@@ -40,8 +33,9 @@ public sealed class KillFlag(string world) : TaskBase {
 
     private async Task Kill() {
         using var scope = BeginScope("Kill");
-        if (FindHuntTarget() is { } target) {
-            await Dismount();
+        var target = FindHuntTarget();
+        if (target is { }) {
+            await MoveTo(target.Position, MovementConfig.Default.WithTolerance(TARGET_APPROACH_DISTANCE + 2f).WithOptions(MovementOptions.Dismount));
             await MoveIfNoLoS(target);
             Svc.Targets.Target = target;
             Service.BossMod.SetActiveList(["VBM Default", "VBM AI"]);
@@ -49,17 +43,19 @@ public sealed class KillFlag(string world) : TaskBase {
             await TargetDead(target);
             Service.BossMod.ClearActive();
         }
-        else
+        else {
             Log("No hunt found.");
+        }
     }
 
-    private IGameObject? FindHuntTarget() => Svc.Objects
-        .Where(o => Player.DistanceTo(o) < HUNT_DETECTION_RADIUS && o is IBattleNpc { NameId: > 0 })
-        .Select(o => new { Object = o, Row = FindRow<NotoriousMonster>(x => o.BaseId == x.BNpcBase.RowId) })
-        .Where(x => x.Row.HasValue)
-        .OrderByDescending(x => x.Row?.Rank)
-        .Select(x => x.Object)
-        .FirstOrDefault();
+    private IGameObject? FindHuntTarget()
+        => Svc.Navmesh.FlagToPoint() is not { } fp ? null
+            : Svc.Objects.Where(o => o is IBattleNpc { NameId: > 0 } && Vector3.Distance(o.Position, fp) <= HUNT_DETECTION_RADIUS)
+            .Select(o => (Object: o, Distance: Vector3.Distance(o.Position, fp), Row: FindRow<NotoriousMonster>(r => o.BaseId == r.BNpcBase.RowId)))
+            .Where(t => t.Row.HasValue)
+            .OrderBy(t => (t.Distance, -t.Row!.Value.Rank))
+            .Select(t => t.Object)
+            .FirstOrDefault();
 
     private async Task MoveIfNoLoS(DGameObject target) {
         if (!Player.Object.IsInLineOfSight(target.Position)) {

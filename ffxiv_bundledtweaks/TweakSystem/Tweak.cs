@@ -3,6 +3,7 @@ using Dalamud.Game.Command;
 using Dalamud.Game.Text;
 using Dalamud.Game.Text.SeStringHandling;
 using Dalamud.Hooking;
+using Dalamud.Hooking.Internal.Verification;
 using Dalamud.Interface.Utility.Raii;
 using Dalamud.Interface.Windowing;
 using Dalamud.Utility.Signatures;
@@ -33,7 +34,7 @@ public abstract partial class Tweak : ITweak {
             Svc.Hook.InitializeFromAttributes(this);
         }
         catch (SignatureException ex) {
-            Error(ex, "SignatureException, flagging as outdated");
+            Error(ex, $"{nameof(SignatureException)}, flagging as outdated");
             Outdated = true;
             LastInternalException = ex;
             return;
@@ -41,6 +42,12 @@ public abstract partial class Tweak : ITweak {
 
         try {
             SetupHooks();
+        }
+        catch (HookVerificationException ex) {
+            Error(ex, $"{nameof(HookVerificationException)}, flagging as outdated");
+            Outdated = true;
+            LastInternalException = ex;
+            return;
         }
         catch (Exception ex) {
             Error(ex, "Unexpected error during SetupHooks");
@@ -581,4 +588,12 @@ public abstract partial class Tweak // Logging
 
         Svc.Chat.Print(message);
     }
+}
+
+internal static class TweakMessageExtensions {
+    internal static void ModuleMessage<T>(this string messageTemplate, T tweak) where T : Tweak
+        => tweak.ModuleMessage(messageTemplate);
+
+    internal static void ModuleMessage<T>(this SeString messageTemplate, T tweak) where T : Tweak
+        => tweak.ModuleMessage(messageTemplate);
 }

@@ -68,7 +68,10 @@ internal sealed class HookGenerator : IIncrementalGenerator {
                     var methodSymbol = (IMethodSymbol)context.TargetSymbol;
                     var attr = methodSymbol.GetAttributes()[0];
 
-                    var addressName = $"(nint){attr.AttributeClass!.TypeArguments[0].GetFullyQualifiedName()}.MemberFunctionPointers.{(string)attr.ConstructorArguments[0].Value!}";
+                    var sourceType = attr.AttributeClass!.TypeArguments[0];
+                    var memberName = (string)attr.ConstructorArguments[0].Value!;
+                    var addressName = $"(nint){sourceType.GetFullyQualifiedName()}.MemberFunctionPointers.{memberName}";
+                    var delegateTypeName = $"{sourceType.GetFullyQualifiedName()}.Delegates.{memberName}";
 
                     return new HookInfo(
                         new ClassInfo(
@@ -84,7 +87,8 @@ internal sealed class HookGenerator : IIncrementalGenerator {
                             methodSymbol.IsStatic,
                             [.. methodSymbol.Parameters.Select(ParseParameter)]
                         ),
-                        addressName);
+                        addressName,
+                        delegateTypeName);
                 });
 
         var vtblHookInfos =
@@ -248,8 +252,10 @@ internal sealed class HookGenerator : IIncrementalGenerator {
 
         // render delegates and hooks
         foreach (var hookInfo in items) {
-            writer.WriteLine($"private delegate {hookInfo.MethodInfo.ReturnType} {hookInfo.MethodInfo.Name}Delegate({hookInfo.MethodInfo.GetParameterTypesAndNamesString()});");
-            writer.WriteLine($"private Dalamud.Hooking.Hook<{hookInfo.MethodInfo.Name}Delegate> {hookInfo.MethodInfo.Name}Hook {{ get; set; }} = null!;");
+            var delegateType = hookInfo.DelegateTypeName ?? $"{hookInfo.MethodInfo.Name}Delegate";
+            if (hookInfo.DelegateTypeName == null)
+                writer.WriteLine($"private delegate {hookInfo.MethodInfo.ReturnType} {hookInfo.MethodInfo.Name}Delegate({hookInfo.MethodInfo.GetParameterTypesAndNamesString()});");
+            writer.WriteLine($"private Dalamud.Hooking.Hook<{delegateType}> {hookInfo.MethodInfo.Name}Hook {{ get; set; }} = null!;");
             writer.WriteLine();
         }
 
@@ -261,7 +267,8 @@ internal sealed class HookGenerator : IIncrementalGenerator {
         writer.Indent++;
         foreach (var hookInfo in items) {
             var addressName = hookInfo.AddressName ?? $"{hookInfo.MethodInfo.Name}Address";
-            writer.WriteLine($"{hookInfo.MethodInfo.Name}Hook = Svc.Hook.HookFromAddress<{hookInfo.MethodInfo.Name}Delegate>({addressName}, {hookInfo.MethodInfo.Name});");
+            var delegateType = hookInfo.DelegateTypeName ?? $"{hookInfo.MethodInfo.Name}Delegate";
+            writer.WriteLine($"{hookInfo.MethodInfo.Name}Hook = Svc.Hook.HookFromAddress<{delegateType}>({addressName}, {hookInfo.MethodInfo.Name});");
         }
         writer.Indent--;
         writer.WriteLine("}");
