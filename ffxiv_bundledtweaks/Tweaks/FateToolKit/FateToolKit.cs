@@ -1,6 +1,4 @@
-using ECommons;
 using ECommons.ImGuiMethods.TerritorySelection;
-using Lumina.Excel;
 using Lumina.Excel.Sheets;
 using TerritoryIntendedUse = FFXIVClientStructs.FFXIV.Client.Enums.TerritoryIntendedUse;
 
@@ -44,15 +42,12 @@ public class FateToolKitConfig {
 
 /*
  * TODO:
- * announce next fate in party chat? might be good if you were multiboxing
- * better handling of hitting a mob at the end of the fight (don't think I can do anything tbh, vbm needs to) // done?
  * identify fate chains and wait around for the next
  * config: blacklist fate types
  * gemstone spending or at least stop when full
  * more dynamic pull sizes. Like if fates have a ton of enemies, they're generally low health and you could just pull them all
  * better handling of new fates spawning on top of you
  * watch gear durability. Either self repair or just stop if I cba
- * 
  * vbm:
  * treat all engaged enemies as your own
  * somehow fix engaging enemies as the fight is ending
@@ -61,7 +56,7 @@ public class FateToolKitConfig {
 
 [Tweak]
 [Requires(Ipc.Navmesh | Ipc.BossMod | Ipc.TextAdvance)]
-public partial class FateToolKit : Tweak<FateToolKitConfig, FateToolKitWindow> {
+public class FateToolKit : Tweak<FateToolKitConfig, FateToolKitWindow>, IFateGrindRunState {
     public override string Name => "Fate Tool Kit (Date With Destiny)";
     public override string Description => "Fate tracker with additional fate automations. This is a WIP v3 of Date With Destiny.";
 
@@ -94,7 +89,11 @@ public partial class FateToolKit : Tweak<FateToolKitConfig, FateToolKitWindow> {
     public int CompletedCount { get; private set; }
     public int? RunUntilCompleted { get; private set; }
     public int? RemainingUntilCompleted => RunUntilCompleted is { } runUntil ? Math.Max(0, runUntil - CompletedCount) : null;
+    /// <summary>For per-relic modes: number of relics already completed for this step (computed from current mode's RelicItemIds via <see cref="IsRelicStepComplete"/>).</summary>
+    public int RelicsCompletedForStep => GetRelicsCompletedForStep(GetCurrentMode().RelicItemIds);
     internal HashSet<uint> SelectedSwapZones { get; } = [];
+    /// <summary>Current grind mode display name (in-memory only, like zone selection). Defaults to "None".</summary>
+    internal string SelectedModeId { get; set; } = "None";
 
     public bool Running {
         get;
@@ -135,7 +134,44 @@ public partial class FateToolKit : Tweak<FateToolKitConfig, FateToolKitWindow> {
     internal void StopIfNoRemaining() {
         if (RunUntilCompleted is { } runUntil && CompletedCount >= runUntil)
             Running = false;
+        else if (GetCurrentMode().IsComplete(this))
+            Running = false;
     }
+
+    internal IFateGrindMode GetCurrentMode() {
+        var displayName = SelectedModeId;
+        if (string.IsNullOrEmpty(displayName))
+            return FateGrindModes.GetNoneMode() ?? FateGrindModes.All[0];
+        return FateGrindModes.GetByDisplayName(displayName) ?? FateGrindModes.GetNoneMode() ?? FateGrindModes.All[0];
+    }
+
+    /// <summary>Returns whether the relic (by item ID) has completed the associated quest for this step. Fill in with quest/achievement check.</summary>
+    public static bool IsRelicStepComplete(uint relicItemId) {
+        // TODO: check quest (or achievement) for this relic; return true when the step is done for that relic
+        return false;
+    }
+
+    internal static int GetRelicsCompletedForStep(IReadOnlyList<uint>? relicItemIds)
+        => relicItemIds is { Count: > 0 } ids ? ids.Count(IsRelicStepComplete) : 0;
+
+    /// <summary>Zones used for swap rotation: mode's allowed zones if set, otherwise selected swap zones.</summary>
+    internal IReadOnlySet<uint>? GetEffectiveSwapZones() => GetCurrentMode().GetAllowedZones() ?? (SelectedSwapZones.Count > 0 ? SelectedSwapZones : null);
+
+    /// <summary>Next zone to swap to; prefers zones where a mode item target is not yet met (e.g. relic atma).</summary>
+    internal uint? GetNextPreferredSwapZone(uint currentTerritoryId) {
+        var targets = GetCurrentMode().GetZoneItemTargets(this);
+        if (targets != null) {
+            var incomplete = targets.Where(t => GetItemCount(t.ItemId) < t.RequiredCount).Select(t => t.TerritoryId).Distinct().ToList();
+            if (incomplete.Count > 0) {
+                var next = incomplete.FirstOrDefault(z => z != currentTerritoryId);
+                if (next != 0) return next;
+                return incomplete[0];
+            }
+        }
+        return GetNextSelectedSwapZone(currentTerritoryId);
+    }
+
+    private static unsafe int GetItemCount(uint itemId) => FFXIVClientStructs.FFXIV.Client.Game.InventoryManager.Instance()->GetInventoryItemCount(itemId);
 
     internal void SyncRunningState() {
         if (Running && !Service.Automation.Running)
@@ -145,11 +181,22 @@ public partial class FateToolKit : Tweak<FateToolKitConfig, FateToolKitWindow> {
     internal bool HasSelectedSwapZones => SelectedSwapZones.Count > 0;
 
     private int _selectedZoneRotation = -1;
+
+    /// <summary>Zone list for rotation. Gemstone mode: order by ExVersion descending (later expansions first).</summary>
+    private List<uint> GetOrderedSwapZones(IReadOnlySet<uint> pool) {
+        var distinct = pool.Where(id => id != 0).Distinct().ToList();
+        if (distinct.Count == 0) return [];
+        if (GetCurrentMode().DisplayName != "Gemstones")
+            return distinct.OrderBy(id => id).ToList();
+        return [.. TerritoryType.Where(r => pool.Contains(r.RowId)).OrderByDescending(r => r.ExVersion.RowId).Select(r => r.RowId)];
+    }
+
     internal uint? GetNextSelectedSwapZone(uint currentTerritoryId) {
-        if (SelectedSwapZones.Count == 0)
+        var pool = GetEffectiveSwapZones();
+        if (pool is null || pool.Count == 0)
             return null;
 
-        var zones = SelectedSwapZones.Where(id => id != 0).Distinct().OrderBy(id => id).ToList();
+        var zones = GetOrderedSwapZones(pool);
 
         if (zones.Count == 0)
             return null;
@@ -243,40 +290,4 @@ public partial class FateToolKit : Tweak<FateToolKitConfig, FateToolKitWindow> {
 
         return ordered ?? source.OrderBy(_ => 0);
     }
-}
-
-public partial class FateToolKit {
-    public record YokaiEntry {
-        public RowRef<Companion> Minion { get; init; }
-        public RowRef<Item> Medal { get; init; }
-        public RowRef<Item> Weapon { get; init; }
-        public List<RowRef<TerritoryType>> Zones { get; init; }
-
-        public YokaiEntry(uint minion, uint medal, uint weapon, uint[] zones) {
-            Minion = Companion.GetRef(minion);
-            Medal = Item.GetRef(medal);
-            Weapon = Item.GetRef(weapon);
-            Zones = [.. zones.Select(z => TerritoryType.GetRef(z))];
-        }
-    }
-
-    public readonly Dictionary<string, YokaiEntry> Yokai = new() {
-        ["Jibanyan"] = new(200, 15168, 15210, [148, 135, 141]), // CentralShroud, LowerLaNoscea, CentralThanalan
-        ["Komasan"] = new(201, 15169, 15216, [152, 138, 145]), // EastShroud, WesternLaNoscea, EasternThanalan
-        ["Whisper"] = new(202, 15170, 15212, [153, 139, 146]), // SouthShroud, UpperLaNoscea, SouthernThanalan
-        ["Blizzaria"] = new(203, 15171, 15217, [154, 180, 134]), // NorthShroud, OuterLaNoscea, MiddleLaNoscea
-        ["Kyubi"] = new(204, 15172, 15213, [140, 148, 135]), // WesternThanalan, CentralShroud, LowerLaNoscea
-        ["Komajiro"] = new(205, 15173, 15219, [141, 152, 138]), // CentralThanalan, EastShroud, WesternLaNoscea
-        ["Manjimutt"] = new(206, 15174, 15218, [145, 153, 139]), // EasternThanalan, SouthShroud, UpperLaNoscea
-        ["Noko"] = new(207, 15175, 15220, [146, 154, 180]), // SouthernThanalan, NorthShroud, OuterLaNoscea
-        ["Venoct"] = new(208, 15176, 15211, [134, 140, 148]), // MiddleLaNoscea, WesternThanalan, CentralShroud
-        ["Shogunyan"] = new(209, 15177, 15221, [135, 141, 152]), // LowerLaNoscea, CentralThanalan, EastShroud
-        ["Hovernyan"] = new(210, 15178, 15214, [138, 145, 153]), // WesternLaNoscea, EasternThanalan, SouthShroud
-        ["Robonyan"] = new(211, 15179, 15215, [139, 146, 154]), // UpperLaNoscea, SouthernThanalan, NorthShroud
-        ["USApyon"] = new(212, 15180, 15209, [180, 134, 140]), // OuterLaNoscea, MiddleLaNoscea, WesternThanalan
-        ["Lord Enma"] = new(390, 30805, 30809, [612, 613, 614, 620, 621, 622]), // TheFringes, TheRubySea, Yanxia, ThePeaks, TheLochs, TheAzimSteppe
-        ["Lord Ananta"] = new(391, 30804, 30808, [397, 398, 399, 400, 401, 402]), // CoerthasWesternHighlands, TheDravanianForelands, TheDravanianHinterlands, TheChurningMists, TheSeaofClouds, AzysLla
-        ["Zazel"] = new(392, 30803, 30807, [397, 398, 399, 400, 401, 402]), // CoerthasWesternHighlands, TheDravanianForelands, TheDravanianHinterlands, TheChurningMists, TheSeaofClouds, AzysLla
-        ["Damona"] = new(393, 30806, 30810, [612, 613, 614, 620, 621, 622]), // TheFringes, TheRubySea, Yanxia, ThePeaks, TheLochs, TheAzimSteppe
-    };
 }

@@ -69,7 +69,7 @@ internal sealed class FateGrind(FateToolKit tweak) : TaskBase {
     private uint? FollowUpFateId { get; set; } // id to store to check if NextFate is a follow up to this
     private long FollowUpWatchUntilMs { get; set; }
 
-    public unsafe IOrderedEnumerable<PublicEvent> AvailableFates => FateToolKit.ApplySortOrder(PublicEvent.Fates.Where(FateConditions), tweak.Config.SortOrder);
+    public IOrderedEnumerable<PublicEvent> AvailableFates => FateToolKit.ApplySortOrder(PublicEvent.Fates.Where(FateConditions), tweak.Config.SortOrder);
     private bool HasTwistOfFate => Player.Status.Any(status => DateWithDestiny.TwistOfFateStatusIDs.Contains(status.StatusId));
 
     private bool FateConditions(PublicEvent f)
@@ -78,7 +78,7 @@ internal sealed class FateGrind(FateToolKit tweak) : TaskBase {
         && (f.TimeRemaining < 0 || f.TimeRemaining > tweak.Config.MinTimeRemaining)
         && !tweak.IsBlacklisted(f);
 
-    private unsafe GrindState State {
+    private GrindState State {
         get {
             if (Svc.Condition[ConditionFlag.Unconscious]) {
                 if (PublicEvent.CurrentFate is { Id: var id, Progress: < 100 })
@@ -112,7 +112,6 @@ internal sealed class FateGrind(FateToolKit tweak) : TaskBase {
             return GrindState.Idle;
         }
     }
-
     private enum GrindState {
         Idle,
         WaitingForFates,
@@ -387,9 +386,10 @@ internal sealed class FateGrind(FateToolKit tweak) : TaskBase {
     }
 
     private async Task HandleNoFates() {
-        if (!HasTwistOfFate && (tweak.HasSelectedSwapZones || tweak.Config.SwapZones)) {
+        var hasEffectiveZones = tweak.GetEffectiveSwapZones() is { Count: > 0 } || tweak.HasSelectedSwapZones;
+        if (!HasTwistOfFate && (hasEffectiveZones || tweak.Config.SwapZones)) {
             using var scope = BeginScope("SwapZones");
-            var destination = tweak.GetNextSelectedSwapZone(Player.Territory.RowId) ?? GetNextAchievementZone() ?? GetRandomSameExpacZone();
+            var destination = tweak.GetNextPreferredSwapZone(Player.Territory.RowId) ?? GetNextAchievementZone() ?? GetRandomSameExpacZone();
             if (destination == Player.Territory.RowId) {
                 Status = "Waiting for fates in selected zones";
                 await Mount();
@@ -397,8 +397,10 @@ internal sealed class FateGrind(FateToolKit tweak) : TaskBase {
                 return;
             }
 
+            var fromTerritoryId = Player.Territory.RowId;
             await Mount();
             await TeleportTo(destination, Vector3.Zero);
+            await tweak.GetCurrentMode().OnSwapZone(fromTerritoryId, destination, CancelToken);
         }
         else {
             using var scope = BeginScope("WaitForFates");
@@ -434,7 +436,11 @@ internal sealed class FateGrind(FateToolKit tweak) : TaskBase {
                 Svc.TextAdvance.EnableExternalControl(Name, new() { EnableTalkSkip = true, EnableRequestFill = true, EnableRequestHandin = true });
         }
         else {
-            DeactivateIntegrations(clearNextFate: true);
+            // Fate ended; clear NextFate so routing is correct. Only turn off combat preset once out of combat,
+            // so we don't get stuck if a non-fate mob is still aggroed when the fate completes.
+            NextFate = null;
+            if (!Svc.Condition[ConditionFlag.InCombat])
+                DeactivateIntegrations(clearNextFate: false);
         }
     }
 

@@ -3,7 +3,6 @@ using Dalamud.Interface;
 using Dalamud.Interface.Components;
 using Dalamud.Interface.Utility.Raii;
 using Dalamud.Interface.Windowing;
-using ComplexTweaks.Utilities;
 using ECommons.ImGuiMethods;
 
 namespace ComplexTweaks.Tweaks;
@@ -56,8 +55,19 @@ public class FateToolKitWindow : Window {
                 DrawHeaderChip($"Remaining: {remaining}", Colors.ChipInfo, Colors.Grey2);
             }
 
+            var modeRemaining = _tweak.GetCurrentMode().GetRemainingDisplay(_tweak);
+            if (!string.IsNullOrEmpty(modeRemaining)) {
+                ImGui.SameLine();
+                var (bg, fg) = modeRemaining.Equals("Done", StringComparison.OrdinalIgnoreCase) ? (Colors.ChipMuted, Colors.Grey2) : (Colors.ChipInfo, Colors.Grey2);
+                DrawHeaderChip(modeRemaining, bg, fg);
+            }
+
             ImGui.SameLine();
-            ImGui.SetCursorPosX(ImGui.GetWindowContentRegionMax().X - ImGui.GetFrameHeight());
+            var style = ImGui.GetStyle();
+            var rightButtonWidth = 2f * ImGui.GetFrameHeight() + style.ItemSpacing.X;
+            ImGui.SetCursorPosX(ImGui.GetWindowContentRegionMax().X - rightButtonWidth);
+            DrawModeButton();
+            ImGui.SameLine();
             if (_tweak.HasSelectedSwapZones) {
                 using var zoneButtonColor = ImRaii.PushColor(ImGuiCol.Text, (uint)Colors.Gold);
                 if (ImGuiComponents.IconButton("###ZoneSelector", FontAwesomeIcon.Globe))
@@ -66,10 +76,10 @@ public class FateToolKitWindow : Window {
             else if (ImGuiComponents.IconButton("###ZoneSelector", FontAwesomeIcon.Globe))
                 _tweak.OpenZoneSelector();
 
-            if (!_tweak.HasSelectedSwapZones)
-                ImGui.TooltipOnHover("Swap Zones (uses default swap behaviour if none selected)");
+            if (_tweak.GetEffectiveSwapZones() is { Count: > 0 })
+                ImGui.TooltipOnHover(_tweak.HasSelectedSwapZones ? $"Swap Zones: {_tweak.SelectedSwapZones.Count}" : "Swap Zones (mode zones)");
             else
-                ImGui.TooltipOnHover($"Swap Zones: {_tweak.SelectedSwapZones.Count}");
+                ImGui.TooltipOnHover("Swap Zones (uses default swap behaviour if none selected)");
         }
 
         ImGui.SpacedSeparator();
@@ -150,6 +160,22 @@ public class FateToolKitWindow : Window {
             );
 
             ImGui.SpacedSeparator();
+        }
+    }
+
+    private void DrawModeButton() {
+        if (ImGuiComponents.IconButton("###GrindMode", FontAwesomeIcon.List))
+            ImGui.OpenPopup("###GrindModePopup");
+        ImGui.TooltipOnHover($"Grind mode: {_tweak.GetCurrentMode().DisplayName}\nEXPERIMENTAL (didn't get to test non-gemstones)");
+
+        using var popup = ImRaii.Popup("###GrindModePopup");
+        if (popup) {
+            foreach (var mode in FateGrindModes.All) {
+                if (ImGui.Selectable(mode.DisplayName, mode.DisplayName == _tweak.SelectedModeId)) {
+                    _tweak.SelectedModeId = mode.DisplayName;
+                    ImGui.CloseCurrentPopup();
+                }
+            }
         }
     }
 
