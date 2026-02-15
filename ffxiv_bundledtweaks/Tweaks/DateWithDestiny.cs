@@ -46,7 +46,7 @@ public class DateWithDestinyConfiguration {
     [BoolConfig] public bool ShowFateBonusIndicator;
 }
 
-[Tweak]
+[Tweak(outdated: true, disabledReason: $"Replaced by {nameof(FateToolKit)}")]
 [Requires(Ipc.Navmesh)]
 public class DateWithDestiny : Tweak<DateWithDestinyConfiguration, DateWithDestinyWindow> {
     public override string Name => "Date with Destiny";
