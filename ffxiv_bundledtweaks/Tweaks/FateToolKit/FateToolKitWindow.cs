@@ -68,16 +68,15 @@ public class FateToolKitWindow : Window {
             ImGui.SetCursorPosX(ImGui.GetWindowContentRegionMax().X - rightButtonWidth);
             DrawModeButton();
             ImGui.SameLine();
-            if (_tweak.HasSelectedSwapZones) {
-                using var zoneButtonColor = ImRaii.PushColor(ImGuiCol.Text, (uint)Colors.Gold);
+            using (var _ = ImRaii.Disabled(_tweak.ModeSuppliesSwapZones))
+            using (var zoneButtonColor = ImRaii.PushColor(ImGuiCol.Text, _tweak.HasSelectedSwapZones ? (uint)Colors.Gold : ImGui.GetColorU32(ImGuiCol.Text))) {
                 if (ImGuiComponents.IconButton("###ZoneSelector", FontAwesomeIcon.Globe))
                     _tweak.OpenZoneSelector();
             }
-            else if (ImGuiComponents.IconButton("###ZoneSelector", FontAwesomeIcon.Globe))
-                _tweak.OpenZoneSelector();
-
-            if (_tweak.GetEffectiveSwapZones() is { Count: > 0 })
-                ImGui.TooltipOnHover(_tweak.HasSelectedSwapZones ? $"Swap Zones: {_tweak.SelectedSwapZones.Count}" : "Swap Zones (mode zones)");
+            if (_tweak.ModeSuppliesSwapZones)
+                ImGui.TooltipOnHover(ImGui.IsItemHovered(ImGuiHoveredFlags.AllowWhenDisabled), "Zone list is defined by the current grind mode. Switch to None to select zones manually.");
+            else if (_tweak.HasSelectedSwapZones)
+                ImGui.TooltipOnHover($"Swap Zones: {_tweak.SelectedSwapZones.Count}");
             else
                 ImGui.TooltipOnHover("Swap Zones (uses default swap behaviour if none selected)");
         }

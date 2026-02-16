@@ -157,6 +157,9 @@ public class FateToolKit : Tweak<FateToolKitConfig, FateToolKitWindow>, IFateGri
     /// <summary>Zones used for swap rotation: mode's allowed zones if set, otherwise selected swap zones.</summary>
     internal IReadOnlySet<uint>? GetEffectiveSwapZones() => GetCurrentMode().GetAllowedZones() ?? (SelectedSwapZones.Count > 0 ? SelectedSwapZones : null);
 
+    /// <summary>True when the current mode defines its own zones; territory selector is disabled to avoid confusion.</summary>
+    internal bool ModeSuppliesSwapZones => GetCurrentMode().GetAllowedZones() != null;
+
     /// <summary>Next zone to swap to; prefers zones where a mode item target is not yet met (e.g. relic atma).</summary>
     internal uint? GetNextPreferredSwapZone(uint currentTerritoryId) {
         var targets = GetCurrentMode().GetZoneItemTargets(this);

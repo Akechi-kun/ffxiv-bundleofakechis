@@ -123,8 +123,12 @@ public static class FateGrindModes {
 public sealed class YokaiGrindMode : IFateGrindMode {
     public string DisplayName => "Yo-kai Watch (Medals)";
 
-    public IReadOnlySet<uint>? GetAllowedZones()
-        => GetCurrentMinionEntry() is not { } entry ? null : (IReadOnlySet<uint>)entry.Zones.Select(z => z.RowId).ToHashSet();
+    public IReadOnlySet<uint>? GetAllowedZones() {
+        if (GetCurrentMinionEntry() is { } entry)
+            return entry.Zones.Select(z => z.RowId).ToHashSet();
+        // return all possible zones so the zone selector still gets disabled
+        return Yokai.Values.SelectMany(e => e.Zones.Select(z => z.RowId)).ToHashSet();
+    }
 
     public bool IsComplete(IFateGrindRunState state)
         => state.RunUntilCompleted is { } runUntil && state.CompletedCount >= runUntil;
