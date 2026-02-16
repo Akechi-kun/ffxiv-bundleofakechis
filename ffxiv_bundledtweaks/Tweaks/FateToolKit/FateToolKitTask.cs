@@ -26,6 +26,10 @@ internal sealed class FateGrind(FateToolKit tweak) : TaskBase {
         try {
             while (!CancelToken.IsCancellationRequested && tweak.Running) {
                 tweak.StopIfNoRemaining();
+                if (tweak.PendingStopWhenSafe && PublicEvent.CurrentFate is null && !Svc.Condition[ConditionFlag.InCombat]) {
+                    tweak.PendingStopWhenSafe = false;
+                    tweak.Running = false;
+                }
                 if (!tweak.Running)
                     break;
 

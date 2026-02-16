@@ -42,9 +42,9 @@ public class FateToolKitConfig {
 
 /*
  * TODO:
- * identify fate chains and wait around for the next
+ * identify fate chains and wait around for the next // hacked together. Needs some RE if the client even knows this
  * config: blacklist fate types
- * gemstone spending or at least stop when full
+ * gemstone spending
  * more dynamic pull sizes. Like if fates have a ton of enemies, they're generally low health and you could just pull them all
  * better handling of new fates spawning on top of you
  * watch gear durability. Either self repair or just stop if I cba
@@ -89,21 +89,22 @@ public class FateToolKit : Tweak<FateToolKitConfig, FateToolKitWindow>, IFateGri
     public int CompletedCount { get; private set; }
     public int? RunUntilCompleted { get; private set; }
     public int? RemainingUntilCompleted => RunUntilCompleted is { } runUntil ? Math.Max(0, runUntil - CompletedCount) : null;
-    /// <summary>For per-relic modes: number of relics already completed for this step (computed from current mode's RelicItemIds via <see cref="IsRelicStepComplete"/>).</summary>
     public int RelicsCompletedForStep => GetRelicsCompletedForStep(GetCurrentMode().RelicItemIds);
     internal HashSet<uint> SelectedSwapZones { get; } = [];
-    /// <summary>Current grind mode display name (in-memory only, like zone selection). Defaults to "None".</summary>
     internal string SelectedModeId { get; set; } = "None";
+    internal bool PendingStopWhenSafe { get; set; } // task sets running = false once no CurrentFate and !InCombat
 
     public bool Running {
         get;
         internal set {
             field = value;
             if (value) {
+                PendingStopWhenSafe = false;
                 CompletedCount = 0;
                 Service.Automation.Start(new FateGrind(this));
             }
             else {
+                PendingStopWhenSafe = false;
                 CurrentState = "Idle";
                 Service.BossMod.ClearActive();
                 Svc.Automation.Stop();
@@ -133,9 +134,9 @@ public class FateToolKit : Tweak<FateToolKitConfig, FateToolKitWindow>, IFateGri
 
     internal void StopIfNoRemaining() {
         if (RunUntilCompleted is { } runUntil && CompletedCount >= runUntil)
-            Running = false;
+            PendingStopWhenSafe = true;
         else if (GetCurrentMode().IsComplete(this))
-            Running = false;
+            PendingStopWhenSafe = true;
     }
 
     internal IFateGrindMode GetCurrentMode() {

@@ -129,6 +129,7 @@ public class FateToolKitWindow : Window {
                              $"ID: {fate.Id}\n" +
                              $"Type: {fate.FateType}\n" +
                              $"Rule: {fate.Rule}\n" +
+                             $"State: {fate.State}" +
                              $"Level: {fate.Level}\n" +
                              $"Progress: {fate.Progress}%\n" +
                              $"Time Remaining: {(fate.TimeRemaining >= 0 ? TimeSpan.FromSeconds(fate.TimeRemaining).ToString(@"mm\:ss") : "∞")}\n" +
