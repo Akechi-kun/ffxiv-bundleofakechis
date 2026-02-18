@@ -80,11 +80,10 @@ public class FateToolKitWindow : MinimisableWindow {
             ImGui.SameLine();
             var style = ImGui.GetStyle();
             var rightButtonWidth = (ImGui.GetFrameHeight() + style.FramePadding.X * 2f) * 2f + style.ItemSpacing.X;
-            var leftRightGap = style.ItemSpacing.X;
-            var leftContentRight = ImGui.GetItemRectMax().X;
-            var rightStart = Math.Max(leftContentRight + leftRightGap, ImGui.GetWindowContentRegionMax().X - rightButtonWidth);
-
-            ImGui.SetCursorPosX(rightStart);
+            if (Math.Max(0f, ImGui.GetContentRegionAvail().X - rightButtonWidth) is > 0 and var spacer) {
+                ImGui.Dummy(new Vector2(spacer, 0f));
+                ImGui.SameLine();
+            }
             DrawModeButton();
             ImGui.SameLine();
             using (var _ = ImRaii.Disabled(_tweak.ModeSuppliesSwapZones))
@@ -100,9 +99,7 @@ public class FateToolKitWindow : MinimisableWindow {
                 ImGui.TooltipOnHover("Swap Zones (uses default swap behaviour if none selected)");
 
             if (minimised) {
-                var windowLeft = ImGui.GetWindowPos().X;
-                var padding = style.WindowPadding.X;
-                MinimisedContentWidth = Math.Max(400, (leftContentRight - windowLeft) + leftRightGap + rightButtonWidth + padding * 2);
+                MinimisedContentWidth = Math.Max(400, ImGui.GetItemRectMax().X - ImGui.GetWindowPos().X + style.WindowPadding.X * 2);
             }
         }
 
