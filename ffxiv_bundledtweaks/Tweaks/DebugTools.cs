@@ -6,6 +6,7 @@ using ECommons;
 using ECommons.Interop;
 using ECommons.SimpleGui;
 using FFXIVClientStructs.FFXIV.Client.Game;
+using FFXIVClientStructs.FFXIV.Client.Game.Control;
 using FFXIVClientStructs.FFXIV.Client.Game.UI;
 using FFXIVClientStructs.FFXIV.Client.System.Framework;
 using FFXIVClientStructs.FFXIV.Client.UI.Agent;
@@ -129,7 +130,7 @@ public class DebugTools : Tweak<DebugToolsConfiguration> {
         if (Config.EnableNoClip && ncActive && !Framework.Instance()->WindowInactive) {
             var cx = Player.Position.X;
             var cy = Player.Position.Z;
-            var angle = MathF.PI - Player.Camera->DirH;
+            var angle = MathF.PI - CameraManager.Instance()->GetActiveCamera()->DirH;
             if (_keys["JUMP"].IsHeldRaw())
                 Player.SetPosition((Player.Position.X, Player.Position.Y + Config.NoClipSpeed, Player.Position.Z).ToVector3());
             if (Svc.KeyState.GetRawValue(VirtualKey.LSHIFT) != 0 || IsKeyPressed(LimitedKeys.LeftShiftKey))

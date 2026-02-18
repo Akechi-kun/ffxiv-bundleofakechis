@@ -1,7 +1,4 @@
-﻿using ECommons;
-using FFXIVClientStructs.FFXIV.Client.Game;
-using FFXIVClientStructs.FFXIV.Client.Game.Control;
-using FFXIVClientStructs.FFXIV.Client.Game.UI;
+﻿using FFXIVClientStructs.FFXIV.Client.Game.UI;
 using FFXIVClientStructs.FFXIV.Client.UI.Agent;
 using System.Runtime.InteropServices;
 using PlayerController = ComplexTweaks.Utilities.Structs.PlayerController;
@@ -11,7 +8,6 @@ namespace ComplexTweaks.Utilities.Extensions;
 
 public static unsafe class PlayerExtensions {
     extension(Player) {
-        public static Camera* Camera => CameraManager.Instance()->GetActiveCamera();
         public static PlayerController* Controller => (PlayerController*)Svc.SigScanner.GetStaticAddressFromSig(Memory.Signatures.PlayerController);
 
         public static float Speed { get => Player.Controller->MoveControllerWalk.BaseMovementSpeed; set => SetSpeed(6 * value); }

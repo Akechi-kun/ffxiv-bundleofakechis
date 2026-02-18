@@ -1,7 +1,6 @@
 using FFXIVClientStructs.FFXIV.Client.Game.UI;
 using FFXIVClientStructs.FFXIV.Client.System.Framework;
 using FFXIVClientStructs.FFXIV.Client.UI.Agent;
-using static FFXIVClientStructs.FFXIV.Client.Game.UI.ContentsFinderQueueInfo.QueueStates;
 
 namespace ComplexTweaks.Tweaks;
 
