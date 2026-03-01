@@ -72,12 +72,16 @@ internal sealed class FateGrind(FateToolKit tweak) : TaskBase {
     private int ConsecutiveStuckRetries { get; set; }
     private uint? FollowUpFateId { get; set; } // id to store to check if NextFate is a follow up to this
     private long FollowUpWatchUntilMs { get; set; }
+    private uint? WaitForExpiryFateId { get; set; } // id for when we leave a collect fate. Stay in zone until fate is null
 
     public IOrderedEnumerable<PublicEvent> AvailableFates => FateToolKit.ApplySortOrder(PublicEvent.Fates.Where(tweak.FateConditions), tweak.Config.SortOrder);
     private bool HasTwistOfFate => Player.Status.Any(status => DateWithDestiny.TwistOfFateStatusIDs.Contains(status.StatusId));
 
     private GrindState State {
         get {
+            if (WaitForExpiryFateId is { } waitId && PublicEvent.GetFateById(waitId) is null)
+                WaitForExpiryFateId = null;
+
             if (Svc.Condition[ConditionFlag.Unconscious]) {
                 if (PublicEvent.CurrentFate is { Id: var id, Progress: < 100 })
                     ReturnToFateId = id;
@@ -92,8 +96,10 @@ internal sealed class FateGrind(FateToolKit tweak) : TaskBase {
                     FollowUpFateId = null;
 
                 // treat completed collect fates as done and wait for out of combat/not busy before trying to move away
-                if (current is { Rule: PublicEvent.FateRule.Collect, Progress: >= 100, Id: var id } && !Player.IsBusy)
+                if (current is { Rule: PublicEvent.FateRule.Collect, Progress: >= 100, Id: var id } && !Player.IsBusy) {
+                    WaitForExpiryFateId = id;
                     return AvailableFates.FirstOrDefault(f => f.Id != id) is { } ? GrindState.BetweenFates : GrindState.WaitingForFates;
+                }
                 Status = "Engaging";
                 return GrindState.Engaging;
             }
@@ -310,7 +316,9 @@ internal sealed class FateGrind(FateToolKit tweak) : TaskBase {
         }
 
         await MoveTo(msh, MovementConfig.Everything.WithTolerance(3),
-            allowTeleportIfFaster: NextFate is { Progress: > 0 } && !HasTwistOfFate, // in progress = urgent, otherwise I'd rather just waste a few extra seconds. Also never drop the buff
+            // in progress = urgent, otherwise I don't think teleporting all the time is necessary
+            // also prohibit when you have the xp buff or when waiting for collect fate rewards
+            allowTeleportIfFaster: NextFate is { Progress: > 0 } && !HasTwistOfFate && WaitForExpiryFateId is null,
             stopCondition: ShouldStopMove,
             onStopReached: async () => {
                 if (stopReason == MoveStopReason.NpcLoaded)
@@ -340,7 +348,7 @@ internal sealed class FateGrind(FateToolKit tweak) : TaskBase {
         if (stopReason == MoveStopReason.HigherPriority)
             return;
 
-        if (stopReason == MoveStopReason.StuckTeleport && NextFate is { Id: var fateId } && PublicEvent.GetFateById(fateId) is { } currentFate) {
+        if (stopReason == MoveStopReason.StuckTeleport && WaitForExpiryFateId is null && NextFate is { Id: var fateId } && PublicEvent.GetFateById(fateId) is { } currentFate) {
             NextFate = currentFate;
             LastStuckFateId = null;
             ConsecutiveStuckRetries = 0;
@@ -386,6 +394,14 @@ internal sealed class FateGrind(FateToolKit tweak) : TaskBase {
     }
 
     private async Task HandleNoFates() {
+        if (WaitForExpiryFateId is not null) {
+            using var scope = BeginScope("WaitForFateRewards");
+            Status = "Waiting for fate rewards";
+            await Mount();
+            await NextFrame(60);
+            return;
+        }
+
         var hasEffectiveZones = tweak.GetEffectiveSwapZones() is { Count: > 0 } || tweak.HasSelectedSwapZones;
         if (!HasTwistOfFate && (hasEffectiveZones || tweak.Config.SwapZones)) {
             using var scope = BeginScope("SwapZones");
@@ -462,18 +478,6 @@ internal sealed class FateGrind(FateToolKit tweak) : TaskBase {
         if (fate.MotivationNpc is not { IsTargetable: true } target)
             return false;
 
-        // TODO: see if this is still needed after objectkind change
-        /*
-        if (target.Position == Player.Position) {
-            Warning($"[{fate.Id}] npc {target} [{target.Position}] has same position as player");
-            return false;
-        }
-
-        if (Vector3.Distance(target.Position, fate.Position) > Math.Max(fate.Radius + 20f, 40f)) {
-            Warning($"[{fate.Id}] npc {target} [{target.Position}] way outside the fate [{fate.Position}]");
-            return false;
-        }
-        */
         npc = target;
         return true;
     }
