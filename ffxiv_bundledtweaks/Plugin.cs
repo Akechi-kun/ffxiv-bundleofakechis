@@ -88,7 +88,6 @@ public class Plugin : IDalamudPlugin {
         }
         C.EnabledTweaks.CollectionChanged -= OnChange;
         ECommonsMain.Dispose();
-        CLibMain.Dispose();
     }
 
     private void OnCommand(string command, string args) {
