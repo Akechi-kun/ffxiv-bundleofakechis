@@ -265,6 +265,27 @@ public class FateToolKit : Tweak<FateToolKitConfig, FateToolKitWindow>, IFateGri
         && !IsBlacklisted(f)
         && !f.IsPending;
 
+    public (bool IsEligible, List<string> FailedConditions) GetFateConditionDetails(PublicEvent f) {
+        var failed = new List<string>();
+
+        if (f.Duration > Config.MaxDuration)
+            failed.Add($"Duration {f.Duration}s > MaxDuration {Config.MaxDuration}s");
+
+        if (f.Progress > Config.MaxProgress)
+            failed.Add($"Progress {f.Progress}% > MaxProgress {Config.MaxProgress}%");
+
+        if (f.TimeRemaining >= 0 && f.TimeRemaining <= Config.MinTimeRemaining)
+            failed.Add($"TimeRemaining {f.TimeRemaining:F0}s <= MinTimeRemaining {Config.MinTimeRemaining}s");
+
+        if (IsBlacklisted(f))
+            failed.Add("Blacklisted");
+
+        if (f.IsPending)
+            failed.Add("Pending (not yet active / not on map)");
+
+        return (failed.Count == 0, failed);
+    }
+
     public IEnumerable<(PublicEvent Fate, bool IsAvailable)> GetOrderedFates() {
         var all = PublicEvent.Fates.ToList();
         if (all.Count == 0)

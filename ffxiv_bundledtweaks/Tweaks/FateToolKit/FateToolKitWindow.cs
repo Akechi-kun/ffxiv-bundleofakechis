@@ -5,12 +5,23 @@ using Dalamud.Interface;
 using Dalamud.Interface.Components;
 using Dalamud.Interface.Utility.Raii;
 using ECommons.ImGuiMethods;
+using System.Globalization;
+using System.Reflection;
+using System.Text;
 
 namespace ComplexTweaks.Tweaks;
 
 public class FateToolKitWindow : MinimisableWindow {
     private readonly FateToolKit _tweak;
     private bool _showSettings;
+
+    private static readonly PropertyInfo[] _tooltipProperties;
+
+    static FateToolKitWindow() {
+        _tooltipProperties = [.. typeof(PublicEvent)
+            .GetProperties(BindingFlags.Instance | BindingFlags.Public)
+            .OrderBy(p => p.Name)];
+    }
 
     public FateToolKitWindow(FateToolKit tweak) : base($"Fate Tracker##{nameof(FateToolKitWindow)}") {
         _tweak = tweak;
@@ -152,20 +163,7 @@ public class FateToolKitWindow : MinimisableWindow {
                 if (ImGui.IsItemClicked(ImGuiMouseButton.Right))
                     _tweak.ToggleBlacklist(fate);
 
-                var tooltip = $"Name: {displayName}\n" +
-                             $"ID: {fate.Id}\n" +
-                             $"Type: {fate.FateType}\n" +
-                             $"Rule: {fate.Rule}\n" +
-                             $"State: {fate.State}\n" +
-                             $"Level: {fate.Level}\n" +
-                             $"Progress: {fate.Progress}%\n" +
-                             $"Time Remaining: {(fate.TimeRemaining >= 0 ? TimeSpan.FromSeconds(fate.TimeRemaining).ToString(@"mm\:ss") : "∞")}\n" +
-                             $"Distance: {Player.DistanceTo(fate.Position):F1}\n" +
-                             $"Position: {fate.Position}\n" +
-                             $"{(fate.HasBonus ? "Has Bonus\n" : "")}" +
-                             $"Right-click to {(isBlacklisted ? "remove from" : "add to")} blacklist";
-                if (ImGui.IsItemHovered())
-                    ImGui.SetTooltip(tooltip);
+                ImGui.TooltipOnHover(BuildFateTooltip(fate, displayName, isBlacklisted));
             }
 
             ImGui.SameLine();
@@ -248,8 +246,7 @@ public class FateToolKitWindow : MinimisableWindow {
                 _tweak.Config.SortOrder = sortOrder;
             });
 
-            if (ImGui.IsItemHovered())
-                ImGui.SetTooltip("Drag to change priority order");
+            ImGui.TooltipOnHover("Drag to change priority order");
 
             ImGui.SameLine();
 
@@ -313,6 +310,47 @@ public class FateToolKitWindow : MinimisableWindow {
         }
 
         ImGui.SpacedSeparator();
+    }
+
+    private string BuildFateTooltip(PublicEvent fate, string displayName, bool isBlacklisted) {
+        var sb = new StringBuilder();
+
+        sb.AppendLine($"Display: {displayName}");
+
+        foreach (var prop in _tooltipProperties) {
+            object? raw;
+            try {
+                raw = prop.GetValue(fate);
+            }
+            catch {
+                continue;
+            }
+
+            var value = raw switch {
+                null => "?",
+                float f when prop.Name == nameof(PublicEvent.TimeRemaining) =>
+                    f >= 0 ? TimeSpan.FromSeconds(f).ToString(@"mm\:ss") : "∞",
+                Vector3 v when prop.Name == nameof(PublicEvent.Position) =>
+                    v.ToString(),
+                bool b => b ? "True" : "False",
+                IFormattable formattable => formattable.ToString(null, CultureInfo.InvariantCulture),
+                _ => raw.ToString() ?? "?"
+            };
+
+            sb.AppendLine($"{prop.Name}: {value}");
+        }
+
+        sb.AppendLine($"Blacklist: {(isBlacklisted ? "Yes" : "No")}");
+
+        var (isEligible, failedConditions) = _tweak.GetFateConditionDetails(fate);
+        sb.AppendLine($"Will be automated? {isEligible}");
+        if (failedConditions.Count > 0) {
+            sb.AppendLine("Blocked by:");
+            foreach (var reason in failedConditions)
+                sb.AppendLine($" - {reason}");
+        }
+
+        return sb.ToString().TrimEnd();
     }
 
     public string FormatDisplayName(PublicEvent fate) => _tweak.Config.DisplayNameFormat
