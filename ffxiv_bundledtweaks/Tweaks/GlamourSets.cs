@@ -428,7 +428,7 @@ public unsafe class GlamourSetsWindow : Window {
             },
             new OutfitCategory {
                 Name = "Variant/DD",
-                Discriminators = [15422, 23164, 38533, 39884, 41078, 46186] // All potsherds
+                Discriminators = [15422, 23164, 38533, 39884, 41078, 46186, 50434] // All potsherds
             },
             new OutfitCategory {
                 Name = "Fates",
