@@ -91,8 +91,17 @@ public class FateToolKit : Tweak<FateToolKitConfig, FateToolKitWindow>, IFateGri
     public int? RemainingUntilCompleted => RunUntilCompleted is { } runUntil ? Math.Max(0, runUntil - CompletedCount) : null;
     public int RelicsCompletedForStep => GetRelicsCompletedForStep(GetCurrentMode().RelicItemIds);
     internal HashSet<uint> SelectedSwapZones { get; } = [];
-    internal string SelectedModeId { get; set; } = "None";
+    internal string SelectedModeId {
+        get;
+        set {
+            if (field == value)
+                return;
+            field = value;
+            RefreshZoneItemTargets();
+        }
+    } = "None";
     internal bool PendingStopWhenSafe { get; set; } // task sets running = false once no CurrentFate and !InCombat
+    private List<ZoneItemTarget> ZoneItemTargets { get; set; } = [];
 
     public bool Running {
         get;
@@ -100,11 +109,14 @@ public class FateToolKit : Tweak<FateToolKitConfig, FateToolKitWindow>, IFateGri
             field = value;
             if (value) {
                 PendingStopWhenSafe = false;
+                ZoneItemTargets = [];
                 CompletedCount = 0;
+                RefreshZoneItemTargets();
                 Service.Automation.Start(new FateGrind(this));
             }
             else {
                 PendingStopWhenSafe = false;
+                ZoneItemTargets = [];
                 CurrentState = "Idle";
                 Service.BossMod.ClearActive();
                 Svc.Automation.Stop();
@@ -122,6 +134,7 @@ public class FateToolKit : Tweak<FateToolKitConfig, FateToolKitWindow>, IFateGri
 
         CompletedCount++;
         StopIfNoRemaining();
+        CheckItemTargetCompletion();
     }
 
     private void RunUntil(int runUntil) {
@@ -137,6 +150,27 @@ public class FateToolKit : Tweak<FateToolKitConfig, FateToolKitWindow>, IFateGri
             PendingStopWhenSafe = true;
         else if (GetCurrentMode().IsComplete(this))
             PendingStopWhenSafe = true;
+    }
+
+    internal bool IsZoneItemTargetComplete(uint currentTerritoryId, out uint destinationTerritoryId) {
+        destinationTerritoryId = 0;
+        var hasCurrentZoneTargets = false;
+        foreach (var target in ZoneItemTargets) {
+            if (target.TerritoryId != currentTerritoryId)
+                continue;
+            hasCurrentZoneTargets = true;
+            if (!target.IsComplete)
+                return false;
+        }
+        if (!hasCurrentZoneTargets)
+            return false;
+
+        var destination = GetNextPreferredSwapZone(currentTerritoryId);
+        if (destination is null or 0 || destination == currentTerritoryId)
+            return false;
+
+        destinationTerritoryId = destination.Value;
+        return true;
     }
 
     internal IFateGrindMode GetCurrentMode() {
@@ -163,9 +197,8 @@ public class FateToolKit : Tweak<FateToolKitConfig, FateToolKitWindow>, IFateGri
 
     /// <summary>Next zone to swap to; prefers zones where a mode item target is not yet met (e.g. relic atma).</summary>
     internal uint? GetNextPreferredSwapZone(uint currentTerritoryId) {
-        var targets = GetCurrentMode().GetZoneItemTargets(this);
-        if (targets != null) {
-            var incomplete = targets.Where(t => GetItemCount(t.ItemId) < t.RequiredCount).Select(t => t.TerritoryId).Distinct().ToList();
+        if (ZoneItemTargets.Count > 0) {
+            var incomplete = ZoneItemTargets.Where(t => !t.IsComplete).Select(t => t.TerritoryId).Distinct().ToList();
             if (incomplete.Count > 0) {
                 var next = incomplete.FirstOrDefault(z => z != currentTerritoryId);
                 if (next != 0) return next;
@@ -176,6 +209,28 @@ public class FateToolKit : Tweak<FateToolKitConfig, FateToolKitWindow>, IFateGri
     }
 
     private static unsafe int GetItemCount(uint itemId) => FFXIVClientStructs.FFXIV.Client.Game.InventoryManager.Instance()->GetInventoryItemCount(itemId);
+
+    private void RefreshZoneItemTargets() {
+        var targets = GetCurrentMode().GetZoneItemTargets(this);
+        if (targets is null) {
+            ZoneItemTargets = [];
+            return;
+        }
+
+        ZoneItemTargets = [.. targets];
+        CheckItemTargetCompletion();
+    }
+
+    private void CheckItemTargetCompletion() {
+        if (ZoneItemTargets.Count == 0)
+            return;
+
+        for (var i = 0; i < ZoneItemTargets.Count; i++) {
+            var target = ZoneItemTargets[i];
+            target.IsComplete = GetItemCount(target.ItemId) >= target.RequiredCount;
+            ZoneItemTargets[i] = target;
+        }
+    }
 
     internal void SyncRunningState() {
         if (Running && !Service.Automation.Running)

@@ -8,6 +8,10 @@ using TerritoryIntendedUse = FFXIVClientStructs.FFXIV.Client.Enums.TerritoryInte
 
 namespace ComplexTweaks.Tweaks;
 
+public record struct ZoneItemTarget(uint TerritoryId, uint ItemId, int RequiredCount) {
+    public bool IsComplete { get; set; }
+}
+
 public interface IFateGrindRunState {
     int CompletedCount { get; }
     int? RunUntilCompleted { get; }
@@ -28,7 +32,7 @@ internal interface IFateGrindMode {
     /// <summary>Optional chip display for progress</summary>
     string? GetRemainingDisplay(IFateGrindRunState state);
 
-    IEnumerable<(uint TerritoryId, uint ItemId, int RequiredCount)>? GetZoneItemTargets(IFateGrindRunState? state = null);
+    IEnumerable<ZoneItemTarget>? GetZoneItemTargets(IFateGrindRunState? state = null);
     Task OnSwapZone(uint fromTerritoryId, uint toTerritoryId, CancellationToken cancellationToken = default) => Task.CompletedTask;
     bool UsesRelicsCompletedForStep() => false;
     IReadOnlyList<uint>? RelicItemIds => null;
@@ -41,7 +45,7 @@ public sealed class NoneGrindMode : IFateGrindMode {
     public IReadOnlySet<uint>? GetAllowedZones() => null;
     public bool IsComplete(IFateGrindRunState state) => state.RunUntilCompleted is { } runUntil && state.CompletedCount >= runUntil;
     public string? GetRemainingDisplay(IFateGrindRunState state) => state.RemainingUntilCompleted is { } r && r > 0 ? $"{r} fates" : null;
-    public IEnumerable<(uint TerritoryId, uint ItemId, int RequiredCount)>? GetZoneItemTargets(IFateGrindRunState? state = null) => null;
+    public IEnumerable<ZoneItemTarget>? GetZoneItemTargets(IFateGrindRunState? state = null) => null;
 }
 
 public static class FateGrindModes {
@@ -142,7 +146,7 @@ public sealed class YokaiGrindMode : IFateGrindMode {
         return count < 10 ? $"{name} {count}/10" : null;
     }
 
-    public IEnumerable<(uint TerritoryId, uint ItemId, int RequiredCount)>? GetZoneItemTargets(IFateGrindRunState? state = null) => null;
+    public IEnumerable<ZoneItemTarget>? GetZoneItemTargets(IFateGrindRunState? state = null) => null;
 
     public async Task OnSwapZone(uint fromTerritoryId, uint toTerritoryId, CancellationToken cancellationToken) {
         if (Yokai.Values.FirstOrDefault(e => e.Zones.Any(z => z.RowId == toTerritoryId) && GetItemCount(e.Medal.RowId) < 10 && e.Unlocked) is not { } entry) return;
@@ -227,7 +231,7 @@ public sealed class GemstoneGrindMode : IFateGrindMode {
         return remaining > 0 ? $"{GetGemstoneRemaining()} left" : null;
     }
 
-    public IEnumerable<(uint TerritoryId, uint ItemId, int RequiredCount)>? GetZoneItemTargets(IFateGrindRunState? state = null) => null;
+    public IEnumerable<ZoneItemTarget>? GetZoneItemTargets(IFateGrindRunState? state = null) => null;
     private static unsafe uint GetGemstoneRemaining() => CurrencyManager.Instance()->GetItemCountRemaining(BicolorGemstone);
 }
 
@@ -251,7 +255,8 @@ public sealed class RelicZoneItemGrindMode(string displayName, IEnumerable<(uint
         return total == 0 ? null : $"{total} left";
     }
 
-    public IEnumerable<(uint TerritoryId, uint ItemId, int RequiredCount)>? GetZoneItemTargets(IFateGrindRunState? state = null) => _targets;
+    public IEnumerable<ZoneItemTarget>? GetZoneItemTargets(IFateGrindRunState? state = null)
+        => _targets.Select(t => new ZoneItemTarget(t.TerritoryId, t.ItemId, t.RequiredCount));
 
     private static unsafe int GetItemCount(uint itemId) => InventoryManager.Instance()->GetInventoryItemCount(itemId);
 }
@@ -309,7 +314,7 @@ public sealed class RelicItemMultiZoneGrindMode(
         return total == 0 ? null : $"{total} left";
     }
 
-    public IEnumerable<(uint TerritoryId, uint ItemId, int RequiredCount)>? GetZoneItemTargets(IFateGrindRunState? state = null) {
+    public IEnumerable<ZoneItemTarget>? GetZoneItemTargets(IFateGrindRunState? state = null) {
         foreach (var entry in _itemZones) {
             var total = GetEffectiveRequired(entry, state);
             if (total <= 0) continue;
@@ -317,7 +322,7 @@ public sealed class RelicItemMultiZoneGrindMode(
             var remaining = Math.Max(0, total - current);
             if (remaining <= 0) continue;
             foreach (var territoryId in entry.TerritoryIds.Where(id => id != 0))
-                yield return (territoryId, entry.ItemId, remaining);
+                yield return new ZoneItemTarget(territoryId, entry.ItemId, remaining);
         }
     }
 

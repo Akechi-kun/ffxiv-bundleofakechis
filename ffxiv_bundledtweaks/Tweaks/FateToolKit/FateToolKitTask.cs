@@ -51,6 +51,9 @@ internal sealed class FateGrind(FateToolKit tweak) : TaskBase {
                     case GrindState.WaitingForFates:
                         await HandleNoFates();
                         break;
+                    case GrindState.SwapZones:
+                        await SwapNewItemTarget();
+                        break;
                     default:
                         await NextFrame();
                         break;
@@ -107,6 +110,9 @@ internal sealed class FateGrind(FateToolKit tweak) : TaskBase {
             if (ShouldWaitForFollowUp())
                 return GrindState.WaitingForFollowUp;
 
+            if (!HasTwistOfFate && !Svc.Condition[ConditionFlag.InCombat] && tweak.IsZoneItemTargetComplete(Player.Territory.RowId, out _))
+                return GrindState.SwapZones;
+
             if (AvailableFates.FirstOrDefault() is { })
                 return GrindState.BetweenFates;
 
@@ -121,6 +127,7 @@ internal sealed class FateGrind(FateToolKit tweak) : TaskBase {
         WaitingForFates,
         WaitingForFollowUp,
         BetweenFates,
+        SwapZones,
         Engaging,
         Unconscious,
     }
@@ -369,9 +376,9 @@ internal sealed class FateGrind(FateToolKit tweak) : TaskBase {
             return;
 
         // sometimes fates are in prep for a very long time before they're on the map. Wait until the npc is actually ready before returning/attempting anything
-        await WaitUntil(() => TryGetValidMotivationNpc(fate, out _) || fate.State is FateState.Running, "");
+        await WaitUntil(() => TryGetValidMotivationNpc(fate, out _) || fate.State is FateState.Running, "WaitForNpcSpawn");
 
-        if (fate.State is FateState.Running) return;
+        if (fate.State is FateState.Running) return; // someone beat us to activating
 
         if (TryGetValidMotivationNpc(fate, out var npc)) {
             Log($"ActivateFate start: fate={NextFate.Id} npc={npc.EntityId} npcPos={npc.Position} playerPos={Player.Position} dist={Player.DistanceTo(npc.Position):F2} inRange={npc.IsInInteractRange()}");
@@ -390,7 +397,7 @@ internal sealed class FateGrind(FateToolKit tweak) : TaskBase {
             }
         }
         else
-            Error($"Something weird happened with the activation npc [{fate}]");
+            Error($"Something weird happened with the npc activation [{fate}]");
     }
 
     private async Task HandleNoFates() {
@@ -424,6 +431,16 @@ internal sealed class FateGrind(FateToolKit tweak) : TaskBase {
             await Mount();
             await NextFrame(60);
         }
+    }
+
+    private async Task SwapNewItemTarget() {
+        if (!tweak.IsZoneItemTargetComplete(Player.Territory.RowId, out var destination))
+            return;
+        using var scope = BeginScope("SwapNewItemTarget");
+        Status = "ZoneItemTarget complete. Swapping zones.";
+        await Mount();
+        await TeleportTo(destination, Vector3.Zero);
+        await tweak.GetCurrentMode().OnSwapZone(Player.Territory.RowId, destination, CancelToken);
     }
 
     private void HandleIntegrations() {
