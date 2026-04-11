@@ -322,7 +322,7 @@ public sealed class RelicItemMultiZoneGrindMode(
             var remaining = Math.Max(0, total - current);
             if (remaining <= 0) continue;
             foreach (var territoryId in entry.TerritoryIds.Where(id => id != 0))
-                yield return new ZoneItemTarget(territoryId, entry.ItemId, remaining);
+                yield return new ZoneItemTarget(territoryId, entry.ItemId, total);
         }
     }
 

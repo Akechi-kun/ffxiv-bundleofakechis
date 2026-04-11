@@ -154,11 +154,12 @@ public class FateToolKit : Tweak<FateToolKitConfig, FateToolKitWindow>, IFateGri
 
     internal bool IsZoneItemTargetComplete(uint currentTerritoryId, out uint destinationTerritoryId) {
         destinationTerritoryId = 0;
-        if (ZoneItemTargets.Any(t => t.TerritoryId == currentTerritoryId && t.IsComplete)) {
-            if (GetNextPreferredSwapZone(currentTerritoryId) is { } next) {
-                destinationTerritoryId = next;
-                return true;
-            }
+        var forZone = ZoneItemTargets.Where(t => t.TerritoryId == currentTerritoryId).ToList();
+        if (forZone.Count == 0 || !forZone.All(t => t.IsComplete))
+            return false;
+        if (GetNextPreferredSwapZone(currentTerritoryId) is { } next) {
+            destinationTerritoryId = next;
+            return true;
         }
         return false;
     }
@@ -186,20 +187,17 @@ public class FateToolKit : Tweak<FateToolKitConfig, FateToolKitWindow>, IFateGri
     internal bool ModeSuppliesSwapZones => GetCurrentMode().GetAllowedZones() != null;
 
     /// <summary>Next zone to swap to; prefers zones where a mode item target is not yet met (e.g. relic atma).</summary>
-    internal uint? GetNextPreferredSwapZone(uint currentTerritoryId) {
-        if (ZoneItemTargets.Count > 0) {
-            if (ZoneItemTargets.Where(t => !t.IsComplete).Select(t => t.TerritoryId).Distinct().ToList() is { Count: > 0 } incomplete) {
-                return incomplete.FirstOrDefault(z => z != currentTerritoryId) is not 0 and var next ? next : incomplete[0];
-            }
-        }
-        return GetNextSelectedSwapZone(currentTerritoryId);
-    }
+    internal uint? GetNextPreferredSwapZone(uint currentTerritoryId)
+        => ZoneItemTargets.Count > 0 && ZoneItemTargets.Where(t => !t.IsComplete).Select(t => t.TerritoryId).Distinct().ToList() is { Count: > 0 } incomplete
+            ? incomplete.Where(z => z != currentTerritoryId).ToList() is { Count: > 0 } others
+                ? others[Random.Shared.Next(others.Count)]
+                : incomplete[0]
+            : GetNextSelectedSwapZone(currentTerritoryId);
 
     private static unsafe int GetItemCount(uint itemId) => FFXIVClientStructs.FFXIV.Client.Game.InventoryManager.Instance()->GetInventoryItemCount(itemId);
 
     private void RefreshZoneItemTargets() {
-        var targets = GetCurrentMode().GetZoneItemTargets(this);
-        if (targets is null) {
+        if (GetCurrentMode().GetZoneItemTargets(this) is not { } targets) {
             ZoneItemTargets = [];
             return;
         }
