@@ -154,23 +154,13 @@ public class FateToolKit : Tweak<FateToolKitConfig, FateToolKitWindow>, IFateGri
 
     internal bool IsZoneItemTargetComplete(uint currentTerritoryId, out uint destinationTerritoryId) {
         destinationTerritoryId = 0;
-        var hasCurrentZoneTargets = false;
-        foreach (var target in ZoneItemTargets) {
-            if (target.TerritoryId != currentTerritoryId)
-                continue;
-            hasCurrentZoneTargets = true;
-            if (!target.IsComplete)
-                return false;
+        if (ZoneItemTargets.Any(t => t.TerritoryId == currentTerritoryId && t.IsComplete)) {
+            if (GetNextPreferredSwapZone(currentTerritoryId) is { } next) {
+                destinationTerritoryId = next;
+                return true;
+            }
         }
-        if (!hasCurrentZoneTargets)
-            return false;
-
-        var destination = GetNextPreferredSwapZone(currentTerritoryId);
-        if (destination is null or 0 || destination == currentTerritoryId)
-            return false;
-
-        destinationTerritoryId = destination.Value;
-        return true;
+        return false;
     }
 
     internal IFateGrindMode GetCurrentMode() {
@@ -198,11 +188,8 @@ public class FateToolKit : Tweak<FateToolKitConfig, FateToolKitWindow>, IFateGri
     /// <summary>Next zone to swap to; prefers zones where a mode item target is not yet met (e.g. relic atma).</summary>
     internal uint? GetNextPreferredSwapZone(uint currentTerritoryId) {
         if (ZoneItemTargets.Count > 0) {
-            var incomplete = ZoneItemTargets.Where(t => !t.IsComplete).Select(t => t.TerritoryId).Distinct().ToList();
-            if (incomplete.Count > 0) {
-                var next = incomplete.FirstOrDefault(z => z != currentTerritoryId);
-                if (next != 0) return next;
-                return incomplete[0];
+            if (ZoneItemTargets.Where(t => !t.IsComplete).Select(t => t.TerritoryId).Distinct().ToList() is { Count: > 0 } incomplete) {
+                return incomplete.FirstOrDefault(z => z != currentTerritoryId) is not 0 and var next ? next : incomplete[0];
             }
         }
         return GetNextSelectedSwapZone(currentTerritoryId);
