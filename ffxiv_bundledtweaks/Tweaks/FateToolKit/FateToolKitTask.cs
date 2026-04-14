@@ -42,6 +42,12 @@ internal sealed class FateGrind(FateToolKit tweak) : TaskBase {
                     case GrindState.Unconscious:
                         await Revive();
                         break;
+                    case GrindState.Engaging:
+                        // this should only ever happen during hot reloading vbm during a fate
+                        if (PublicEvent.CurrentFate is { IsOnMap: true } current && !Svc.BossMod.HasTempMap())
+                            await GenerateObstacleMap(current);
+                        await NextFrame();
+                        break;
                     case GrindState.WaitingForFollowUp:
                         await NextFrame(100);
                         break;
@@ -347,6 +353,7 @@ internal sealed class FateGrind(FateToolKit tweak) : TaskBase {
             return false;
         }
 
+        await GenerateObstacleMap(nextFate);
         await MoveTo(msh, MovementConfig.Everything.WithTolerance(3),
             // in progress = urgent, otherwise I don't think teleporting all the time is necessary
             // also prohibit when you have the xp buff or when waiting for collect fate rewards
@@ -400,6 +407,23 @@ internal sealed class FateGrind(FateToolKit tweak) : TaskBase {
         // only activate after a normal arrival; if we explicitly stopped (e.g. npcloaded), let the loop re-handle
         if (stopReason == MoveStopReason.None && NextFate is { State: FateState.Preparing, MotivationNpcId: not 0xE0000000 } && PublicEvent.Fates.Any(f => f.Id == NextFate.Id))
             await ActivateFate();
+    }
+
+    private async Task GenerateObstacleMap(PublicEvent evt) {
+        using var scope = BeginScope(nameof(GenerateObstacleMap));
+        Svc.BossMod.Generate(evt.Position, evt.Radius + 10, false);
+        await WaitUntil(() => {
+            var status = Svc.BossMod.GetGenerationStatus();
+            if (status is TaskStatus.RanToCompletion) {
+                Log($"Obstacle map generated for fate {evt.Id}");
+                return true;
+            }
+            if (status is TaskStatus.Faulted) {
+                Warning($"Obstacle map generation failed for fate {evt.Id}");
+                return true; // allow moving without the map rather than getting stuck in an infinite wait
+            }
+            return false;
+        }, "WaitForObstacleMap");
     }
 
     private async Task ActivateFate() {

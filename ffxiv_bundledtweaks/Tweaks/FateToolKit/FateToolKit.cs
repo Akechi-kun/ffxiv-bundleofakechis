@@ -48,6 +48,7 @@ public class FateToolKitConfig {
  * more dynamic pull sizes. Like if fates have a ton of enemies, they're generally low health and you could just pull them all
  * better handling of new fates spawning on top of you
  * watch gear durability. Either self repair or just stop if I cba
+ * grind modes: check item count on way to fate or something as an interrupt since you don't get the item when fatereward pops
  * vbm:
  * treat all engaged enemies as your own
  * somehow fix engaging enemies as the fight is ending

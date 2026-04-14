@@ -1,4 +1,5 @@
-﻿using ECommons.EzIpcManager;
+using ECommons.EzIpcManager;
+using System.Threading.Tasks;
 
 namespace ComplexTweaks.IPC;
 
@@ -45,6 +46,11 @@ public class BossModIPC : BaseIPC {
 
     /// <remarks> string presetName </remarks>
     [EzIPC("Presets.%m", true)] public readonly Func<string, bool> ClearTransientPresetStrategies;
+
+    /// <remarks> centerWorld, radius, writeToFile </remarks>
+    [EzIPC("ObstacleMap.%m", true)] public readonly Func<Vector3, float, bool, bool> Generate;
+    [EzIPC("ObstacleMap.%m", true)] public readonly Func<TaskStatus> GetGenerationStatus;
+    [EzIPC("ObstacleMap.%m", true)] public readonly Func<bool> HasTempMap;
 
     public class Modules {
         public const string AutoFarm = "BossMod.Autorotation.MiscAI.AutoFarm";
