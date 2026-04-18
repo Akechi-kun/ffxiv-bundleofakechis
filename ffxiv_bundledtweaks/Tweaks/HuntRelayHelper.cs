@@ -267,7 +267,7 @@ public class HuntRelayHelper : Tweak<HuntRelayHelperConfiguration> {
                         .AppendIntExpression(200)
                         .AppendIntExpression(3) // type of link (player, job, item, map, etc)
                         .AppendUIntExpression(MapLink.TerritoryType.RowId) // territory
-                        .AppendUIntExpression(Instance is not null or 0 ? MapLink.Map.RowId | ((uint)Instance << 16) : MapLink.Map.RowId) // map or (map | (instance << 16))
+                        .AppendUIntExpression(Instance is not null ? MapLink.Map.RowId | ((uint)Instance << 16) : MapLink.Map.RowId) // map or (map | (instance << 16))
                         .AppendIntExpression(MapLink.RawX) // x -> (int)(MathF.Round(posX, 3, MidpointRounding.AwayFromZero) * 1000)
                         .AppendIntExpression(MapLink.RawY) // y
                         .AppendIntExpression(-30000) // z or -30000 for no z

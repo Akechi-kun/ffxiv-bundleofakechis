@@ -440,7 +440,7 @@ internal sealed class FateGrind(FateToolKit tweak) : TaskBase {
 
         if (TryGetValidMotivationNpc(fate, out var npc)) {
             Log($"ActivateFate start: fate={NextFate.Id} npc={npc.EntityId} npcPos={npc.Position} playerPos={Player.Position} dist={Player.DistanceTo(npc.Position):F2} inRange={npc.IsInInteractRange()}");
-            await MoveTo(npc.Position, MovementConfig.InteractRange.WithOptions(MovementOptions.GetCurrent()));
+            await MoveTo(npc.Position, MovementConfig.InteractRange.WithOptions(MovementOptions.Current));
             Log($"ActivateFate after MoveTo: npc={npc.EntityId} playerPos={Player.Position} dist={Player.DistanceTo(npc.Position):F2} inRange={npc.IsInInteractRange()}");
             try {
                 await InteractWith(npc, () => NextFate?.State == FateState.Running, skip: UiSkipOptions.Talk | UiSkipOptions.YesNo);
