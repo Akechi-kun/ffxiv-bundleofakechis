@@ -1,3 +1,4 @@
+using Automaton.Tweaks;
 using ComplexTweaks.Tweaks;
 using ECommons.Configuration;
 using System.Collections.ObjectModel;
@@ -20,6 +21,7 @@ public class TweakConfigs {
     public AchievementTrackerConfiguration AchievementTrackerConfiguration { get; init; } = new();
     public AutoFollowConfiguration AutoFollow { get; init; } = new();
     public AutoInviteConfiguration AutoInvite { get; init; } = new();
+    public ARQuestingConfiguration ARQuestingConfiguration { get; init; } = new();
     public ClickToMoveConfiguration ClickToMove { get; init; } = new();
     public CommandsConfiguration Commands { get; init; } = new();
     public DateWithDestinyConfiguration DateWithDestiny { get; init; } = new();
@@ -30,8 +32,8 @@ public class TweakConfigs {
     public GlamourSetsTrackerConfiguration GlamourSets { get; init; } = new();
     public GMAlertConfiguration GMAlert { get; init; } = new();
     public HuntRelayHelperConfiguration HuntRelayHelper { get; init; } = new();
+    public MailEnhanacementsConfig MailEnhanacements { get; init; } = new();
     public SimpleCurrencyAlertConfig SimpleCurrencyAlertConfig { get; init; } = new();
-    public ARQuestingConfiguration ARQuestingConfiguration { get; init; } = new();
 }
 
 public class YamlFactory : DefaultSerializationFactory, ISerializationFactory {

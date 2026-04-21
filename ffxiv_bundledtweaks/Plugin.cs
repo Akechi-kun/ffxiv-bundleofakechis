@@ -7,6 +7,7 @@ using ECommons.Configuration;
 using ECommons.Reflection;
 using ECommons.SimpleGui;
 using ECommons.Singletons;
+using KamiToolKit;
 using System.Collections.Specialized;
 using System.Reflection;
 
@@ -27,6 +28,7 @@ public class Plugin : IDalamudPlugin {
         Version = P.GetType().Assembly.GetName().Version ?? new(0, 0);
         ECommonsMain.Init(pluginInterface, P, ECommons.Module.DalamudReflector, ECommons.Module.ObjectFunctions);
         CLibMain.Init(pluginInterface, P);
+        KamiToolKitLibrary.Initialize(pluginInterface, "CBT");
 
 #if LOCAL_CS
         FFXIVClientStructs.Interop.Generated.Addresses.Register();
@@ -88,6 +90,7 @@ public class Plugin : IDalamudPlugin {
         }
         C.EnabledTweaks.CollectionChanged -= OnChange;
         ECommonsMain.Dispose();
+        KamiToolKitLibrary.Dispose();
     }
 
     private void OnCommand(string command, string args) {

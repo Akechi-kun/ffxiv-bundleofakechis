@@ -31,5 +31,7 @@ internal unsafe class TestTab : DebugTab {
             ImGui.Text($"In Interact Range: {Svc.Targets.Target.IsInInteractRange()}");
 
         ImGui.Text($"{ExdModule.GetRoleForClassJobId(Player.ClassJob.RowId)}");
+
+        ImGui.Text($"Target LoS: {Svc.Targets.Target?.IsInLineOfSight(Player.Position) ?? false}");
     }
 }
