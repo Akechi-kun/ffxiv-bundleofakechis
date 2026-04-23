@@ -516,12 +516,16 @@ internal sealed class FateGrind(FateToolKit tweak) : TaskBase {
         if (PublicEvent.CurrentFate is { } fate) {
             // when we leave collect fates early, it's still CurrentFate, so we need to ignore that and deactivate anyway
             if (fate is { Rule: PublicEvent.FateRule.Collect, Progress: >= 100 } && (NextFate is null || NextFate.Id != fate.Id)) {
+                // don't deactivate before we're out of combat
+                if (Svc.Condition[ConditionFlag.InCombat])
+                    return;
                 DeactivateIntegrations(clearNextFate: false);
                 return;
             }
 
             // only activate for the fate we're pathfinding to (or any if NextFate is null)
-            if (NextFate is { } next && fate.Id != next.Id) {
+            if (NextFate is { } next && fate.Id != next.Id
+                && !(fate is { Rule: PublicEvent.FateRule.Collect, Progress: >= 100 } && Svc.Condition[ConditionFlag.InCombat])) {
                 DeactivateIntegrations(clearNextFate: false);
                 return;
             }
