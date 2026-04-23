@@ -435,6 +435,10 @@ internal sealed class FateGrind(FateToolKit tweak) : TaskBase {
             }
             return false;
         }, "WaitForObstacleMap");
+
+        if (Svc.BossMod.EvaluateTempMapQuality() is { } quality) {
+            Log($"Generated obstacle map quality for fate {evt.Id}: {quality}");
+        }
     }
 
     private async Task ActivateFate() {
