@@ -4,6 +4,3 @@
 [submodule "clib"]
 	path = clib
 	url = https://github.com/Jaksuhn/clib.git
-[submodule "KamiToolKit"]
-	path = KamiToolKit
-	url = https://github.com/MidoriKami/KamiToolKit
