@@ -61,10 +61,11 @@ public class BossModIPC : BaseIPC {
         float SpeckleFraction, // amount of isolated cells with no neighbors of the same type (higher = noiser)
         int PassableComponents // count of passable regions (higher = more fragmented)
     ) {
-        public bool BlockedIdeal => BlockedFraction is > 0.03f and < 0.82f;
+        public bool BlockedIdeal => BlockedFraction < 0.85f;
         public bool LargestCompIdeal => LargestPassableComponentFraction < 0.5f;
         public bool TinyCompIdeal => TinyPassableComponentFraction < 0.03f;
         public bool SpeckleIdeal => SpeckleFraction < 0.003f;
+        public bool IsBad => !BlockedIdeal || !LargestCompIdeal || !TinyCompIdeal || !SpeckleIdeal;
         public override string ToString() => $"Blocked: {BlockedFraction:P1}/{BlockedIdeal}, LargestComp: {LargestPassableComponentFraction:P1}/{LargestCompIdeal}, TinyComp: {TinyPassableComponentFraction:P1}/{TinyCompIdeal}, Speckle: {SpeckleFraction:P1}/{SpeckleIdeal}, PassableComps: {PassableComponents}";
     }
 
