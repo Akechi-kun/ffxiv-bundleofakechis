@@ -13,7 +13,7 @@ internal class AutoQueue : Tweak {
     public override void Enable() => Svc.ClientState.TerritoryChanged += OnTerritoryChanged;
     public override void Disable() => Svc.ClientState.TerritoryChanged -= OnTerritoryChanged;
 
-    private unsafe void OnTerritoryChanged(ushort obj) {
+    private void OnTerritoryChanged(uint obj) {
         if (Player.IsInDuty || Player.IsPenalised) return;
         TaskManager.Enqueue(() => !Player.IsBusy);
         TaskManager.Enqueue(() => Svc.Party.All(p => !p.Territory.Value.IsDuty), "WaitForPartyNotInDuty");
@@ -23,7 +23,7 @@ internal class AutoQueue : Tweak {
 
     private unsafe bool QueueSelectedDuty() {
         var content = AgentContentsFinder.Instance()->SelectedContent;
-        if (content.FirstOrNull(x => x.ContentType is ContentsId.ContentsType.Roulette) is { Id: var id }) {
+        if (content.FirstOrNull(x => x.ContentType is ContentsType.Roulette) is { Id: var id }) {
             ContentsFinder.Instance()->QueueInfo.QueueRoulette((byte)id);
             return true;
         }

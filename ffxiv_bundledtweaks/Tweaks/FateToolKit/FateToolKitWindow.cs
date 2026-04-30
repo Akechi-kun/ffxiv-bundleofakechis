@@ -4,6 +4,7 @@ using Dalamud.Game.Text;
 using Dalamud.Interface;
 using Dalamud.Interface.Components;
 using Dalamud.Interface.Utility.Raii;
+using Dalamud.Interface.Windowing;
 using ECommons.ImGuiMethods;
 using System.Globalization;
 using System.Reflection;

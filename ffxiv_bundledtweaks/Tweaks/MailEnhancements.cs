@@ -1,7 +1,6 @@
 using clib.Extensions.ClientStructs;
 using Dalamud.Memory;
 using FFXIVClientStructs.FFXIV.Client.Game;
-using FFXIVClientStructs.FFXIV.Client.Game.UI;
 using FFXIVClientStructs.FFXIV.Client.UI.Agent;
 using FFXIVClientStructs.FFXIV.Client.UI.Info;
 using FFXIVClientStructs.FFXIV.Component.GUI;
@@ -12,7 +11,7 @@ using Lumina.Excel.Sheets;
 using System.Diagnostics.CodeAnalysis;
 using System.Threading.Tasks;
 
-namespace Automaton.Tweaks;
+namespace ComplexTweaks.Tweaks;
 
 public class MailEnhanacementsConfig {
     [BoolConfig] public bool EnableRetrieveAll = true;

@@ -53,9 +53,12 @@ internal class DebugWindow : Window {
             return;
         }
 
-        using var child = SelectedTab.DrawInChild
-            ? ImRaii.Child($"###{SelectedTab.InternalName}_Child", new Vector2(-1), true)
-            : null;
+        if (SelectedTab.DrawInChild) {
+            using var child = ImRaii.Child($"###{SelectedTab.InternalName}_Child", new Vector2(-1), true);
+            if (SelectedTab.DrawConditions())
+                TryExecute(SelectedTab.Draw);
+            return;
+        }
 
         if (SelectedTab.DrawConditions())
             TryExecute(SelectedTab.Draw);

@@ -18,6 +18,7 @@ namespace ComplexTweaks.TweakSystem;
 public abstract partial class Tweak : ITweak {
     public Tweak() {
         CachedType = GetType();
+        _eventController = new(this);
         InternalName = CachedType.Name;
         IncompatibilityWarnings = [.. CachedType.GetCustomAttributes<IncompatibilityWarningAttribute>()];
 
@@ -83,6 +84,7 @@ public abstract partial class Tweak : ITweak {
     protected Window? _window;
 
     private readonly Dictionary<TweakEvent, List<Action<Type, EventArgs>>> _eventHandlers = [];
+    private readonly TweakEventController _eventController;
 
     protected virtual object? GetConfigObject() => null;
 
@@ -141,6 +143,8 @@ public abstract partial class Tweak : ITweak {
         DrawCommands();
     }
     public virtual void OnConfigChange(string fieldName) { }
+    internal object? GetConfigObjectInternal() => GetConfigObject();
+    internal Type? CachedConfigTypeInternal => CachedConfigType;
 }
 
 public abstract partial class Tweak // Internal
@@ -237,6 +241,14 @@ public abstract partial class Tweak // Internal
         }
 
         try {
+            _eventController.EnableHandlers();
+        }
+        catch (Exception ex) {
+            Error(ex, "Unexpected error during Enable (Event Controller Handlers)");
+            LastInternalException = ex;
+        }
+
+        try {
             CallHooks("Enable");
         }
         catch (Exception ex) {
@@ -279,6 +291,14 @@ public abstract partial class Tweak // Internal
         }
         catch (Exception ex) {
             Error(ex, "Unexpected error during Disable (Event Handlers)");
+            LastInternalException = ex;
+        }
+
+        try {
+            _eventController.DisableHandlers();
+        }
+        catch (Exception ex) {
+            Error(ex, "Unexpected error during Disable (Event Controller Handlers)");
             LastInternalException = ex;
         }
 
@@ -369,6 +389,8 @@ public abstract partial class Tweak // Internal
                 foreach (var c in attr.Commands)
                     DisableCommand(c);
         }
+
+        _eventController.OnConfigChange(fieldName);
 
         try {
             OnConfigChange(fieldName);

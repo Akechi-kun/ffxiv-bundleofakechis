@@ -1,4 +1,5 @@
 using Dalamud.Game;
+using Dalamud.Game.Chat;
 using Dalamud.Game.Text;
 using Dalamud.Game.Text.SeStringHandling;
 using Dalamud.Game.Text.SeStringHandling.Payloads;
@@ -51,18 +52,18 @@ public class TimezoneTranslator : Tweak {
     public override void Enable() => Svc.Chat.ChatMessage += OnChatMessage;
     public override void Disable() => Svc.Chat.ChatMessage -= OnChatMessage;
 
-    private void OnChatMessage(XivChatType type, int timestamp, ref SeString sender, ref SeString message, ref bool isHandled) {
-        if (type is not XivChatType.Notice) return;
-        if (message.TextValue.IsNullOrEmpty()) return;
+    private void OnChatMessage(IHandleableChatMessage message) {
+        if (message.LogKind is not XivChatType.Notice) return;
+        if (message.Message.TextValue.IsNullOrEmpty()) return;
 
         if (_kvp.TryGetValue(Svc.ClientState.ClientLanguage, out var conf)) {
             var regex = conf.Culture.GetFullDateTimeRegexPattern();
-            if (!regex.IsMatch(message.TextValue))
+            if (!regex.IsMatch(message.Message.TextValue))
                 return;
 
             var serverTz = Svc.ClientState.ClientLanguage == ClientLanguage.French ? conf.LongName : conf.Abbreviation; // french has to be special as always
             var sb = new SeStringBuilder();
-            foreach (var item in message.Payloads) {
+            foreach (var item in message.Message.Payloads) {
                 if (item is TextPayload tp && !string.IsNullOrEmpty(tp.Text)) {
                     // replace every timestamp in this payload (there can be multiple)
                     var replacedTimes = regex.Replace(tp.Text, m => {
@@ -90,7 +91,7 @@ public class TimezoneTranslator : Tweak {
                 }
             }
 
-            message = sb.Build();
+            message.Message = sb.Build();
         }
     }
 

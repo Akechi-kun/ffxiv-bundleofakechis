@@ -6,7 +6,6 @@ using FFXIVClientStructs.FFXIV.Component.GUI;
 namespace ComplexTweaks.Tweaks;
 
 [Tweak(debug: true)]
-[RequiresClientStructs(7372)]
 public unsafe partial class InstantReturn : Tweak {
     public override string Name => "Quick Return";
     public override string Description => "Calls the return function directly";

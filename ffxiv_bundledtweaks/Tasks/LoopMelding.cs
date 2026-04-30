@@ -5,7 +5,6 @@ using FFXIVClientStructs.FFXIV.Client.Game.UI;
 using FFXIVClientStructs.FFXIV.Client.UI.Agent;
 using FFXIVClientStructs.FFXIV.Component.GUI;
 using System.Threading.Tasks;
-using ValueType = FFXIVClientStructs.FFXIV.Component.GUI.ValueType;
 
 namespace ComplexTweaks.Tasks;
 
@@ -128,7 +127,7 @@ public sealed partial class LoopMelding(GameInventoryItem item) : TaskBase {
         var ret = new AtkValue();
         var atkvalues = stackalloc AtkValue[values.Length];
         for (var i = 0; i < values.Length; i++) {
-            atkvalues[i].Type = ValueType.Int;
+            atkvalues[i].Type = AtkValueType.Int;
             atkvalues[i].Int = values[i];
         }
         AgentMateriaAttach.Instance()->ReceiveEvent(&ret, atkvalues, (uint)values.Length, eventKind);

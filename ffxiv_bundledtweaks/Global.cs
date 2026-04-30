@@ -22,7 +22,6 @@ global using System.Numerics;
 global using static ComplexTweaks.Plugin;
 global using static ComplexTweaks.Utilities.Enums;
 global using static ECommons.GenericHelpers;
-global using AtkValueType = FFXIVClientStructs.FFXIV.Component.GUI.ValueType;
 global using Callback = ECommons.Automation.Callback;
 global using CSGameObject = FFXIVClientStructs.FFXIV.Client.Game.Object.GameObject;
 global using DGameObject = Dalamud.Game.ClientState.Objects.Types.IGameObject;

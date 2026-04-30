@@ -66,8 +66,7 @@ public partial class HaselWindow : Window {
                 if (ImGui.IsItemHovered()) {
                     var (status, color) = GetTweakStatus(tweak);
                     using var tooltip = ImRaii.Tooltip();
-                    if (tooltip.Success)
-                        ImGuiEx.Text((uint)color, status);
+                    ImGuiEx.Text((uint)color, status);
                 }
 
                 drawList.AddRectFilled(pos, pos + size, ImGui.GetColorU32(ImGuiCol.FrameBg), 3f, ImDrawFlags.RoundCornersAll);

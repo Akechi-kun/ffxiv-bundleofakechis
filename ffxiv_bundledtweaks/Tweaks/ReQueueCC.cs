@@ -14,7 +14,7 @@ public class ReQueueCC : Tweak {
 
     private unsafe void CheckForMessage(ILogMessage message) {
         if (message.LogMessageId is 7392)
-            if (AgentContentsFinder.Instance()->SelectedContent.FirstOrNull(x => x.ContentType is ContentsId.ContentsType.Roulette) is { Id: (40 or 41) and var id })
+            if (AgentContentsFinder.Instance()->SelectedContent.FirstOrNull(x => x.ContentType is ContentsType.Roulette) is { Id: (40 or 41) and var id })
                 ContentsFinder.Instance()->QueueInfo.QueueRoulette((byte)id);
     }
 }

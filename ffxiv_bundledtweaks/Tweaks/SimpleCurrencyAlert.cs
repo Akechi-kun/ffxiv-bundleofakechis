@@ -20,7 +20,7 @@ public class SimpleCurrencyAlert : Tweak<SimpleCurrencyAlertConfig> {
     public override void Enable() => Svc.ClientState.TerritoryChanged += OnTerritoryChanged;
     public override void Disable() => Svc.ClientState.TerritoryChanged -= OnTerritoryChanged;
 
-    private unsafe void OnTerritoryChanged(ushort obj) {
+    private unsafe void OnTerritoryChanged(uint obj) {
         foreach (var currency in Config.Alerts) {
             var count = GetAlertCount(currency);
 

@@ -1,4 +1,3 @@
-using Dalamud.Plugin.Ipc;
 using ECommons.EzIpcManager;
 using System.Threading;
 

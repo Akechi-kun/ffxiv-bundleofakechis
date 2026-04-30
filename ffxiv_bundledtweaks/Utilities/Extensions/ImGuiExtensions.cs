@@ -29,19 +29,17 @@ public static class ImGuiExtensions {
                 ImGui.SetMouseCursor(ImGuiMouseCursor.Hand);
 
                 using var tooltip = ImRaii.Tooltip();
-                if (tooltip.Success) {
-                    ImGuiEx.Text(EzColor.White, title);
+                ImGuiEx.Text(EzColor.White, title);
 
-                    var pos = ImGui.GetCursorPos();
-                    ImGui.GetWindowDrawList().AddText(
-                        UiBuilder.IconFont, 12,
-                        ImGui.GetWindowPos() + pos + new Vector2(2),
-                        Colors.Grey,
-                        FontAwesomeIcon.ExternalLinkAlt.ToIconString()
-                    );
-                    ImGui.SetCursorPos(pos + new Vector2(20, 0));
-                    ImGuiEx.Text((uint)Colors.Grey, url);
-                }
+                var pos = ImGui.GetCursorPos();
+                ImGui.GetWindowDrawList().AddText(
+                    UiBuilder.IconFont, 12,
+                    ImGui.GetWindowPos() + pos + new Vector2(2),
+                    Colors.Grey,
+                    FontAwesomeIcon.ExternalLinkAlt.ToIconString()
+                );
+                ImGui.SetCursorPos(pos + new Vector2(20, 0));
+                ImGuiEx.Text((uint)Colors.Grey, url);
             }
 
             if (ImGui.IsItemClicked()) {
@@ -70,7 +68,7 @@ public static class ImGuiExtensions {
             }
         }
 
-        public static ImRaii.Indent ConfigIndent(bool enabled = true) => ImRaii.PushIndent(ImGui.GetFrameHeight() + ImGui.GetStyle().ItemSpacing.X / 2f, true, enabled);
+        public static ImRaii.IndentDisposable ConfigIndent(bool enabled = true) => ImRaii.PushIndent(ImGui.GetFrameHeight() + ImGui.GetStyle().ItemSpacing.X / 2f, true, enabled);
 
         public static void Checkbox(string name, ref bool v) {
             if (ImGui.Checkbox(name, ref v))
