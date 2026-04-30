@@ -70,12 +70,12 @@ public class HuntRelayHelper : Tweak<HuntRelayHelperConfiguration> {
     private RelayPayload? LastRelay;
 
     public override void Enable() {
-        Svc.Chat.CheckMessageHandled += OnChatMessage;
+        Svc.Chat.ChatMessage += OnChatMessage;
         RelayLinkPayload = Svc.Chat.AddChatLinkHandler((uint)LinkHandlerId.RelayLinkPayload, HandleRelayLink);
     }
 
     public override void Disable() {
-        Svc.Chat.CheckMessageHandled -= OnChatMessage;
+        Svc.Chat.ChatMessage -= OnChatMessage;
         Svc.Chat.RemoveChatLinkHandler((uint)LinkHandlerId.RelayLinkPayload);
     }
 
@@ -187,7 +187,7 @@ public class HuntRelayHelper : Tweak<HuntRelayHelperConfiguration> {
         try {
             var (world, instance, relayType) = DetectWorldInstanceRelayType(message.Message);
             if ((RelayTypes)relayType == RelayTypes.None) {
-                Log($"Failed to detect relay type in {nameof(MapLinkPayload)} message: {message}");
+                Log($"Failed to detect relay type in {nameof(MapLinkPayload)} message: {message.Message}");
                 return;
             }
             if (world is null && message.LogKind is XivChatType.NoviceNetwork)
@@ -203,10 +203,14 @@ public class HuntRelayHelper : Tweak<HuntRelayHelperConfiguration> {
                     _ => null
                 };
             }
-            if (world is { RowId: var id })
-                message.Message.Payloads.AddRange([RelayLinkPayload, new IconPayload(BitmapFontIcon.NotoriousMonster), new RelayPayload(mlp, id, instance, relayType, (uint)message.LogKind).ToRawPayload(), RawPayload.LinkTerminator]);
+            if (world is { RowId: var id }) {
+                Debug($"Adding payload with [world={world.Value.Name}, i={instance}, type={(RelayTypes)relayType}]");
+                // can't change IMutableChatMessage in place. Have to assign a new string to it
+                var seString = new SeString().Append(message.Message.Payloads).Append([RelayLinkPayload, new IconPayload(BitmapFontIcon.NotoriousMonster), new RelayPayload(mlp, id, instance, relayType, (uint)message.LogKind).ToRawPayload(), RawPayload.LinkTerminator]);
+                message.Message = seString;
+            }
             else
-                Log($"Failed to detect world in {nameof(MapLinkPayload)} message: {message}");
+                Log($"Failed to detect world in {nameof(MapLinkPayload)} message: {message.Message}");
         }
         catch (Exception ex) {
             Error(ex, $"[{nameof(OnChatMessage)}] Unexpected error");
