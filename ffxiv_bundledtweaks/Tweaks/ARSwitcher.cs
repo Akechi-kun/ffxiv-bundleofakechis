@@ -12,10 +12,10 @@ public class ARSwitcher : Tweak {
     public override string Name => "AutoRetainer Character Switcher";
     public override string Description => "Adds a DTR element and commands to switch to the prev/next character in AutoRetainer.";
 
-    private IDtrBarEntry _dtrBarEntry = null!;
+    private IDtrBarEntry? _dtrBarEntry;
 
     public override void Enable() {
-        _dtrBarEntry = Svc.DtrBar.Get("Character Index", "Unknown Character Index");
+        _dtrBarEntry ??= Svc.DtrBar.Get("Character Index", "Unknown Character Index");
         _dtrBarEntry.OnClick = @event => {
             unsafe {
                 var homeWorldId = Svc.PlayerState.HomeWorld.RowId;
@@ -34,12 +34,12 @@ public class ARSwitcher : Tweak {
     }
 
     public override void Disable() {
-        _dtrBarEntry.Remove();
+        _dtrBarEntry?.Remove();
         Svc.ClientState.Login -= UpdateDtrBar;
     }
 
     private void UpdateDtrBar() {
-        if (_dtrBarEntry.UserHidden || !Svc.PlayerState.CurrentWorld.IsValid || !Svc.PlayerState.HomeWorld.IsValid)
+        if (_dtrBarEntry?.UserHidden ?? true || !Svc.PlayerState.CurrentWorld.IsValid || !Svc.PlayerState.HomeWorld.IsValid)
             return;
 
         try {

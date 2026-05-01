@@ -59,7 +59,7 @@ public class Plugin : IDalamudPlugin {
 
         Svc.Framework.RunOnFrameworkThread(InitializeTweaks);
         C.EnabledTweaks.CollectionChanged += OnChange;
-        DalamudReflector.RegisterOnInstalledPluginsChangedEvents(OnPluginsChanged);
+        Svc.PluginInterface.ActivePluginsChanged += OnPluginsChanged;
     }
 
     public static void OnChange(object? sender, NotifyCollectionChangedEventArgs e) {
@@ -72,7 +72,7 @@ public class Plugin : IDalamudPlugin {
         }
     }
 
-    private static void OnPluginsChanged() {
+    private static void OnPluginsChanged(IActivePluginsChangedEventArgs args) {
         foreach (var tweak in Tweaks) {
             if (C.EnabledTweaks.Contains(tweak.InternalName) && !tweak.Enabled && !tweak.Outdated && !tweak.Disabled)
                 if (tweak.CanBeEnabled())
@@ -92,6 +92,7 @@ public class Plugin : IDalamudPlugin {
             TryExecute(tweak.DisposeInternal);
         }
         C.EnabledTweaks.CollectionChanged -= OnChange;
+        Svc.PluginInterface.ActivePluginsChanged -= OnPluginsChanged;
         ECommonsMain.Dispose();
         KamiToolKitLibrary.Dispose();
     }
