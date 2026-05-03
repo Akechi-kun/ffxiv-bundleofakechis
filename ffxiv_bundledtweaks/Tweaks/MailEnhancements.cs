@@ -173,7 +173,9 @@ public class MailEnhancements : Tweak<MailEnhanacementsConfig> {
                     await Decipher();
                 }
                 else if (!inventoryHasMap) {
+#pragma warning disable IDE0002 // why does it do this
                     if (InfoProxyLetter.MapLetter is not { } letter) return;
+#pragma warning restore
                     await OpenMailbox();
                     InfoProxyLetter.TakeAllAttachements(letter.Index, letter.SenderContentId);
                 }

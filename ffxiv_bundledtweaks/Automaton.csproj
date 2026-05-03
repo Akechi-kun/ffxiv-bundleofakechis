@@ -52,9 +52,4 @@
         <ProjectReference Include="..\clib\clib.csproj" />
 		<ProjectReference Include="..\InteropSourceGenerators\InteropSourceGenerator.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
     </ItemGroup>
-
-	<ItemGroup>
-	  <PackageReference Update="DalamudPackager" Version="15.0.0" />
-	  <PackageReference Update="DotNet.ReproducibleBuilds" Version="1.2.39" />
-	</ItemGroup>
 </Project>

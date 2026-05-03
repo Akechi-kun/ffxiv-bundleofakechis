@@ -186,6 +186,8 @@ public abstract partial class Tweak // Internal
 
     internal virtual void EnableInternal() {
         if (!Ready || Outdated || Disabled) return;
+        if (Enabled)
+            return;
         if (Requirements.Any(r => !r.IsLoaded)) {
             // TODO: append a button to re-enable
             ModuleMessage("Feature not enabled due to missing dependencies. Please install them then re-enable this feature.");
@@ -557,6 +559,10 @@ public abstract partial class Tweak // Internal
 
             originalHandler(cmd, args);
         }
+
+        // replace if already registered
+        if (Svc.Commands.Commands.ContainsKey(command))
+            Svc.Commands.RemoveHandler(command);
 
         if (Svc.Commands.AddHandler(command, new CommandInfo(handler) { HelpMessage = helpMessage, DisplayOrder = 1 }))
             Log($"Added CommandHandler for {command}");
