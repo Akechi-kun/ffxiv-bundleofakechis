@@ -1,7 +1,7 @@
+using Dalamud.Game.Chat;
 using Dalamud.Game.ClientState.Objects.Enums;
 using Dalamud.Game.ClientState.Objects.Types;
 using Dalamud.Game.Text;
-using Dalamud.Game.Text.SeStringHandling;
 using Dalamud.Game.Text.SeStringHandling.Payloads;
 using ECommons;
 using ECommons.EzHookManager;
@@ -107,7 +107,7 @@ public unsafe class AutoFollow : Tweak<AutoFollowConfiguration> {
 
         if (Svc.Condition[ConditionFlag.RidingPillion]) return;
 
-        if (master.ObjectKind == ObjectKind.Player) {
+        if (master.ObjectKind == ObjectKind.Pc) {
             if (TrySprint(master)) return;
             if (TryPillion(master)) return;
             if (TryMount(master)) return;
@@ -225,13 +225,13 @@ public unsafe class AutoFollow : Tweak<AutoFollowConfiguration> {
             => Id is not null && obj.EntityId == Id || !string.IsNullOrEmpty(Name) && obj.Name.TextValue.EqualsIgnoreCase(Name);
     }
 
-    private void OnChatMessage(XivChatType type, int timestamp, ref SeString sender, ref SeString message, ref bool isHandled) {
-        if (type != XivChatType.Party) return;
-        var player = sender.Payloads.SingleOrDefault(x => x is PlayerPayload) as PlayerPayload;
-        if (message.TextValue.ContainsIgnoreCase("autofollow")) {
-            if (int.TryParse(message.TextValue.Split("autofollow")[1], out var distance))
+    private void OnChatMessage(IHandleableChatMessage message) {
+        if (message.LogKind != XivChatType.Party) return;
+        var player = message.Sender.Payloads.SingleOrDefault(x => x is PlayerPayload) as PlayerPayload;
+        if (message.Message.TextValue.ContainsIgnoreCase("autofollow")) {
+            if (int.TryParse(message.Message.TextValue.Split("autofollow")[1], out var distance))
                 Config.DistanceToKeep = distance;
-            else if (message.TextValue.ContainsIgnoreCase("autofollow off"))
+            else if (message.Message.TextValue.ContainsIgnoreCase("autofollow off"))
                 ClearMaster();
             else {
                 if (Svc.Objects.FirstOrDefault(o => o.Name.TextValue.Equals(player?.PlayerName)) is { } actor) {

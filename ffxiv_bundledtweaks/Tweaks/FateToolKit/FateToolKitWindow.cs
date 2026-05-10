@@ -1,38 +1,64 @@
+using clib.ImGuiHelpers;
 using Dalamud.Bindings.ImGui;
+using Dalamud.Game.Text;
 using Dalamud.Interface;
 using Dalamud.Interface.Components;
 using Dalamud.Interface.Utility.Raii;
 using Dalamud.Interface.Windowing;
-using ComplexTweaks.Utilities;
 using ECommons.ImGuiMethods;
+using System.Globalization;
+using System.Reflection;
+using System.Text;
 
 namespace ComplexTweaks.Tweaks;
 
-public class FateToolKitWindow : Window {
+public class FateToolKitWindow : MinimisableWindow {
     private readonly FateToolKit _tweak;
+    private bool _showSettings;
+
+    private static readonly PropertyInfo[] _tooltipProperties;
+
+    static FateToolKitWindow() {
+        _tooltipProperties = [.. typeof(PublicEvent)
+            .GetProperties(BindingFlags.Instance | BindingFlags.Public)
+            .OrderBy(p => p.Name)];
+    }
+
     public FateToolKitWindow(FateToolKit tweak) : base($"Fate Tracker##{nameof(FateToolKitWindow)}") {
         _tweak = tweak;
-        TitleBarButtons.Add(new() {
+        TitleBarButtons.Add(new TitleBarButton {
             Icon = FontAwesomeIcon.Cog,
             Click = _ => _showSettings = !_showSettings,
         });
     }
 
-    private bool _showSettings = false;
+    protected override Vector2 MinimisedSize => new(700, 90);
 
     public override bool DrawConditions() => Player.Available;
 
-    public override void Draw() {
+    protected override void DrawContent(bool minimised) {
         _tweak.SyncRunningState();
 
         using (var rounding = ImRaii.PushStyle(ImGuiStyleVar.FrameRounding, 6f))
         using (var runButtonColor = ImRaii.PushColor(ImGuiCol.Button, _tweak.Running ? (uint)Colors.Negative : (uint)Colors.Positive)
             .Push(ImGuiCol.ButtonHovered, _tweak.Running ? (uint)Colors.NegativeHover : (uint)Colors.PositiveHover)
             .Push(ImGuiCol.ButtonActive, _tweak.Running ? (uint)Colors.NegativeActive : (uint)Colors.PositiveActive)) {
-            if (ImGui.Button(_tweak.Running ? "Stop" : "Start")) {
-                _tweak.ToggleRunning();
-                Service.Navmesh.Stop();
+
+            if (ImGui.Button(_tweak.Running ? (_tweak.PendingStopWhenSafe ? "Stopping" : "Stop") : "Start")) {
+                if (_tweak.Running) {
+                    if (ImGui.GetIO().KeyCtrl) {
+                        _tweak.PendingStopWhenSafe = true;
+                    }
+                    else {
+                        _tweak.ToggleRunning();
+                        Service.Navmesh.Stop();
+                    }
+                }
+                else {
+                    _tweak.ToggleRunning();
+                }
             }
+            ImGui.TooltipOnHover(_tweak.Running, $"Stop. Ctrl+{SeIconChar.MouseLeftClick.ToIconString()} soft stop");
 
             ImGui.SameLine();
             DrawHeaderChip(
@@ -56,26 +82,48 @@ public class FateToolKitWindow : Window {
                 DrawHeaderChip($"Remaining: {remaining}", Colors.ChipInfo, Colors.Grey2);
             }
 
+            var modeRemaining = _tweak.GetCurrentMode().GetRemainingDisplay(_tweak);
+            if (!string.IsNullOrEmpty(modeRemaining)) {
+                ImGui.SameLine();
+                var (bg, fg) = modeRemaining.Equals("Done", StringComparison.OrdinalIgnoreCase) ? (Colors.ChipMuted, Colors.Grey2) : (Colors.ChipInfo, Colors.Grey2);
+                DrawHeaderChip(modeRemaining, bg, fg);
+            }
+
             ImGui.SameLine();
-            ImGui.SetCursorPosX(ImGui.GetWindowContentRegionMax().X - ImGui.GetFrameHeight());
-            if (_tweak.HasSelectedSwapZones) {
-                using var zoneButtonColor = ImRaii.PushColor(ImGuiCol.Text, (uint)Colors.Gold);
+            var style = ImGui.GetStyle();
+            var rightButtonWidth = (ImGui.GetFrameHeight() + style.FramePadding.X * 2f) * 2f + style.ItemSpacing.X;
+            var leftRightGap = style.ItemSpacing.X;
+            var leftContentRight = ImGui.GetItemRectMax().X;
+            if (Math.Max(0f, ImGui.GetContentRegionAvail().X - rightButtonWidth) is > 0 and var spacer) {
+                ImGui.Dummy(new Vector2(spacer, 0f));
+                ImGui.SameLine();
+            }
+            DrawModeButton();
+            ImGui.SameLine();
+            using (var _ = ImRaii.Disabled(_tweak.ModeSuppliesSwapZones))
+            using (var zoneButtonColor = ImRaii.PushColor(ImGuiCol.Text, _tweak.HasSelectedSwapZones ? (uint)Colors.Gold : ImGui.GetColorU32(ImGuiCol.Text))) {
                 if (ImGuiComponents.IconButton("###ZoneSelector", FontAwesomeIcon.Globe))
                     _tweak.OpenZoneSelector();
             }
-            else if (ImGuiComponents.IconButton("###ZoneSelector", FontAwesomeIcon.Globe))
-                _tweak.OpenZoneSelector();
-
-            if (!_tweak.HasSelectedSwapZones)
-                ImGui.TooltipOnHover("Swap Zones (uses default swap behaviour if none selected)");
-            else
+            if (_tweak.ModeSuppliesSwapZones)
+                ImGui.TooltipOnHover(ImGui.IsItemHovered(ImGuiHoveredFlags.AllowWhenDisabled), "Zone list is defined by the current grind mode. Switch to None to select zones manually.");
+            else if (_tweak.HasSelectedSwapZones)
                 ImGui.TooltipOnHover($"Swap Zones: {_tweak.SelectedSwapZones.Count}");
-        }
+            else
+                ImGui.TooltipOnHover("Swap Zones (uses default swap behaviour if none selected)");
 
-        ImGui.SpacedSeparator();
+            if (minimised) {
+                MinimisedContentWidth = Math.Max(400, leftContentRight - ImGui.GetWindowPos().X + leftRightGap + rightButtonWidth + style.WindowPadding.X * 2);
+            }
+        }
 
         if (_showSettings)
             DrawSettings();
+
+        if (minimised)
+            return;
+
+        ImGui.SpacedSeparator();
 
         if (_tweak.GetOrderedFates().ToList() is not { Count: > 0 } fates) {
             ImGui.TextColored(new Vector4(0.7f, 0.7f, 0.7f, 1f), "No fates match the current filters.");
@@ -116,19 +164,7 @@ public class FateToolKitWindow : Window {
                 if (ImGui.IsItemClicked(ImGuiMouseButton.Right))
                     _tweak.ToggleBlacklist(fate);
 
-                var tooltip = $"Name: {displayName}\n" +
-                             $"ID: {fate.Id}\n" +
-                             $"Type: {fate.FateType}\n" +
-                             $"Rule: {fate.Rule}\n" +
-                             $"Level: {fate.Level}\n" +
-                             $"Progress: {fate.Progress}%\n" +
-                             $"Time Remaining: {(fate.TimeRemaining >= 0 ? TimeSpan.FromSeconds(fate.TimeRemaining).ToString(@"mm\:ss") : "∞")}\n" +
-                             $"Distance: {Player.DistanceTo(fate.Position):F1}\n" +
-                             $"Position: {fate.Position}\n" +
-                             $"{(fate.HasBonus ? "Has Bonus\n" : "")}" +
-                             $"Right-click to {(isBlacklisted ? "remove from" : "add to")} blacklist";
-                if (ImGui.IsItemHovered())
-                    ImGui.SetTooltip(tooltip);
+                ImGui.TooltipOnHover(BuildFateTooltip(fate, displayName, isBlacklisted));
             }
 
             ImGui.SameLine();
@@ -150,6 +186,22 @@ public class FateToolKitWindow : Window {
             );
 
             ImGui.SpacedSeparator();
+        }
+    }
+
+    private void DrawModeButton() {
+        if (ImGuiComponents.IconButton("###GrindMode", FontAwesomeIcon.List))
+            ImGui.OpenPopup("###GrindModePopup");
+        ImGui.TooltipOnHover($"Grind mode: {_tweak.GetCurrentMode().DisplayName}\nEXPERIMENTAL (didn't get to test non-gemstones)");
+
+        using var popup = ImRaii.Popup("###GrindModePopup");
+        if (popup) {
+            foreach (var mode in FateGrindModes.All) {
+                if (ImGui.Selectable(mode.DisplayName, mode.DisplayName == _tweak.SelectedModeId)) {
+                    _tweak.SelectedModeId = mode.DisplayName;
+                    ImGui.CloseCurrentPopup();
+                }
+            }
         }
     }
 
@@ -195,8 +247,7 @@ public class FateToolKitWindow : Window {
                 _tweak.Config.SortOrder = sortOrder;
             });
 
-            if (ImGui.IsItemHovered())
-                ImGui.SetTooltip("Drag to change priority order");
+            ImGui.TooltipOnHover("Drag to change priority order");
 
             ImGui.SameLine();
 
@@ -260,6 +311,47 @@ public class FateToolKitWindow : Window {
         }
 
         ImGui.SpacedSeparator();
+    }
+
+    private string BuildFateTooltip(PublicEvent fate, string displayName, bool isBlacklisted) {
+        var sb = new StringBuilder();
+
+        sb.AppendLine($"Display: {displayName}");
+
+        foreach (var prop in _tooltipProperties) {
+            object? raw;
+            try {
+                raw = prop.GetValue(fate);
+            }
+            catch {
+                continue;
+            }
+
+            var value = raw switch {
+                null => "?",
+                float f when prop.Name == nameof(PublicEvent.TimeRemaining) =>
+                    f >= 0 ? TimeSpan.FromSeconds(f).ToString(@"mm\:ss") : "∞",
+                Vector3 v when prop.Name == nameof(PublicEvent.Position) =>
+                    v.ToString(),
+                bool b => b ? "True" : "False",
+                IFormattable formattable => formattable.ToString(null, CultureInfo.InvariantCulture),
+                _ => raw.ToString() ?? "?"
+            };
+
+            sb.AppendLine($"{prop.Name}: {value}");
+        }
+
+        sb.AppendLine($"Blacklist: {(isBlacklisted ? "Yes" : "No")}");
+
+        var (isEligible, failedConditions) = _tweak.GetFateConditionDetails(fate);
+        sb.AppendLine($"Will be automated? {isEligible}");
+        if (failedConditions.Count > 0) {
+            sb.AppendLine("Blocked by:");
+            foreach (var reason in failedConditions)
+                sb.AppendLine($" - {reason}");
+        }
+
+        return sb.ToString().TrimEnd();
     }
 
     public string FormatDisplayName(PublicEvent fate) => _tweak.Config.DisplayNameFormat

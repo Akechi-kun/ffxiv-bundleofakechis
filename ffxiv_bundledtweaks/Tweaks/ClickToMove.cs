@@ -1,4 +1,5 @@
 ﻿using Dalamud.Bindings.ImGui;
+using Dalamud.Game.Addon.Events;
 using Dalamud.Interface.Utility.Raii;
 using ECommons;
 using ECommons.ImGuiMethods;
@@ -72,7 +73,7 @@ public unsafe class ClickToMove : Tweak<ClickToMoveConfiguration> {
 
     private void HandleMapClick(AddonEvent type, AddonArgs args) {
         if (!Config.MapClick.Enabled) return;
-        if (args is AddonReceiveEventArgs { AtkEventType: (byte)AtkEventType.MouseDown } receiveArgs) {
+        if (args is AddonReceiveEventArgs { AtkEventType: AddonEventType.MouseDown } receiveArgs) {
             if (receiveArgs.AtkEventData.As<AtkEventData.AtkMouseData>()->ButtonId != 0) return; // left click only
             if (AgentMap.Instance()->CurrentMapId != AgentMap.Instance()->SelectedMapId) return;
             if (args.GetAddon<AddonAreaMap>()->GetMouseWorldCoords() is { } coords) {

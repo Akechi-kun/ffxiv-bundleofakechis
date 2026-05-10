@@ -1,13 +1,13 @@
 ﻿using Dalamud.Game.Addon.Events;
 using Dalamud.Game.Addon.Events.EventDataTypes;
 using ECommons.ImGuiMethods;
+using FFXIVClientStructs.FFXIV.Client.Enums;
 using FFXIVClientStructs.FFXIV.Client.Game.UI;
 using FFXIVClientStructs.FFXIV.Client.UI;
 using FFXIVClientStructs.FFXIV.Client.UI.Agent;
 using FFXIVClientStructs.FFXIV.Component.GUI;
 using Lumina.Excel.Sheets;
 using System.Text.RegularExpressions;
-using static FFXIVClientStructs.FFXIV.Client.Game.UI.ContentsFinderQueueInfo.QueueStates;
 
 namespace ComplexTweaks.Tweaks;
 
@@ -41,7 +41,7 @@ internal class WondrousTailsClickToOpen : Tweak {
 
     private unsafe void QueueDuty(List<uint> duties, bool roulette) {
         if (duties.Count == 0) return;
-        if (QueueInfo->QueueState is Pending or Queued) QueueInfo->CancelQueue();
+        if (QueueInfo->QueueState is ContentsFinderQueueState.Pending or ContentsFinderQueueState.Queued) QueueInfo->CancelQueue();
 
         if (roulette) {
             ContentsFinder.Instance()->ResetFlags();
@@ -105,7 +105,7 @@ internal class WondrousTailsClickToOpen : Tweak {
         }
     }
 
-    private unsafe List<uint> GetInstanceListFromId(uint orderDataId) {
+    private List<uint> GetInstanceListFromId(uint orderDataId) {
         var bingoOrderData = GetSheet<WeeklyBingoOrderData>().GetRow(orderDataId);
         Debug($"{nameof(OnDutySlotClick)}: [row={bingoOrderData.RowId}; type={bingoOrderData.Type}; text={bingoOrderData.Text.Value.Description};]");
         switch (bingoOrderData.Type) {
@@ -135,7 +135,7 @@ internal class WondrousTailsClickToOpen : Tweak {
             // Special categories
             case 3:
                 // handling AgentContentsFinder here is such a hack
-                switch (bingoOrderData.Unknown1) {
+                switch (bingoOrderData.ContentCategory) {
                     // Treasure Maps, nothing to do
                     case 1: return [];
 

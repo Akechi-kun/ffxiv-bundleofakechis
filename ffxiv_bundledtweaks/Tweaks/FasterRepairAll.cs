@@ -1,4 +1,5 @@
-﻿using ECommons;
+﻿using Dalamud.Game.Addon.Events;
+using ECommons;
 using FFXIVClientStructs.FFXIV.Client.Game;
 using FFXIVClientStructs.FFXIV.Client.UI.Agent;
 using FFXIVClientStructs.FFXIV.Component.GUI;
@@ -7,7 +8,6 @@ using System.Threading.Tasks;
 namespace ComplexTweaks.Tweaks;
 
 [Tweak]
-[RequiresClientStructs(7240)]
 public partial class FasterRepairAll : Tweak {
     public override string Name => "Faster Npc Repair All";
     public override string Description => "Instantly repair all inventories when repairing at an npc.";
@@ -32,12 +32,12 @@ public partial class FasterRepairAll : Tweak {
     private unsafe void HandleEvent(AddonEvent type, AddonArgs args) {
         if (args is not AddonReceiveEventArgs rea || AgentRepair.Instance()->IsSelfRepairOpen) return;
         // the normal event. Set both to 0 to block
-        if (rea is { AtkEventType: (byte)AtkEventType.ButtonClick, EventParam: 5 }) {
+        if (rea is { AtkEventType: AddonEventType.ButtonClick, EventParam: 5 }) {
             rea.AtkEventType = 0;
             rea.EventParam = 0;
         }
         // custom event. Still has to be set to 0 or else the normal triggers (why?!)
-        if (rea is { AtkEventType: (byte)AtkEventType.ButtonClick, EventParam: (int)eventParamId }) {
+        if (rea is { AtkEventType: AddonEventType.ButtonClick, EventParam: (int)eventParamId }) {
             rea.AtkEventType = 0;
             rea.EventParam = 0;
             RepairAll();

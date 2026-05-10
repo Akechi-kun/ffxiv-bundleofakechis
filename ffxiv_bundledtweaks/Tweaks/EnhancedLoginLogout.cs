@@ -42,7 +42,7 @@ public class EnhancedLoginLogout : Tweak<EnhancedLoginLogoutConfig> {
         {
             Config.Chars.Add(new CharacterCommands {
                 CID = Player.CID,
-                Name = Player.Name,
+                Name = Player.Name ?? "null",
             });
         }
         Config.Chars.RemoveAll(c => c.LoginCommands.Count == 0 && c.CID != 0 && c.CID != Player.CID);

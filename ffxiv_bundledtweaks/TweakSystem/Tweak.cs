@@ -18,6 +18,7 @@ namespace ComplexTweaks.TweakSystem;
 public abstract partial class Tweak : ITweak {
     public Tweak() {
         CachedType = GetType();
+        _eventController = new(this);
         InternalName = CachedType.Name;
         IncompatibilityWarnings = [.. CachedType.GetCustomAttributes<IncompatibilityWarningAttribute>()];
 
@@ -83,6 +84,7 @@ public abstract partial class Tweak : ITweak {
     protected Window? _window;
 
     private readonly Dictionary<TweakEvent, List<Action<Type, EventArgs>>> _eventHandlers = [];
+    private readonly TweakEventController _eventController;
 
     protected virtual object? GetConfigObject() => null;
 
@@ -141,6 +143,8 @@ public abstract partial class Tweak : ITweak {
         DrawCommands();
     }
     public virtual void OnConfigChange(string fieldName) { }
+    internal object? GetConfigObjectInternal() => GetConfigObject();
+    internal Type? CachedConfigTypeInternal => CachedConfigType;
 }
 
 public abstract partial class Tweak // Internal
@@ -182,6 +186,8 @@ public abstract partial class Tweak // Internal
 
     internal virtual void EnableInternal() {
         if (!Ready || Outdated || Disabled) return;
+        if (Enabled)
+            return;
         if (Requirements.Any(r => !r.IsLoaded)) {
             // TODO: append a button to re-enable
             ModuleMessage("Feature not enabled due to missing dependencies. Please install them then re-enable this feature.");
@@ -237,6 +243,14 @@ public abstract partial class Tweak // Internal
         }
 
         try {
+            _eventController.EnableHandlers();
+        }
+        catch (Exception ex) {
+            Error(ex, "Unexpected error during Enable (Event Controller Handlers)");
+            LastInternalException = ex;
+        }
+
+        try {
             CallHooks("Enable");
         }
         catch (Exception ex) {
@@ -279,6 +293,14 @@ public abstract partial class Tweak // Internal
         }
         catch (Exception ex) {
             Error(ex, "Unexpected error during Disable (Event Handlers)");
+            LastInternalException = ex;
+        }
+
+        try {
+            _eventController.DisableHandlers();
+        }
+        catch (Exception ex) {
+            Error(ex, "Unexpected error during Disable (Event Controller Handlers)");
             LastInternalException = ex;
         }
 
@@ -370,6 +392,8 @@ public abstract partial class Tweak // Internal
                     DisableCommand(c);
         }
 
+        _eventController.OnConfigChange(fieldName);
+
         try {
             OnConfigChange(fieldName);
         }
@@ -380,7 +404,7 @@ public abstract partial class Tweak // Internal
         }
     }
 
-    protected virtual void EnableCommands() {
+    protected virtual void EnableCommands(bool onlyAbsent = false) {
         foreach (var methodInfo in CommandHandlers) {
             var attr = methodInfo.GetCustomAttribute<CommandHandlerAttribute>()!;
             var enabled = string.IsNullOrEmpty(attr.ConfigFieldName);
@@ -394,16 +418,33 @@ public abstract partial class Tweak // Internal
 
             if (enabled && methodInfo.GetCustomAttributes<RequiresAttribute>().SelectMany(r => r.Id.Flags).Where(id => id != Ipc.None).Distinct().ToArray() is { Length: > 0 } reqs) {
                 if (!Service.IPC.AreAllLoaded(reqs)) {
-                    var missing = Service.IPC.GetMissing(reqs);
-                    var missingNames = missing.Length > 0 ? string.Join(", ", missing.Select(ipc => ipc.Name)) : "one or more required IPCs are not registered";
-                    Warning($"Cannot enable command(s) [{string.Join(", ", attr.Commands)}]: missing dependencies: {missingNames}");
+                    if (!onlyAbsent) {
+                        var missing = Service.IPC.GetMissing(reqs);
+                        var missingNames = missing.Length > 0 ? string.Join(", ", missing.Select(ipc => ipc.Name)) : "one or more required IPCs are not registered";
+                        Warning($"Cannot enable command(s) [{string.Join(", ", attr.Commands)}]: missing dependencies: {missingNames}");
+                    }
                     continue;
                 }
             }
 
-            if (enabled)
-                foreach (var c in attr.Commands)
+            if (enabled) {
+                foreach (var c in attr.Commands) {
+                    if (onlyAbsent && Svc.Commands.Commands.ContainsKey(c))
+                        continue;
                     EnableCommand(c, attr.HelpMessage, methodInfo, attr);
+                }
+            }
+        }
+    }
+
+    internal void RefreshCommands() {
+        if (!Enabled || !CanBeEnabled()) return;
+        try {
+            EnableCommands(onlyAbsent: true);
+        }
+        catch (Exception ex) {
+            Error(ex, "Unexpected error during RefreshCommands");
+            LastInternalException = ex;
         }
     }
 
@@ -518,6 +559,10 @@ public abstract partial class Tweak // Internal
 
             originalHandler(cmd, args);
         }
+
+        // replace if already registered
+        if (Svc.Commands.Commands.ContainsKey(command))
+            Svc.Commands.RemoveHandler(command);
 
         if (Svc.Commands.AddHandler(command, new CommandInfo(handler) { HelpMessage = helpMessage, DisplayOrder = 1 }))
             Log($"Added CommandHandler for {command}");

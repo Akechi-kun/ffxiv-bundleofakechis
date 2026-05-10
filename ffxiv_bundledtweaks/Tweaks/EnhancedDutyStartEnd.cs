@@ -4,6 +4,7 @@ using ECommons;
 using ECommons.ImGuiMethods;
 using Dalamud.Bindings.ImGui;
 using FFXIVClientStructs.FFXIV.Client.Game.Event;
+using Dalamud.Game.DutyState;
 
 namespace ComplexTweaks.Tweaks;
 
@@ -78,7 +79,7 @@ public class EnhancedDutyStartEnd : Tweak<EnhancedDutyStartEndConfiguration> {
             ImGui.SliderInt("Leave after (s)", ref Config.TimeToWait, 0, 100);
     }
 
-    private void OnDutyStart(object? sender, ushort e) {
+    private void OnDutyStart(IDutyStateEventArgs args) {
         if (!Config.StartMsg.IsNullOrEmpty()) {
             if (Config.StartMsg.StartsWith('/'))
                 ECommons.Automation.Chat.SendMessage(Config.StartMsg);
@@ -93,7 +94,7 @@ public class EnhancedDutyStartEnd : Tweak<EnhancedDutyStartEndConfiguration> {
     }
 
     private static uint _territoryID;
-    private void OnDutyComplete(object? sender, ushort e) {
+    private void OnDutyComplete(IDutyStateEventArgs args) {
         _territoryID = Player.Territory.RowId;
         if (!Config.EndMsg.IsNullOrEmpty()) {
             if (Config.EndMsg.StartsWith('/'))
@@ -108,7 +109,7 @@ public class EnhancedDutyStartEnd : Tweak<EnhancedDutyStartEndConfiguration> {
         }
     }
 
-    private void OnTerritoryChanged(ushort id) {
+    private void OnTerritoryChanged(uint id) {
         // cancel queue if we changed zones via other means to prevent autoleave from triggering in the next duty
         if (id != _territoryID && TaskManager.Tasks.Count > 0)
             TaskManager.Abort();

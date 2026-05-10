@@ -36,7 +36,7 @@ public class EnumConfigAttribute : BaseConfigAttribute {
                 }
             }
         }
-        combo?.Dispose();
+        combo.Dispose();
         if (!attr?.Description.IsNullOrEmpty() ?? false)
             ImGui.TextColoredWrapped(Colors.Grey, attr!.Description);
     }

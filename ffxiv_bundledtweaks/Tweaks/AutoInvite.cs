@@ -66,7 +66,7 @@ public partial class AutoInvite : Tweak<AutoInviteConfiguration> {
             return;
         }
 
-        if (Svc.Party.Any(p => p.ContentId == (long)contentId)) {
+        if (Svc.Party.Any(p => p.ContentId == contentId)) {
             Log("Skipping invite: already in party.");
             return;
         }

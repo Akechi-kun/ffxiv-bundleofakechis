@@ -1,4 +1,5 @@
-﻿using ECommons.EzIpcManager;
+using ECommons.EzIpcManager;
+using System.Threading.Tasks;
 
 namespace ComplexTweaks.IPC;
 
@@ -45,6 +46,28 @@ public class BossModIPC : BaseIPC {
 
     /// <remarks> string presetName </remarks>
     [EzIPC("Presets.%m", true)] public readonly Func<string, bool> ClearTransientPresetStrategies;
+
+    /// <remarks> centerWorld, radius, writeToFile </remarks>
+    [EzIPC("ObstacleMap.%m", true)] public readonly Func<Vector3, float, bool, bool> Generate;
+    [EzIPC("ObstacleMap.%m", true)] public readonly Func<TaskStatus> GetGenerationStatus;
+    [EzIPC("ObstacleMap.%m", true)] public readonly Func<bool> HasTempMap;
+    [EzIPC("ObstacleMap.%m", true)] public readonly Func<bool> ClearTempMap;
+    [EzIPC("ObstacleMap.%m", true)] public readonly Func<BitmapQuality?> EvaluateTempMapQuality;
+
+    public readonly record struct BitmapQuality(
+        float BlockedFraction, // amount of cells blocked (higher = less navigable)
+        float LargestPassableComponentFraction, // amount of valid cells clustered in one area (higher = more navigable)
+        float TinyPassableComponentFraction, // amount of valid cells in tiny clusters (higher = more fragmented)
+        float SpeckleFraction, // amount of isolated cells with no neighbors of the same type (higher = noiser)
+        int PassableComponents // count of passable regions (higher = more fragmented)
+    ) {
+        public bool BlockedIdeal => BlockedFraction < 0.85f;
+        public bool LargestCompIdeal => LargestPassableComponentFraction < 0.5f;
+        public bool TinyCompIdeal => TinyPassableComponentFraction < 0.03f;
+        public bool SpeckleIdeal => SpeckleFraction < 0.003f;
+        public bool IsBad => !BlockedIdeal || !LargestCompIdeal || !TinyCompIdeal || !SpeckleIdeal;
+        public override string ToString() => $"Blocked: {BlockedFraction:P1}/{BlockedIdeal}, LargestComp: {LargestPassableComponentFraction:P1}/{LargestCompIdeal}, TinyComp: {TinyPassableComponentFraction:P1}/{TinyCompIdeal}, Speckle: {SpeckleFraction:P1}/{SpeckleIdeal}, PassableComps: {PassableComponents}";
+    }
 
     public class Modules {
         public const string AutoFarm = "BossMod.Autorotation.MiscAI.AutoFarm";

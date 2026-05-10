@@ -78,7 +78,7 @@ public static class AsciiSplash {
             _rows = _cols; // ensure square since all in game icons are squares
             _cachedWidth = _cols;
 
-            ImGui.SetWindowFontScale(ImGuiHelpers.GlobalScaleSafe);
+            ImGui.SetWindowFontScale(ImGuiHelpers.GlobalScale);
             _sizedOnce = true;
         }
 
@@ -127,7 +127,7 @@ public static class AsciiSplash {
             }
         }
 
-        ImGui.SetWindowFontScale(ImGuiHelpers.GlobalScaleSafe);
+        ImGui.SetWindowFontScale(ImGuiHelpers.GlobalScale);
         ImGui.SetCursorPos(new Vector2(baseCursorPos.X, baseCursorPos.Y + maxRowsToDraw * lineHeight));
     }
 

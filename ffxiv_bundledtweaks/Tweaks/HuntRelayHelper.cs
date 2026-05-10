@@ -1,3 +1,5 @@
+using Dalamud.Bindings.ImGui;
+using Dalamud.Game.Chat;
 using Dalamud.Game.Text;
 using Dalamud.Game.Text.SeStringHandling;
 using Dalamud.Game.Text.SeStringHandling.Payloads;
@@ -7,13 +9,12 @@ using Dalamud.Utility;
 using ECommons.Automation;
 using ECommons.ExcelServices;
 using ECommons.ImGuiMethods;
-using Dalamud.Bindings.ImGui;
+using FFXIVClientStructs.FFXIV.Client.UI.Info;
 using Lumina.Excel.Sheets;
 using System.Data;
 using System.Text;
 using System.Text.RegularExpressions;
 using static Dalamud.Game.Text.XivChatType;
-using FFXIVClientStructs.FFXIV.Client.UI.Info;
 
 namespace ComplexTweaks.Tweaks;
 
@@ -69,12 +70,12 @@ public class HuntRelayHelper : Tweak<HuntRelayHelperConfiguration> {
     private RelayPayload? LastRelay;
 
     public override void Enable() {
-        Svc.Chat.CheckMessageHandled += OnChatMessage;
+        Svc.Chat.ChatMessage += OnChatMessage;
         RelayLinkPayload = Svc.Chat.AddChatLinkHandler((uint)LinkHandlerId.RelayLinkPayload, HandleRelayLink);
     }
 
     public override void Disable() {
-        Svc.Chat.CheckMessageHandled -= OnChatMessage;
+        Svc.Chat.ChatMessage -= OnChatMessage;
         Svc.Chat.RemoveChatLinkHandler((uint)LinkHandlerId.RelayLinkPayload);
     }
 
@@ -177,46 +178,50 @@ public class HuntRelayHelper : Tweak<HuntRelayHelperConfiguration> {
         }
     }
 
-    private void OnChatMessage(XivChatType type, int timestamp, ref SeString sender, ref SeString message, ref bool isHandled) {
+    private void OnChatMessage(IHandleableChatMessage message) {
         if (!Svc.ClientState.IsLoggedIn) return; // messages sometimes trigger during login, but before fully logged in and thus stuff like checking player DC fails later
-        if (sender.TextValue == Player.Name) return;
-        var maplink = message.Payloads.FirstOrDefault(x => x is MapLinkPayload, null);
+        if (message.Sender.TextValue == Svc.PlayerState.CharacterName) return;
+        var maplink = message.Message.Payloads.FirstOrDefault(x => x is MapLinkPayload, null);
         if (maplink is not MapLinkPayload mlp) return;
 
         try {
-            var (world, instance, relayType) = DetectWorldInstanceRelayType(message);
+            var (world, instance, relayType) = DetectWorldInstanceRelayType(message.Message);
             if ((RelayTypes)relayType == RelayTypes.None) {
-                Log($"Failed to detect relay type in {nameof(MapLinkPayload)} message: {message}");
+                Log($"Failed to detect relay type in {nameof(MapLinkPayload)} message: {message.Message}");
                 return;
             }
-            if (world is null && type is XivChatType.NoviceNetwork)
-                world = Player.CurrentWorld.Value;
+            if (world is null && message.LogKind is XivChatType.NoviceNetwork)
+                world = Svc.PlayerState.CurrentWorld.Value;
             if (world is null && Config.AssumeBlankWorldsAreLocal) {
                 world = Config.AssumedLocality switch {
-                    Locality.PlayerHomeWorld => Player.HomeWorld.Value,
-                    Locality.PlayerCurrentWorld => Player.CurrentWorld.Value,
-                    Locality.SenderHomeWorld => sender.Payloads.OfType<TextPayload>().Select(p => p.Text!.Contains((char)SeIconChar.CrossWorld)
+                    Locality.PlayerHomeWorld => Svc.PlayerState.HomeWorld.Value,
+                    Locality.PlayerCurrentWorld => Svc.PlayerState.CurrentWorld.Value,
+                    Locality.SenderHomeWorld => message.Sender.Payloads.OfType<TextPayload>().Select(p => p.Text!.Contains((char)SeIconChar.CrossWorld)
                         ? FindRow<World>(x => x!.IsPublic && p.Text.Split((char)SeIconChar.CrossWorld)[1].Contains(x.Name.ToString(), StringComparison.OrdinalIgnoreCase))
-                        : Player.CurrentWorld.Value)
-                        .FirstOrDefault(Player.CurrentWorld.Value),
+                        : Svc.PlayerState.CurrentWorld.Value)
+                        .FirstOrDefault(Svc.PlayerState.CurrentWorld.Value),
                     _ => null
                 };
             }
-            if (world is { RowId: var id })
-                message.Payloads.AddRange([RelayLinkPayload, new IconPayload(BitmapFontIcon.NotoriousMonster), new RelayPayload(mlp, id, instance, relayType, (uint)type).ToRawPayload(), RawPayload.LinkTerminator]);
+            if (world is { RowId: var id }) {
+                Debug($"Adding payload with [world={world.Value.Name}, i={instance}, type={(RelayTypes)relayType}]");
+                // can't change IMutableChatMessage in place. Have to assign a new string to it
+                var seString = new SeString().Append(message.Message.Payloads).Append([RelayLinkPayload, new IconPayload(BitmapFontIcon.NotoriousMonster), new RelayPayload(mlp, id, instance, relayType, (uint)message.LogKind).ToRawPayload(), RawPayload.LinkTerminator]);
+                message.Message = seString;
+            }
             else
-                Log($"Failed to detect world in {nameof(MapLinkPayload)} message: {message}");
+                Log($"Failed to detect world in {nameof(MapLinkPayload)} message: {message.Message}");
         }
         catch (Exception ex) {
             Error(ex, $"[{nameof(OnChatMessage)}] Unexpected error");
         }
     }
 
-    private unsafe void HandleRelayLink(uint _, SeString link) {
+    private void HandleRelayLink(uint _, SeString link) {
         var payload = link.Payloads.OfType<RawPayload>().Select(RelayPayload.Parse).FirstOrDefault(x => x != default);
         if (payload == default) { Error($"Failed to parse {nameof(RelayPayload)}"); return; }
         if (Player.TerritoryIntendedUseEnum is TerritoryIntendedUseEnum.Crystalline_Conflict or TerritoryIntendedUseEnum.Crystalline_Conflict_2 or TerritoryIntendedUseEnum.Deep_Dungeon) {
-            Log($"Relay link ignored. Player in territory {Player.Territory} ({Player.TerritoryIntendedUse}) where chat is not permitted.");
+            Log($"Relay link ignored. Player in territory {Player.Territory.RowId} ({Player.TerritoryIntendedUse}) where chat is not permitted.");
             return;
         }
         if (payload == LastRelay) {
@@ -229,9 +234,9 @@ public class HuntRelayHelper : Tweak<HuntRelayHelperConfiguration> {
         foreach (var (channel, command, islocal, _) in Config.Channels.Where(c => c.Enabled)) {
             var channelName = channel.GetAttribute<XivChatTypeInfoAttribute>()?.FancyName ?? throw new Exception($"Channel has no {nameof(XivChatTypeInfoAttribute)}");
             if (Config.DontRepeatRelays && payload.OriginChannel == ((uint)channel)) continue; // don't send to the channel that relay was clicked from
-            if (channelName.StartsWith("Linkshell") && Player.CurrentWorld.RowId != Player.HomeWorld.RowId) continue; // don't send to linkshells when off homeworld
-            if (Config.OnlySendLocalHuntsToLocalChannels && islocal && !channelName.StartsWith("Novice") && Player.HomeWorld.RowId != payload.World.RowId) continue; // don't send to non-novice local channels when off homeworld
-            if (channelName.StartsWith("Novice") && Player.CurrentWorld.RowId != payload.World.RowId) continue; // don't send offworld relays to NN
+            if (channelName.StartsWith("Linkshell") && Svc.PlayerState.CurrentWorld.RowId != Svc.PlayerState.HomeWorld.RowId) continue; // don't send to linkshells when off homeworld
+            if (Config.OnlySendLocalHuntsToLocalChannels && islocal && !channelName.StartsWith("Novice") && Svc.PlayerState.HomeWorld.RowId != payload.World.RowId) continue; // don't send to non-novice local channels when off homeworld
+            if (channelName.StartsWith("Novice") && Svc.PlayerState.CurrentWorld.RowId != payload.World.RowId) continue; // don't send offworld relays to NN
             if (channelName.StartsWith("Novice") && !InfoProxyNoviceNetwork.IsInNoviceNetwork()) continue;
 
             if (Config.DryRun) {
@@ -267,7 +272,7 @@ public class HuntRelayHelper : Tweak<HuntRelayHelperConfiguration> {
                         .AppendIntExpression(200)
                         .AppendIntExpression(3) // type of link (player, job, item, map, etc)
                         .AppendUIntExpression(MapLink.TerritoryType.RowId) // territory
-                        .AppendUIntExpression(Instance is not null or 0 ? MapLink.Map.RowId | ((uint)Instance << 16) : MapLink.Map.RowId) // map or (map | (instance << 16))
+                        .AppendUIntExpression(Instance is not null ? MapLink.Map.RowId | ((uint)Instance << 16) : MapLink.Map.RowId) // map or (map | (instance << 16))
                         .AppendIntExpression(MapLink.RawX) // x -> (int)(MathF.Round(posX, 3, MidpointRounding.AwayFromZero) * 1000)
                         .AppendIntExpression(MapLink.RawY) // y
                         .AppendIntExpression(-30000) // z or -30000 for no z
@@ -388,27 +393,27 @@ public class HuntRelayHelper : Tweak<HuntRelayHelperConfiguration> {
         };
     }
 
-    private int ReplaceSeIconCharNumber(char c) {
-        return c switch {
-            (char)SeIconChar.Number1 => 1,
-            (char)SeIconChar.BoxedNumber1 => 1,
-            (char)SeIconChar.Number2 => 2,
-            (char)SeIconChar.BoxedNumber2 => 2,
-            (char)SeIconChar.Number3 => 3,
-            (char)SeIconChar.BoxedNumber3 => 3,
-            (char)SeIconChar.Number4 => 4,
-            (char)SeIconChar.BoxedNumber4 => 4,
-            (char)SeIconChar.Number5 => 5,
-            (char)SeIconChar.BoxedNumber5 => 5,
-            (char)SeIconChar.Number6 => 6,
-            (char)SeIconChar.BoxedNumber6 => 6,
-            (char)SeIconChar.Number7 => 7,
-            (char)SeIconChar.BoxedNumber7 => 7,
-            (char)SeIconChar.Number8 => 8,
-            (char)SeIconChar.BoxedNumber8 => 8,
-            (char)SeIconChar.Number9 => 9,
-            (char)SeIconChar.BoxedNumber9 => 9,
-            _ => c,
-        };
-    }
+    //private int ReplaceSeIconCharNumber(char c) {
+    //    return c switch {
+    //        (char)SeIconChar.Number1 => 1,
+    //        (char)SeIconChar.BoxedNumber1 => 1,
+    //        (char)SeIconChar.Number2 => 2,
+    //        (char)SeIconChar.BoxedNumber2 => 2,
+    //        (char)SeIconChar.Number3 => 3,
+    //        (char)SeIconChar.BoxedNumber3 => 3,
+    //        (char)SeIconChar.Number4 => 4,
+    //        (char)SeIconChar.BoxedNumber4 => 4,
+    //        (char)SeIconChar.Number5 => 5,
+    //        (char)SeIconChar.BoxedNumber5 => 5,
+    //        (char)SeIconChar.Number6 => 6,
+    //        (char)SeIconChar.BoxedNumber6 => 6,
+    //        (char)SeIconChar.Number7 => 7,
+    //        (char)SeIconChar.BoxedNumber7 => 7,
+    //        (char)SeIconChar.Number8 => 8,
+    //        (char)SeIconChar.BoxedNumber8 => 8,
+    //        (char)SeIconChar.Number9 => 9,
+    //        (char)SeIconChar.BoxedNumber9 => 9,
+    //        _ => c,
+    //    };
+    //}
 }
