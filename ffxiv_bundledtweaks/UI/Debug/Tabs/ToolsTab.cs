@@ -26,7 +26,7 @@ internal unsafe class ToolsTab : DebugTab {
                 cantSpend.Add("ShopExchangeCurrency not open");
         }
         if (ImGui.IsItemHovered()) ImGui.SetTooltip($"Buys the most amount of {GetRow<Item>(34922)?.Name}");
-        cantSpend.ForEach(x => ImGuiEx.Text(EzColor.RedBright, x));
+        cantSpend.ForEach(x => ImGui.TextColored(EzColor.RedBright, x));
 
         if (ImGui.Button("Use all items")) {
             foreach (var c in InventoryType.Bags) {

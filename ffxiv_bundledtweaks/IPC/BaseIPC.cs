@@ -3,7 +3,7 @@
 public abstract class BaseIPC {
     public abstract string Name { get; }
     public abstract string Repo { get; }
-    public bool IsLoaded => Svc.PluginInterface.InstalledPlugins.Any(p => p.InternalName == Name && p.IsLoaded);
+    public bool IsLoaded => Svc.Interface.InstalledPlugins.Any(p => p.InternalName == Name && p.IsLoaded);
 
     public string Dynamis => "https://puni.sh/api/repository/";
     public string Punish => "https://love.puni.sh/ment.json";

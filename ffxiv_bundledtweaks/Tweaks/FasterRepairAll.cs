@@ -1,5 +1,4 @@
 ﻿using Dalamud.Game.Addon.Events;
-using ECommons;
 using FFXIVClientStructs.FFXIV.Client.Game;
 using FFXIVClientStructs.FFXIV.Client.UI.Agent;
 using FFXIVClientStructs.FFXIV.Component.GUI;

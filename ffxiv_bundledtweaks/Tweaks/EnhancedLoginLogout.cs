@@ -1,8 +1,7 @@
-﻿using Dalamud.Interface;
+﻿using Dalamud.Bindings.ImGui;
+using Dalamud.Interface;
 using Dalamud.Interface.Components;
-using ECommons.Automation;
 using ECommons.Events;
-using Dalamud.Bindings.ImGui;
 
 namespace ComplexTweaks.Tweaks;
 
@@ -65,7 +64,7 @@ public class EnhancedLoginLogout : Tweak<EnhancedLoginLogoutConfig> {
         }
     }
 
-    public override void Enable() => ProperOnLogin.RegisterInteractable(RunCommands);
+    public override void Enable() => ProperOnLogin.RegisterInteractable(RunCommands); // TODO: see if regular login can be used yet
     public override void Disable() => ProperOnLogin.Unregister(RunCommands);
 
     private string ConvertToCommand(string cmd) => cmd.StartsWith('/') ? cmd : $"/{cmd}";
@@ -74,7 +73,7 @@ public class EnhancedLoginLogout : Tweak<EnhancedLoginLogoutConfig> {
         foreach (var chr in Config.Chars.Where(x => x.CID == 0 || x.CID == Player.CID).OrderByDescending(x => x.Name == "Global"))
             foreach (var cmd in chr.LoginCommands.Where(c => c.Length >= 3)) {
                 TaskManager.EnqueueDelay(250);
-                TaskManager.Enqueue(() => Chat.SendMessage(cmd));
+                TaskManager.Enqueue(() => Svc.Chat.SendMessage(cmd));
             }
     }
 }

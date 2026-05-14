@@ -1,10 +1,9 @@
-﻿using ECommons;
-using ECommons.ExcelServices;
-using FFXIVClientStructs.FFXIV.Client.System.Framework;
+﻿using FFXIVClientStructs.FFXIV.Client.System.Framework;
 using FFXIVClientStructs.FFXIV.Component.Excel;
 using Lumina.Excel;
 using Lumina.Excel.Sheets;
 using Task = System.Threading.Tasks.Task;
+using TerritoryIntendedUse = FFXIVClientStructs.FFXIV.Client.Enums.TerritoryIntendedUse;
 
 namespace ComplexTweaks.Tweaks;
 
@@ -51,7 +50,7 @@ internal class AutoEquipXPBoosts : Tweak {
         protected override async Task Execute() {
             using var scope = BeginScope("EquipItems");
             await WaitWhile(() => Player.IsBusy, "WaitForLoad");
-            if (Player.TerritoryIntendedUseEnum is not (TerritoryIntendedUseEnum.Dungeon or TerritoryIntendedUseEnum.Raid or TerritoryIntendedUseEnum.Raid_2 or TerritoryIntendedUseEnum.Alliance_Raid)) return;
+            if (Player.CsTerritoryIntendedUseEnum is not (TerritoryIntendedUse.Dungeon or TerritoryIntendedUse.Raid1 or TerritoryIntendedUse.Raid2 or TerritoryIntendedUse.AllianceRaid)) return;
             if (Player.ContentFinderCondition is { Value.ContentType.RowId: 28 }) return; // skip ults
 
             foreach (var expItem in expItems) {

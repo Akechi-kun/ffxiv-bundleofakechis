@@ -1,6 +1,5 @@
 using Dalamud.Interface;
 using Dalamud.Interface.Components;
-using ECommons.ImGuiMethods;
 using Dalamud.Bindings.ImGui;
 using System.Reflection;
 
@@ -29,7 +28,7 @@ public class StringListConfigAttribute : BaseConfigAttribute {
         if (value is ICollection<string> items && items.Count > 0) {
             ImGui.DrawSection("Items");
             foreach (var item in items.ToList()) {
-                ImGuiEx.TextV(item);
+                ImGui.TextV(item);
                 ImGui.SameLine();
                 if (ImGuiComponents.IconButton($"##{item}", FontAwesomeIcon.Trash)) {
                     items.Remove(item);

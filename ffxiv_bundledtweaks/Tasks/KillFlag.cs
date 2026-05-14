@@ -1,6 +1,5 @@
 using ComplexTweaks.Tweaks;
 using Dalamud.Game.ClientState.Objects.Types;
-using ECommons.Automation;
 using Lumina.Excel.Sheets;
 using System.Threading.Tasks;
 
@@ -23,7 +22,7 @@ public sealed class KillFlag(string world) : TaskBase {
 
     private async Task HandleWorldTravel() {
         if (C.EnabledTweaks.Contains(nameof(InstantReturn)) && Player.Territory.RowId != Player.HomeAetheryteTerritory.RowId) {
-            Chat.SendMessage("/return");
+            Svc.Chat.SendMessage("/return");
             await WaitUntilTerritory(Player.HomeAetheryteTerritory.RowId);
         }
         Service.Lifestream.ExecuteCommand(world);

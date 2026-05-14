@@ -1,4 +1,3 @@
-using clib.Extensions.ClientStructs;
 using Dalamud.Game.ClientState.Objects.Enums;
 using Dalamud.Memory;
 using FFXIVClientStructs.FFXIV.Client.Game;

@@ -2,7 +2,6 @@
 using Dalamud.Bindings.ImGui;
 using Dalamud.Game.ClientState.Objects.Types;
 using Dalamud.Interface.Utility.Raii;
-using ECommons.Automation;
 using FFXIVClientStructs.FFXIV.Client.Game;
 using System.Threading.Tasks;
 
@@ -13,7 +12,7 @@ internal class TasksTab : DebugTab {
         using (ImRaii.Disabled(!Service.Automation.Running))
             if (ImGui.Button("Stop current task"))
                 Service.Automation.Stop();
-        ImGui.TextUnformatted($"{Service.Automation.Name}: {Service.Automation.Status}");
+        ImGui.Text($"{Service.Automation.Name}: {Service.Automation.Status}");
 
         if (ImGui.Button("transmute"))
             Service.Automation.Start(new MateriaTransmutation());
@@ -29,7 +28,7 @@ internal class TasksTab : DebugTab {
         protected override async Task Execute() {
             foreach (var obj in Svc.Objects.OfType<IBattleChara>().Where(o => o.Name.TextValue.Contains(name, StringComparison.InvariantCultureIgnoreCase))) {
                 Svc.Targets.Target = obj;
-                Chat.SendMessage("/voidtarget");
+                Svc.Chat.SendMessage("/voidtarget");
                 await NextFrame();
             }
         }

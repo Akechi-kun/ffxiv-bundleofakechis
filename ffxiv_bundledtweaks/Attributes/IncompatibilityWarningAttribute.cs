@@ -5,5 +5,5 @@ public class IncompatibilityWarningAttribute(string InternalName, params string[
     public string InternalName { get; } = InternalName;
     public string[] ConfigNames { get; } = ConfigNames;
 
-    public bool IsLoaded => Svc.PluginInterface.InstalledPlugins.Any(p => p.InternalName == InternalName && p.IsLoaded);
+    public bool IsLoaded => Svc.Interface.InstalledPlugins.Any(p => p.InternalName == InternalName && p.IsLoaded);
 }

@@ -1,6 +1,5 @@
 using Dalamud.Bindings.ImGui;
 using Dalamud.Interface.Utility.Raii;
-using ECommons.ImGuiMethods;
 using System.Reflection;
 
 namespace ComplexTweaks.Attributes.Config;
@@ -35,19 +34,19 @@ public class BoolConfigAttribute : BaseConfigAttribute {
 
         var desc = !cmdAttr?.HelpMessage.IsNullOrEmpty() ?? false ? cmdAttr!.HelpMessage : !attr?.Description.IsNullOrEmpty() ?? false ? attr!.Description : null;
         if (desc != null) {
-            ImGuiEx.PushCursorY(-3);
+            ImGui.PushCursorY(-3);
             using var descriptionIndent = ImGui.ConfigIndent();
             ImGui.TextColoredWrapped(Colors.Grey, desc);
-            ImGuiEx.PushCursorY(3);
+            ImGui.PushCursorY(3);
         }
 
         if (missingIpcs.Length > 0) {
             using var warningIndent = ImGui.ConfigIndent();
-            ImGuiEx.TextV(Colors.Grey2, $"Missing {missingIpcs.Length} of the required plugins for this command to work:");
+            ImGui.TextV(Colors.Grey2, $"Missing {missingIpcs.Length} of the required plugins for this command to work:");
             foreach (var entry in missingIpcs) {
                 ImGui.TextColoredWrapped(Colors.Grey2, $"{entry.Name}:");
                 ImGui.SameLine();
-                ImGuiEx.TextCopy(entry.Repo);
+                ImGui.CopyableText(entry.Repo);
             }
         }
     }

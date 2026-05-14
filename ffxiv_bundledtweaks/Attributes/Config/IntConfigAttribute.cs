@@ -1,4 +1,3 @@
-using ECommons.ImGuiMethods;
 using Dalamud.Bindings.ImGui;
 using System.Globalization;
 using System.Reflection;
@@ -16,7 +15,7 @@ public class IntConfigAttribute : BaseConfigAttribute {
         var value = (int)fieldInfo.GetValue(config)!;
         var attr = fieldInfo.GetCustomAttribute<BaseConfigAttribute>();
 
-        ImGuiEx.TextV(fieldInfo.Name.SplitWords());
+        ImGui.TextV(fieldInfo.Name.SplitWords());
         if (SameLine) ImGui.SameLine();
 
         using var indent = ImGui.ConfigIndent(!SameLine);

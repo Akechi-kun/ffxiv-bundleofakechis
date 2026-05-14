@@ -17,9 +17,9 @@ public static class ImGuiExtensions {
     extension(ImGui) {
         public static void DrawPaddedSeparator() {
             var style = ImGui.GetStyle();
-            ImGuiEx.PushCursorY(style.ItemSpacing.Y);
+            ImGui.PushCursorY(style.ItemSpacing.Y);
             ImGui.Separator();
-            ImGuiEx.PushCursorY(style.ItemSpacing.Y - 1);
+            ImGui.PushCursorY(style.ItemSpacing.Y - 1);
         }
 
         public static void DrawLink(string label, string title, string url) {
@@ -29,7 +29,7 @@ public static class ImGuiExtensions {
                 ImGui.SetMouseCursor(ImGuiMouseCursor.Hand);
 
                 using var tooltip = ImRaii.Tooltip();
-                ImGuiEx.Text(EzColor.White, title);
+                ImGui.TextColored(EzColor.White, title);
 
                 var pos = ImGui.GetCursorPos();
                 ImGui.GetWindowDrawList().AddText(
@@ -39,7 +39,7 @@ public static class ImGuiExtensions {
                     FontAwesomeIcon.ExternalLinkAlt.ToIconString()
                 );
                 ImGui.SetCursorPos(pos + new Vector2(20, 0));
-                ImGuiEx.Text((uint)Colors.Grey, url);
+                ImGui.TextColored((uint)Colors.Grey, url);
             }
 
             if (ImGui.IsItemClicked()) {
@@ -52,19 +52,19 @@ public static class ImGuiExtensions {
 
             // push down a bit
             if (PushDown)
-                ImGuiEx.PushCursorY(style.ItemSpacing.Y * 2);
+                ImGui.PushCursorY(style.ItemSpacing.Y * 2);
 
             var color = Colors.Gold;
             if (RespectUiTheme && Colors.IsLightTheme)
                 color = EzColor.FromUiForeground(UIColor);
 
-            ImGuiEx.Text(color, Label);
+            ImGui.TextColored(color, Label);
 
             if (drawSeparator) {
                 // pull up the separator
-                ImGuiEx.PushCursorY(-style.ItemSpacing.Y + 3);
+                ImGui.PushCursorY(-style.ItemSpacing.Y + 3);
                 ImGui.Separator();
-                ImGuiEx.PushCursorY(style.ItemSpacing.Y * 2 - 1);
+                ImGui.PushCursorY(style.ItemSpacing.Y * 2 - 1);
             }
         }
 
@@ -186,7 +186,7 @@ public static class ImGuiExtensions {
                     ImGui.ProgressBar(percentage, sizeVec, "");
 
                     ImGui.SetCursorPos(new Vector2(cursor.X + sizeVec.X - labelSize.X - 4, cursor.Y));
-                    ImGuiEx.TextV(label);
+                    ImGui.TextV(label);
                 }
             }
             catch (Exception e) { e.Log(); }

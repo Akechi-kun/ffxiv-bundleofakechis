@@ -26,7 +26,7 @@ public class Plugin : IDalamudPlugin {
         P = this;
         Version = P.GetType().Assembly.GetName().Version ?? new(0, 0);
         ECommonsMain.Init(pluginInterface, P, ECommons.Module.DalamudReflector, ECommons.Module.ObjectFunctions);
-        CLibMain.Init(pluginInterface, P);
+        CLibMain.Init(pluginInterface, P, CLibModule.Automation);
         KamiToolKitLibrary.Initialize(pluginInterface, "CBT");
 
 #if LOCAL_CS
@@ -58,7 +58,7 @@ public class Plugin : IDalamudPlugin {
 
         Svc.Framework.RunOnFrameworkThread(InitializeTweaks);
         C.EnabledTweaks.CollectionChanged += OnChange;
-        Svc.PluginInterface.ActivePluginsChanged += OnPluginsChanged;
+        Svc.Interface.ActivePluginsChanged += OnPluginsChanged;
     }
 
     public static void OnChange(object? sender, NotifyCollectionChangedEventArgs e) {
@@ -91,7 +91,7 @@ public class Plugin : IDalamudPlugin {
             TryExecute(tweak.DisposeInternal);
         }
         C.EnabledTweaks.CollectionChanged -= OnChange;
-        Svc.PluginInterface.ActivePluginsChanged -= OnPluginsChanged;
+        Svc.Interface.ActivePluginsChanged -= OnPluginsChanged;
         ECommonsMain.Dispose();
         KamiToolKitLibrary.Dispose();
     }

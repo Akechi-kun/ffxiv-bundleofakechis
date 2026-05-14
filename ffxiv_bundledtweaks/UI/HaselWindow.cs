@@ -66,7 +66,7 @@ public partial class HaselWindow : Window {
                 if (ImGui.IsItemHovered()) {
                     var (status, color) = GetTweakStatus(tweak);
                     using var tooltip = ImRaii.Tooltip();
-                    ImGuiEx.Text((uint)color, status);
+                    ImGui.TextColored((uint)color, status);
                 }
 
                 drawList.AddRectFilled(pos, pos + size, ImGui.GetColorU32(ImGuiCol.FrameBg), 3f, ImDrawFlags.RoundCornersAll);
@@ -92,7 +92,7 @@ public partial class HaselWindow : Window {
             ImGui.TableNextColumn();
 
             if (fixY)
-                ImGuiEx.PushCursorY(3); // if i only knew why this happens
+                ImGui.PushCursorY(3); // if i only knew why this happens
 
             using var colour = ImRaii.PushColor(ImGuiCol.Text, !tweak.Ready || tweak.Outdated ? EzColor.RedBright : !enabled ? (uint)Colors.Grey : ImGui.GetColorU32(ImGuiCol.Text), !tweak.Ready || tweak.Outdated || !enabled);
 
@@ -115,7 +115,7 @@ public partial class HaselWindow : Window {
 
         using var id = ImRaii.PushId(tweak.Name);
 
-        ImGuiEx.Text((uint)Colors.Gold, tweak.Name);
+        ImGui.TextColored((uint)Colors.Gold, tweak.Name);
 
         var (status, color) = GetTweakStatus(tweak);
 
@@ -125,7 +125,7 @@ public partial class HaselWindow : Window {
 
         ImGui.SameLine(windowX - textSize.X);
 
-        ImGuiEx.Text(color.Vector4, status);
+        ImGui.TextColored(color.Vector4, status);
 
         if (tweak.DisabledReason is { } reason) {
             ImGui.TextColoredWrapped(Colors.Grey2, reason);
@@ -142,11 +142,11 @@ public partial class HaselWindow : Window {
             ImGui.DrawSection("Required Dependencies");
             ImGui.Icon(60074, 24);
             ImGui.SameLine();
-            ImGuiEx.TextV(Colors.Grey2, $"Missing {tweak.Requirements.Count(r => !r.IsLoaded)} of the required plugins for this feature to work:");
+            ImGui.TextV(Colors.Grey2, $"Missing {tweak.Requirements.Count(r => !r.IsLoaded)} of the required plugins for this feature to work:");
             foreach (var entry in tweak.Requirements.Where(r => !r.IsLoaded)) {
                 ImGui.TextColoredWrapped(Colors.Grey2, $"{entry.Name}:");
                 ImGui.SameLine();
-                ImGuiEx.TextCopy(entry.Repo);
+                ImGui.CopyableText(entry.Repo);
             }
         }
 
@@ -154,7 +154,7 @@ public partial class HaselWindow : Window {
             ImGui.DrawSection("Invalid ClientStructs version");
             ImGui.Icon(60074, 24);
             ImGui.SameLine();
-            ImGuiEx.TextV(Colors.Grey2, $"[{Svc.PluginInterface.ClientStructsVersion}] not in tweak bounds [{tweak.RequiredClientStructsVersion.Min}/{tweak.RequiredClientStructsVersion.Max}]. Wait for a Dalamud update.");
+            ImGui.TextV(Colors.Grey2, $"[{Svc.Interface.ClientStructsVersion}] not in tweak bounds [{tweak.RequiredClientStructsVersion.Min}/{tweak.RequiredClientStructsVersion.Max}]. Wait for a Dalamud update.");
         }
 
         if (tweak.IncompatibilityWarnings.Any(entry => entry.IsLoaded)) {

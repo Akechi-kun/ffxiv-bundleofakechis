@@ -1,5 +1,4 @@
 using Dalamud.Interface.Components;
-using ECommons.ImGuiMethods;
 using Dalamud.Bindings.ImGui;
 using System.Reflection;
 
@@ -14,7 +13,7 @@ public class ColorConfigAttribute : BaseConfigAttribute {
         var value = (Vector4)fieldInfo.GetValue(config)!;
         var attr = fieldInfo.GetCustomAttribute<BaseConfigAttribute>();
 
-        ImGuiEx.TextV(fieldInfo.Name.SplitWords());
+        ImGui.TextV(fieldInfo.Name.SplitWords());
         ImGui.SameLine();
 
         var newColor = ImGuiComponents.ColorPickerWithPalette(1, $"##{fieldInfo.Name}", value, Flags);

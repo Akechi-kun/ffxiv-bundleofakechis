@@ -1,5 +1,4 @@
 using Dalamud.Interface;
-using ECommons.ImGuiMethods;
 using Dalamud.Bindings.ImGui;
 using System.Reflection;
 
@@ -35,6 +34,6 @@ public abstract class BaseConfigAttribute : Attribute {
             return false;
 
         ImGui.SameLine();
-        return ImGuiEx.IconButton(FontAwesomeIcon.Undo, "##Reset");
+        return ImGui.IconButton(FontAwesomeIcon.Undo, "##Reset");
     }
 }

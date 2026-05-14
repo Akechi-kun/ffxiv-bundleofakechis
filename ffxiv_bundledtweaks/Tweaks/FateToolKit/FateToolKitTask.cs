@@ -467,7 +467,7 @@ internal sealed class FateGrind(FateToolKit tweak) : TaskBase {
             await MoveTo(npc.Position, MovementConfig.InteractRange.WithOptions(MovementOptions.Current));
             Log($"ActivateFate after MoveTo: npc={npc.EntityId} playerPos={Player.Position} dist={Player.DistanceTo(npc.Position):F2} inRange={npc.IsInInteractRange()}");
             try {
-                await InteractWith(npc, () => NextFate?.State == FateState.Running, skip: UiSkipOptions.Talk | UiSkipOptions.YesNo);
+                await InteractWith(npc, () => NextFate?.State == FateState.Running || !TryGetValidMotivationNpc(fate, out _), skip: UiSkipOptions.Talk | UiSkipOptions.YesNo);
             }
             catch (Exception ex) {
                 // will crash if we don't catch and it's fine if interact fails because the npc/fate disappeared before we could start

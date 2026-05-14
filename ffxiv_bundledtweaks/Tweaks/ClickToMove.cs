@@ -2,7 +2,6 @@
 using Dalamud.Game.Addon.Events;
 using Dalamud.Interface.Utility.Raii;
 using ECommons;
-using ECommons.ImGuiMethods;
 using FFXIVClientStructs.FFXIV.Client.System.Framework;
 using FFXIVClientStructs.FFXIV.Client.UI;
 using FFXIVClientStructs.FFXIV.Client.UI.Agent;
@@ -39,7 +38,7 @@ public unsafe class ClickToMove : Tweak<ClickToMoveConfiguration> {
     public override void DrawConfig() {
         static void DrawProfile(string name, ref ClickToMoveSettings cfg) {
             using var id = ImRaii.PushId(name);
-            ImGuiEx.TextV(name);
+            ImGui.TextV(name);
             ImGui.SameLine();
 
             var worldEnabled = cfg.Enabled;
@@ -48,7 +47,7 @@ public unsafe class ClickToMove : Tweak<ClickToMoveConfiguration> {
             }
 
             using var indent = ImRaii.PushIndent();
-            ImGuiEx.TextV("Movement Type");
+            ImGui.TextV("Movement Type");
             ImGui.SameLine();
 
             ImGui.SetNextItemWidth(120);

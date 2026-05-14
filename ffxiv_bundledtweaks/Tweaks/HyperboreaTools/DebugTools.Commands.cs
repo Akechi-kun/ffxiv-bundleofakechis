@@ -1,6 +1,5 @@
 using ComplexTweaks.UI;
 using Dalamud.Game.Gui.Toast;
-using ECommons;
 using ECommons.SimpleGui;
 using FFXIVClientStructs.FFXIV.Client.Game;
 using FFXIVClientStructs.FFXIV.Client.Game.UI;

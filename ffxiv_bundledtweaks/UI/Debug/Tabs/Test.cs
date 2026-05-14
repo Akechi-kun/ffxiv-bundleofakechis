@@ -1,5 +1,4 @@
 ﻿using Dalamud.Bindings.ImGui;
-using ECommons.ImGuiMethods;
 using FFXIVClientStructs.FFXIV.Client.Game;
 using FFXIVClientStructs.FFXIV.Client.Game.Event;
 using FFXIVClientStructs.FFXIV.Client.UI.Agent;
@@ -10,7 +9,7 @@ namespace ComplexTweaks.UI.Debug.Tabs;
 
 internal unsafe class TestTab : DebugTab {
     public override void Draw() {
-        ImGuiEx.Text($"{Svc.PluginInterface.InternalName}: {Svc.PluginInterface.GetPluginConfigDirectory()}");
+        ImGui.Text($"{Svc.Interface.InternalName}: {Svc.Interface.GetPluginConfigDirectory()}");
 
         if (ImGui.Button($"compress"))
             ImGui.SetClipboardText(ImGui.GetClipboardText().ToBase64());

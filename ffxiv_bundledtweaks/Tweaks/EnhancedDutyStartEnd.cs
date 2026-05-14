@@ -1,7 +1,5 @@
 ﻿using Dalamud.Interface;
 using Dalamud.Interface.Components;
-using ECommons;
-using ECommons.ImGuiMethods;
 using Dalamud.Bindings.ImGui;
 using FFXIVClientStructs.FFXIV.Client.Game.Event;
 using Dalamud.Game.DutyState;
@@ -63,7 +61,7 @@ public class EnhancedDutyStartEnd : Tweak<EnhancedDutyStartEndConfiguration> {
                     Config.CheckForAll = !Config.CheckForAny;
         }
         foreach (var person in Config.Players) {
-            ImGuiEx.TextV(person);
+            ImGui.TextV(person);
             ImGui.SameLine();
             if (ImGuiComponents.IconButton(person, FontAwesomeIcon.Trash))
                 Config.Players.Remove(person);

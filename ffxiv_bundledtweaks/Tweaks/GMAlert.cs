@@ -1,9 +1,6 @@
 using Dalamud.Game.ClientState.Objects.SubKinds;
 using Dalamud.Interface;
 using Dalamud.Interface.Components;
-using ECommons.Automation;
-using ECommons.GameFunctions;
-using ECommons.ImGuiMethods;
 using Dalamud.Bindings.ImGui;
 using System.Threading.Tasks;
 
@@ -68,7 +65,7 @@ public class GMAlert : Tweak<GMAlertConfiguration> {
             Config.Commands.Add(_cmd.StartsWith('/') ? _cmd : $"/{_cmd}");
 
         foreach (var cmd in Config.Commands) {
-            ImGuiEx.TextV(cmd);
+            ImGui.TextV(cmd);
             ImGui.SameLine();
             if (ImGuiComponents.IconButton(cmd, FontAwesomeIcon.Trash))
                 Config.Commands.Remove(cmd);
@@ -101,8 +98,8 @@ public class GMAlert : Tweak<GMAlertConfiguration> {
 
         if (Config.Commands.Count > 0)
             foreach (var cmd in Config.Commands)
-                Chat.ExecuteCommand(cmd);
+                Svc.Chat.ExecuteCommand(cmd);
         if (Config.KillGame)
-            Chat.ExecuteCommand("/xlkill");
+            Svc.Chat.ExecuteCommand("/xlkill");
     }
 }

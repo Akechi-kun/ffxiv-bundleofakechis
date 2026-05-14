@@ -6,15 +6,13 @@ using Dalamud.Game.Text.SeStringHandling.Payloads;
 using Dalamud.Interface.Components;
 using Dalamud.Interface.Utility.Raii;
 using Dalamud.Utility;
-using ECommons.Automation;
-using ECommons.ExcelServices;
-using ECommons.ImGuiMethods;
 using FFXIVClientStructs.FFXIV.Client.UI.Info;
 using Lumina.Excel.Sheets;
 using System.Data;
 using System.Text;
 using System.Text.RegularExpressions;
 using static Dalamud.Game.Text.XivChatType;
+using TerritoryIntendedUse = FFXIVClientStructs.FFXIV.Client.Enums.TerritoryIntendedUse;
 
 namespace ComplexTweaks.Tweaks;
 
@@ -161,14 +159,14 @@ public class HuntRelayHelper : Tweak<HuntRelayHelperConfiguration> {
         foreach (var t in Config.Types.ToList().Select((x, i) => new { Value = x, Index = i })) {
             ImGui.TextUnformatted($"{t.Value.RelayType.ToString().SplitWords()}");
             ImGui.Indent();
-            ImGuiEx.TextV("Format: ");
+            ImGui.TextV("Format: ");
             ImGui.SameLine();
             var tmpF = Config.Types[t.Index].TypeFormat;
             if (ImGui.InputText($"##{t.Value.RelayType}{nameof(t.Value.TypeFormat)}", ref tmpF, 64))
                 Config.Types[t.Index] = (t.Value.RelayType, tmpF, t.Value.TypeHeuristics);
             ImGuiComponents.HelpMarker("This is what will be sent in chat to replace the <type> tag.");
 
-            ImGuiEx.TextV("Heuristics: ");
+            ImGui.TextV("Heuristics: ");
             ImGui.SameLine();
             var tmpH = Config.Types[t.Index].TypeHeuristics;
             if (ImGui.InputText($"##{t.Value.RelayType}{nameof(t.Value.TypeHeuristics)}", ref tmpH, 128))
@@ -220,7 +218,7 @@ public class HuntRelayHelper : Tweak<HuntRelayHelperConfiguration> {
     private void HandleRelayLink(uint _, SeString link) {
         var payload = link.Payloads.OfType<RawPayload>().Select(RelayPayload.Parse).FirstOrDefault(x => x != default);
         if (payload == default) { Error($"Failed to parse {nameof(RelayPayload)}"); return; }
-        if (Player.TerritoryIntendedUseEnum is TerritoryIntendedUseEnum.Crystalline_Conflict or TerritoryIntendedUseEnum.Crystalline_Conflict_2 or TerritoryIntendedUseEnum.Deep_Dungeon) {
+        if (Player.CsTerritoryIntendedUseEnum is TerritoryIntendedUse.CrystallineConflict or TerritoryIntendedUse.CrystallineConflictCustomMatch or TerritoryIntendedUse.DeepDungeon) {
             Log($"Relay link ignored. Player in territory {Player.Territory.RowId} ({Player.TerritoryIntendedUse}) where chat is not permitted.");
             return;
         }
@@ -248,7 +246,7 @@ public class HuntRelayHelper : Tweak<HuntRelayHelperConfiguration> {
             TaskManager.Enqueue(() => {
                 if (Player.Available) // messages can't be sent when travelling between zones where your player goes null
                 {
-                    Chat.SendMessageUnsafe([.. Encoding.UTF8.GetBytes($"/{command} "), .. channelName.StartsWith("Novice") ? nnRelay.ToArray() : relay.ToArray()]);
+                    Svc.Chat.SendMessageUnsafe([.. Encoding.UTF8.GetBytes($"/{command} "), .. channelName.StartsWith("Novice") ? nnRelay.ToArray() : relay.ToArray()]);
                     return true;
                 }
                 else return false;

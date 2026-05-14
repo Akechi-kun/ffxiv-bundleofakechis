@@ -221,7 +221,7 @@ public class FateToolKitWindow : MinimisableWindow {
 
         ImGui.TextColored(new Vector4(0.8f, 0.8f, 1f, 1f), "Display Name");
         ImGui.Spacing();
-        ImGuiEx.TextV("Format:");
+        ImGui.TextV("Format:");
         ImGui.SameLine();
         ImGui.SetNextItemWidth(400f);
         ImGui.InputText("###DisplayNameFormat", ref _tweak.Config.DisplayNameFormat, 256);

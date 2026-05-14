@@ -194,7 +194,7 @@ public abstract partial class Tweak // Internal
             return;
         }
         if (!MeetsClientStructsRequirements()) {
-            ModuleMessage($"Feature not enabled due to invalid ClientStructs version [{Svc.PluginInterface.ClientStructsVersion}].");
+            ModuleMessage($"Feature not enabled due to invalid ClientStructs version [{Svc.Interface.ClientStructsVersion}].");
             return;
         }
 
@@ -274,7 +274,7 @@ public abstract partial class Tweak // Internal
 
     public bool CanBeEnabled() => Ready && !Outdated && !Disabled && Requirements.All(r => r.IsLoaded) && MeetsClientStructsRequirements();
 
-    public bool MeetsClientStructsRequirements() => P.IsLocalCs || Svc.PluginInterface.ClientStructsVersion <= RequiredClientStructsVersion.Max && Svc.PluginInterface.ClientStructsVersion >= RequiredClientStructsVersion.Min;
+    public bool MeetsClientStructsRequirements() => P.IsLocalCs || Svc.Interface.ClientStructsVersion <= RequiredClientStructsVersion.Max && Svc.Interface.ClientStructsVersion >= RequiredClientStructsVersion.Min;
 
     internal virtual void DisableInternal(bool isDisposing = false) {
         if (!Enabled) return;

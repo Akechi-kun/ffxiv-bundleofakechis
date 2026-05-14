@@ -1,5 +1,4 @@
-﻿using ECommons.EzHookManager;
-using System.Runtime.InteropServices;
+﻿using System.Runtime.InteropServices;
 
 namespace ComplexTweaks.Services;
 #pragma warning disable CS0649
@@ -13,10 +12,6 @@ public unsafe class Memory {
         internal const string PlayerGroundSpeed = "F3 0F 11 05 ?? ?? ?? ?? 40 38 2D";
         internal const string FreeCompanyDialogPacketReceive = "48 89 5C 24 ?? 48 89 74 24 ?? 57 48 81 EC ?? ?? ?? ?? 48 8B 05 ?? ?? ?? ?? 48 33 C4 48 89 84 24 ?? ?? ?? ?? 0F B6 42 31"; // xan
     }
-
-    public Memory() => EzSignatureHelper.Initialize(this);
-
-    public void Dispose() { }
 
     #region Speed
     // this persists through LocalPlayer going null unlike setting via PMC
