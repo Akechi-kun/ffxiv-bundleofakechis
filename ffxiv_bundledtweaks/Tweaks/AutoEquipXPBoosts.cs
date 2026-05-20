@@ -17,6 +17,8 @@ internal class AutoEquipXPBoosts : Tweak {
 
     private readonly List<ExpItem> _expItems =
     [
+        new ExpItem(2634, 10, 20), // Helm of Light
+        new ExpItem(8567, 25, 20), // Friendship Circlet
         new ExpItem(14043, 30, 30), // Brand-new ring
         new ExpItem(16039, 50, 30), // Ala Mhigan earrings
         new ExpItem(24589, 70, 30), // Aetheryte earring

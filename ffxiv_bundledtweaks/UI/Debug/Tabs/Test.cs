@@ -4,6 +4,7 @@ using FFXIVClientStructs.FFXIV.Client.Game.Event;
 using FFXIVClientStructs.FFXIV.Client.UI.Agent;
 using FFXIVClientStructs.FFXIV.Client.UI.Info;
 using FFXIVClientStructs.FFXIV.Component.Exd;
+using System.Runtime.CompilerServices;
 
 namespace ComplexTweaks.UI.Debug.Tabs;
 
@@ -32,5 +33,13 @@ internal unsafe class TestTab : DebugTab {
         ImGui.Text($"{ExdModule.GetRoleForClassJobId(Player.ClassJob.RowId)}");
 
         ImGui.Text($"Target LoS: {Svc.Targets.Target?.IsInLineOfSight(Player.Position) ?? false}");
+
+        ref var activeRender = ref ActiveRender;
+        var current = activeRender != 0;
+
+        if (ImGui.Checkbox("Disable Render", ref current))
+            activeRender = current ? (byte)1 : (byte)0;
     }
+
+    internal static ref byte ActiveRender => ref Unsafe.AddByteOffset(ref Unsafe.AsRef<byte>(FFXIVClientStructs.FFXIV.Client.Graphics.Render.Manager.Instance()), 0x38358);
 }
