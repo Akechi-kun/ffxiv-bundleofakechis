@@ -11,7 +11,7 @@ namespace ComplexTweaks.Tweaks;
 
 internal sealed class FateGrind(FateToolKit tweak) : TaskBase {
     private const string _presetName = "CBT - DwD";
-    private const string _presetCompressed = "G7sgAORUXTtl2E+e+WjPVqrAAflbPZILOMWW4oP+/v+fCkIhzvG84ACJWKy03g9QazmlsQdIscatVWu8Jo51H+IdQI2Y/jafAIgSBxI+iCh8ggeIT7FYvBsibX3oyQkfvp0RQITWOWlrLziwHS0ja2s8qV0VFM9HPOG4IxY+fP6kw98KhNFPI1ad8EGkwVOChw66yKpuovBBJAa3PdXiV+P/U9/QTEWMlgExR9Cf8OIautG+4TKoVL4zGi8uI4qkFB6axuHukAPbAVlXOxtgfEw9XpCtINLWwgfxuNcNLyDisW/8CtaMH5RgnRCYeNqpNjsWcKM8fSbI7mCRUV5IK5dOlU3x2ricRQ7tQ5R9bVl0XBvJx6P+2shwJsusDaZtJaYxsIme1BEBeCFKy5r2uezJsB6IcHQjyomPlVWsEYDlMZDsLi1LtpXZASsvGyVssFIWpVQFS1aGWtKdRYp1rMRqWdxblD76YHnNjbtYCR6fykdLqKzS+xY37ADDlfPFNqKC3F7oYl4DtbgPbFNttNtHdtiqFA8WFeuIOIlVVqge1O1LkemZde8EfSiPF1NRhvynbSTDEp7ReBE6plH48Pl9B+SEPY1B0WdEUk/UVIhCs6O6DPsJTQddZeT5LO04YC/tkQYyoQAsMTnWhnwckdPwBnnfaFMzuct8AvA/n/wD";
+    private const string _presetCompressed = "GwwhAORUXTtl2E+e+WjPVqrAATn5Vo7kAFPsV3yB7j9/70DoI3U+9gNJLIvWvQ+obKxFY4OEmQ5LM14Tx7oq1h1/UtrJk9/GAwBR4oGEDyIKa3iC+BSLybsB0rb9npzw4dspAURonZO29YKebWcZWVvjSe2aoHg+pMZuTSx8+PzJgL9NCMPrDpud8EGkQZ3QwcEQTdWNFT6IxOByT6341fL41D2aVRGTJSCWCPYnvLgJN+ZvXIKQ6ndG48VlJJCcwn61crTbpGd7QNbNTgZMj2mPF2IriLSt8EFUG73iCUTc7SePgrnkBySYJwxDpX3VZi0DDoLHZ0x5FxYZ5Z22cuqrsildhctZ5GgfouzrTBLj2hg+mvDXxoQTZWZtKG0rPS0Di6i2Rxh4MUrLWvSl7MmwPhBzuOEq4mNlFjsEwlIFUt61Zcm28jvIwMtCaRsG3sy8dpo32qwrg/8SGqbQrENNwGSafVkpi7ITlqwM7ds7i9TrshKraXcvUA4zgJn2y4PlNfc/y0pQ1fL+aAlV2HzfEinuZTiz07eRtmm2F7qY10AJYXH3bFNttNtE9rC0nR8sKnYR5SRWWaeneLcuRaZn1nunALFUF9NwgARvhesSntF4ETqmTvjwqUfaICfcUxcUfxRE0p5oQuSTEvi4azS77/UsBfNZ2u6Ae2mPdCCTrcAmJsfaUKRIeDUL5M1Km8gyu/EA4DEePAA=";
     private static readonly string _preset = _presetCompressed.FromBase64();
 
     private int PullSize => Player.ClassJob.Value switch {
@@ -23,6 +23,8 @@ internal sealed class FateGrind(FateToolKit tweak) : TaskBase {
 
     protected override async Task Execute() {
         using var stop = new OnDispose(() => Svc.TextAdvance.DisableExternalControl(Name));
+        if (Service.BossMod.Get(_presetName) is not null) // one time overwrite in case I update the preset
+            Service.BossMod.Create(_preset, true);
         try {
             while (!CancelToken.IsCancellationRequested && tweak.Running) {
                 tweak.StopIfNoRemaining();
