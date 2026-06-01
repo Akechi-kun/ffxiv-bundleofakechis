@@ -76,7 +76,7 @@ public class GMAlert : Tweak<GMAlertConfiguration> {
     private unsafe void OnUpdate(IFramework framework) {
         if (!Player.Available) return;
 
-        var gms = Svc.Objects.OfType<IPlayerCharacter>().Where(pc => pc.EntityId != 0xE000000 && pc.Character()->CharacterData.OnlineStatus is <= 3 and > 0);
+        var gms = Svc.Objects.OfType<IPlayerCharacter>().Where(pc => pc.EntityId != 0xE000000 && pc.Character->CharacterData.OnlineStatus is <= 3 and > 0);
 
         if (!gms.Any()) {
             sent = false;

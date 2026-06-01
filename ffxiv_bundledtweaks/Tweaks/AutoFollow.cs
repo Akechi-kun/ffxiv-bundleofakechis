@@ -179,7 +179,7 @@ public unsafe class AutoFollow : Tweak<AutoFollowConfiguration> {
     }
 
     private bool TryMount(IGameObject master) {
-        if (!master.Character()->IsMounted() || !CanMount())
+        if (!master.Character->IsMounted() || !CanMount())
             return false;
 
         movement.Enabled = false;
@@ -188,7 +188,7 @@ public unsafe class AutoFollow : Tweak<AutoFollowConfiguration> {
     }
 
     private bool TryFly(IGameObject master) {
-        if (master.Character()->MovementState is not MovementStateOptions.Flying || !CanFly())
+        if (master.Character->MovementState is not MovementStateOptions.Flying || !CanFly())
             return false;
 
         movement.Enabled = false;
@@ -202,7 +202,7 @@ public unsafe class AutoFollow : Tweak<AutoFollowConfiguration> {
     }
 
     private bool TryDismount(IGameObject master) {
-        if (master.Character()->IsMounted() || !Svc.Condition[ConditionFlag.Mounted])
+        if (master.Character->IsMounted() || !Svc.Condition[ConditionFlag.Mounted])
             return false;
 
         movement.Enabled = false;
