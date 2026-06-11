@@ -84,6 +84,10 @@ public static class DateTimeExtensions {
                                 var pattern = $@"({monthNames})";
                                 regex.Append(pattern);
                                 i += 2;
+                                if (i + 1 < form.Length && form[i + 1] == '.') {
+                                    regex.Append(@"\.?");
+                                    i++;
+                                }
                             }
                         }
                         else {

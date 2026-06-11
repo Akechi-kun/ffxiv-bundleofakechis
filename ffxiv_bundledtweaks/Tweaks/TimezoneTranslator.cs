@@ -11,6 +11,8 @@ namespace ComplexTweaks.Tweaks;
 
 [Tweak]
 public class TimezoneTranslator : Tweak {
+    private static readonly Regex MonthPeriodRegex = new(@"^(\p{L}+)\s", RegexOptions.Compiled);
+
     public override string Name => "Timezone Translator";
     public override string Description => "Translates system message timestamps in chat to your time zone";
 
@@ -67,7 +69,8 @@ public class TimezoneTranslator : Tweak {
                 if (item is TextPayload tp && !string.IsNullOrEmpty(tp.Text)) {
                     // replace every timestamp in this payload (there can be multiple)
                     var replacedTimes = regex.Replace(tp.Text, m => {
-                        if (!DateTime.TryParse(m.Value, conf.Culture, out var serverTime)) {
+                        if (!DateTime.TryParse(m.Value, conf.Culture, out var serverTime)
+                            && !DateTime.TryParse(MonthPeriodRegex.Replace(m.Value, "$1. ", 1), conf.Culture, out serverTime)) {
                             Error($"Failed to parse a {nameof(DateTime)} from [{m.Value}] with culture [{conf.Culture.Name}]");
                             return m.Value;
                         }
