@@ -16,7 +16,6 @@ public class Service {
     public static QuestionableIPC Questionable { get; private set; } = null!;
     public static TextAdvanceIpc TextAdvance { get; private set; } = null!;
 
-    public static Automation Automation { get; private set; } = null!;
     public static IPCRegistry IPC { get; private set; } = null!;
     public static Memory Memory { get; private set; } = null!;
     public static TaskManager TaskManager { get; private set; } = null!;

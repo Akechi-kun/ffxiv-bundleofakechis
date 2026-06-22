@@ -9,16 +9,16 @@ namespace ComplexTweaks.UI.Debug.Tabs;
 
 internal class TasksTab : DebugTab {
     public override void Draw() {
-        using (ImRaii.Disabled(!Service.Automation.Running))
+        using (ImRaii.Disabled(!Svc.Automation.Running))
             if (ImGui.Button("Stop current task"))
-                Service.Automation.Stop();
-        ImGui.Text($"{Service.Automation.Name}: {Service.Automation.Status}");
+                Svc.Automation.Stop();
+        ImGui.Text($"{Svc.Automation.Name}: {Svc.Automation.Status}");
 
         if (ImGui.Button("transmute"))
-            Service.Automation.Start(new MateriaTransmutation());
+            Svc.Automation.Start(new MateriaTransmutation());
 
         if (ImGui.Button("void all weeaboos"))
-            Service.Automation.Start(new VoidMatches("weeaboo"));
+            Svc.Automation.Start(new VoidMatches("weeaboo"));
 
         if (ImGui.Button($"{nameof(MoveNonGearsetFromArmoury)}"))
             Svc.Automation.Start(new MoveNonGearsetFromArmoury());

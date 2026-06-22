@@ -19,7 +19,7 @@ internal class RetrieveMateria : Tweak {
         args.AddMenuItem(new MenuItem {
             PrefixChar = 'C',
             Name = "Retrieve All Materia",
-            OnClicked = (a) => Service.Automation.Start(new RetrieveAllMateria(inv.TargetItem.Value)),
+            OnClicked = (a) => Svc.Automation.Start(new RetrieveAllMateria(inv.TargetItem.Value)),
             IsEnabled = !Player.IsBusy,
         });
     }

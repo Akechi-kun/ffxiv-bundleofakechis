@@ -92,6 +92,7 @@ public class Plugin : IDalamudPlugin {
         }
         C.EnabledTweaks.CollectionChanged -= OnChange;
         Svc.Interface.ActivePluginsChanged -= OnPluginsChanged;
+        CLibMain.Dispose();
         ECommonsMain.Dispose();
         KamiToolKitLibrary.Dispose();
     }
@@ -121,7 +122,7 @@ public class Plugin : IDalamudPlugin {
                         C.EnabledTweaks.Add(@params[0]);
                     break;
                 case "stop":
-                    Service.Automation.Stop();
+                    Svc.Automation.Stop();
                     Service.TaskManager.Abort();
                     foreach (var t in Tweaks.OfType<ARTweak>())
                         t.AutoRetainer.FinishCharacterPostProcess();

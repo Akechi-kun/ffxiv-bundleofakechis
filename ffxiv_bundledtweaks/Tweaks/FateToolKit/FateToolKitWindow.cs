@@ -62,7 +62,7 @@ public class FateToolKitWindow : MinimisableWindow {
 
             ImGui.SameLine();
             DrawHeaderChip(
-                $"Automation: {(_tweak.Running ? Service.Automation.Status : "Stopped")}",
+                $"Automation: {(_tweak.Running ? Svc.Automation.Status : "Stopped")}",
                 _tweak.Running ? Colors.ChipGold : Colors.ChipMuted,
                 Colors.Grey2
             );

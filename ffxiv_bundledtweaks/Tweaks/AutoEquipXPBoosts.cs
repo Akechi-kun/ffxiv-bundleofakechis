@@ -36,7 +36,7 @@ internal class AutoEquipXPBoosts : Tweak {
             .OrderByDescending(x => x.GameData.Value.LevelItem.RowId)
             .ThenByDescending(x => x.Percent)
             .First()).ToList();
-        Service.Automation.Start(new EquipItems(expItems));
+        Svc.Automation.Start(new EquipItems(expItems));
     }
 
     private readonly unsafe struct ExpItem(uint ItemId, int MaxLevel, int Percent) {

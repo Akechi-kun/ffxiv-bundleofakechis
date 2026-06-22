@@ -24,7 +24,7 @@ internal class QuestsTab : DebugTab {
 
         if (GetRow<Quest>(_questId) is { } row) {
             if (ImGui.Button("go to quest start"))
-                Service.Automation.Start(new DoQuest(row));
+                Svc.Automation.Start(new DoQuest(row));
             ImGui.Text($"IssuerLocation: {row.IssuerLocation.ToStringExtended()}");
             foreach (var todo in row.TodoParams)
                 foreach (var loc in todo.ToDoLocation)

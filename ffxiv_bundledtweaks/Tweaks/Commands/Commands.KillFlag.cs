@@ -10,6 +10,6 @@ public partial class CommandsConfiguration {
 public partial class Commands : Tweak<CommandsConfiguration> {
     [Requires(Ipc.BossMod | Ipc.Navmesh)]
     [CommandHandler(["/killflag", "/kf"], "Goes to flag, kills hunt mob at destination.", nameof(Config.EnableKillFlag))]
-    internal void OnCommandKillFlag(string _, string arguments) => Service.Automation.Start(new KillFlag(arguments));
+    internal void OnCommandKillFlag(string _, string arguments) => Svc.Automation.Start(new KillFlag(arguments));
 }
 

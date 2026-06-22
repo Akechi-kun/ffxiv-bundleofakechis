@@ -113,7 +113,7 @@ public class FateToolKit : Tweak<FateToolKitConfig, FateToolKitWindow>, IFateGri
                 ZoneItemTargets = [];
                 CompletedCount = 0;
                 RefreshZoneItemTargets();
-                Service.Automation.Start(new FateGrind(this));
+                Svc.Automation.Start(new FateGrind(this));
             }
             else {
                 PendingStopWhenSafe = false;
@@ -219,7 +219,7 @@ public class FateToolKit : Tweak<FateToolKitConfig, FateToolKitWindow>, IFateGri
     }
 
     internal void SyncRunningState() {
-        if (Running && !Service.Automation.Running)
+        if (Running && !Svc.Automation.Running)
             Running = false;
     }
 
