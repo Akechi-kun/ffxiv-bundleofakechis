@@ -3,6 +3,7 @@ using Dalamud.Game.Addon.Events;
 using Dalamud.Game.Gui.Dtr;
 using Dalamud.Interface.Utility.Raii;
 using ECommons;
+using ECommons.ImGuiMethods;
 using FFXIVClientStructs.FFXIV.Client.System.Framework;
 using FFXIVClientStructs.FFXIV.Client.UI;
 using FFXIVClientStructs.FFXIV.Client.UI.Agent;
@@ -119,7 +120,7 @@ public unsafe class ClickToMove : Tweak<ClickToMoveConfiguration> {
             movement.Enabled = false;
         }
 
-        var isPressed = IsKeyPressed(ECommons.Interop.LimitedKeys.LeftMouseButton) && Utils.IsClickingInGameWorld();
+        var isPressed = ClickedInWorld();
         if (!wasPressed && isPressed)
             wasPressed = true;
         else if (wasPressed && !isPressed) {
@@ -137,4 +138,13 @@ public unsafe class ClickToMove : Tweak<ClickToMoveConfiguration> {
             }
         }
     }
+
+    private bool ClickedInWorld()
+        => IsKeyPressed(ECommons.Interop.LimitedKeys.LeftMouseButton) && Utils.IsClickingInGameWorld() && Config.ClickModifier switch {
+            ClickModifierKeys.None => true,
+            ClickModifierKeys.Shift => ImGuiEx.Shift,
+            ClickModifierKeys.Ctrl => ImGuiEx.Ctrl,
+            ClickModifierKeys.Alt => ImGuiEx.Alt,
+            _ => false
+        };
 }
