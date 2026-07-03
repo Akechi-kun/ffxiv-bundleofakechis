@@ -17,7 +17,6 @@ public class Service {
     public static TextAdvanceIpc TextAdvance { get; private set; } = null!;
 
     public static IPCRegistry IPC { get; private set; } = null!;
-    public static Memory Memory { get; private set; } = null!;
     public static TaskManager TaskManager { get; private set; } = null!;
 }
 
