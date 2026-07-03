@@ -123,8 +123,7 @@ public unsafe class AutoFollow : Tweak<AutoFollowConfiguration> {
     }
 
     private bool TryGetMaster([NotNullWhen(true)] out IGameObject? master) {
-        master = Svc.Objects.FirstOrDefault(x => !_master.IsEmpty && _master.Matches(x)
-            || !Config.AutoFollowName.IsNullOrEmpty() && x.Name.TextValue.EqualsIgnoreCase(Config.AutoFollowName));
+        master = Svc.Objects.FirstOrDefault(x => !_master.IsEmpty && _master.Matches(x) || !Config.AutoFollowName.IsNullOrEmpty() && x.Name.TextValue.EqualsIgnoreCase(Config.AutoFollowName));
         return master != null;
     }
 
@@ -188,7 +187,7 @@ public unsafe class AutoFollow : Tweak<AutoFollowConfiguration> {
     }
 
     private bool TryFly(IGameObject master) {
-        if (master.Character->MovementState is not MovementStateOptions.Flying || !CanFly())
+        if (master.Character->MoveController.MovementState is not MovementStateOptions.Flying || !CanFly())
             return false;
 
         movement.Enabled = false;

@@ -25,7 +25,7 @@ public class GlamourSetsTrackerConfiguration {
     [BoolConfig] public bool ShowMarketboardPurchasable = false;
 }
 
-[Tweak]
+[Tweak(outdated: true, disabledReason: "This tweak is replaced by my new plugin Glamour Log (same repo)")]
 public unsafe class GlamourSets : Tweak<GlamourSetsTrackerConfiguration, GlamourSetsWindow> {
     public override string Name => "Glamour Sets Tracker";
     public override string Description => "A tracking window for glamour sets";

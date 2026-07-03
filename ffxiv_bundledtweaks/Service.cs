@@ -19,7 +19,6 @@ public class Service {
     public static IPCRegistry IPC { get; private set; } = null!;
     public static Memory Memory { get; private set; } = null!;
     public static TaskManager TaskManager { get; private set; } = null!;
-    public static TweakEventManager TweakEventManager { get; private set; } = null!;
 }
 
 public class IPCRegistry {

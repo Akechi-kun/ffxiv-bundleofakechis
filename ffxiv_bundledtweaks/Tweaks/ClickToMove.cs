@@ -1,5 +1,6 @@
 ﻿using Dalamud.Bindings.ImGui;
 using Dalamud.Game.Addon.Events;
+using Dalamud.Game.Gui.Dtr;
 using Dalamud.Interface.Utility.Raii;
 using ECommons;
 using FFXIVClientStructs.FFXIV.Client.System.Framework;
@@ -14,6 +15,7 @@ public record struct ClickToMoveSettings(bool Enabled, MovementType MovementType
 public class ClickToMoveConfiguration {
     public ClickToMoveSettings WorldClick = new() { Enabled = true };
     public ClickToMoveSettings MapClick = new() { Enabled = true };
+    public ClickModifierKeys ClickModifier = ClickModifierKeys.Shift;
 }
 
 [Tweak]
@@ -67,6 +69,19 @@ public unsafe class ClickToMove : Tweak<ClickToMoveConfiguration> {
         ImGui.DrawSection("Configuration");
         DrawProfile("In-World Click", ref Config.WorldClick);
         DrawProfile("AreaMap Click", ref Config.MapClick);
+
+        ImGui.TextV("Modifier Key");
+        ImGui.SameLine();
+        ImGui.SetNextItemWidth(120);
+        using (var modifierCombo = ImRaii.Combo($"###modifier", Config.ClickModifier.ToString().Replace("_", " "))) {
+            if (modifierCombo) {
+                foreach (var mod in Enum.GetValues<ClickModifierKeys>()) {
+                    if (ImGui.Selectable(mod.ToString(), mod == Config.ClickModifier)) {
+                        Config.ClickModifier = mod;
+                    }
+                }
+            }
+        }
         DrawCommands();
     }
 
@@ -75,6 +90,15 @@ public unsafe class ClickToMove : Tweak<ClickToMoveConfiguration> {
         if (args is AddonReceiveEventArgs { AtkEventType: AddonEventType.MouseDown } receiveArgs) {
             if (receiveArgs.AtkEventData.As<AtkEventData.AtkMouseData>()->ButtonId != 0) return; // left click only
             if (AgentMap.Instance()->CurrentMapId != AgentMap.Instance()->SelectedMapId) return;
+            var success = Config.ClickModifier switch {
+                ClickModifierKeys.None => true,
+                ClickModifierKeys.Shift => receiveArgs.AtkEventData.As<AtkEventData>()->MouseData.Modifier.HasFlag(ModifierFlag.Shift),
+                ClickModifierKeys.Ctrl => receiveArgs.AtkEventData.As<AtkEventData>()->MouseData.Modifier.HasFlag(ModifierFlag.Ctrl),
+                ClickModifierKeys.Alt => receiveArgs.AtkEventData.As<AtkEventData>()->MouseData.Modifier.HasFlag(ModifierFlag.Alt),
+                _ => false
+            };
+            if (!success) return;
+
             if (args.GetAddon<AddonAreaMap>()->GetMouseWorldCoords() is { } coords) {
                 if (Config.MapClick.MovementType is MovementType.Pathfind)
                     Svc.Navmesh.PathfindAndMoveTo(coords.OnMesh(), Player.CanFly);

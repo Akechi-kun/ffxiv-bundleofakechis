@@ -18,7 +18,6 @@ namespace ComplexTweaks.TweakSystem;
 public abstract partial class Tweak : ITweak {
     public Tweak() {
         CachedType = GetType();
-        _eventController = new(this);
         InternalName = CachedType.Name;
         IncompatibilityWarnings = [.. CachedType.GetCustomAttributes<IncompatibilityWarningAttribute>()];
 
@@ -83,9 +82,6 @@ public abstract partial class Tweak : ITweak {
     protected Type? CachedWindowType { get; set; }
     protected Window? _window;
 
-    private readonly Dictionary<TweakEvent, List<Action<Type, EventArgs>>> _eventHandlers = [];
-    private readonly TweakEventController _eventController;
-
     protected virtual object? GetConfigObject() => null;
 
     public TConfig? GetConfig<TConfig>() where TConfig : class {
@@ -103,11 +99,6 @@ public abstract partial class Tweak : ITweak {
         => CachedType
             .GetMethods(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance)
             .Where(mi => mi.GetCustomAttribute<CommandHandlerAttribute>() != null);
-
-    protected IEnumerable<MethodInfo> EventHandlers
-        => CachedType
-            .GetMethods(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance)
-            .Where(mi => mi.GetCustomAttribute<TweakEventAttribute>() != null);
 
     public virtual void SetupAddressHooks() { }
     public virtual void SetupVTableHooks() { }
@@ -234,23 +225,6 @@ public abstract partial class Tweak // Internal
         }
 
         try {
-            if (EventHandlers.Any(eh => eh.GetCustomAttribute<TweakEventAttribute>()?.AutoEnable != false))
-                EnableEventHandlers();
-        }
-        catch (Exception ex) {
-            Error(ex, "Unexpected error during Enable (Event Handlers)");
-            LastInternalException = ex;
-        }
-
-        try {
-            _eventController.EnableHandlers();
-        }
-        catch (Exception ex) {
-            Error(ex, "Unexpected error during Enable (Event Controller Handlers)");
-            LastInternalException = ex;
-        }
-
-        try {
             CallHooks("Enable");
         }
         catch (Exception ex) {
@@ -284,23 +258,6 @@ public abstract partial class Tweak // Internal
         }
         catch (Exception ex) {
             Error(ex, "Unexpected error during Disable (Commands)");
-            LastInternalException = ex;
-        }
-
-        try {
-            if (AreEventHandlersEnabled)
-                DisableEventHandlers();
-        }
-        catch (Exception ex) {
-            Error(ex, "Unexpected error during Disable (Event Handlers)");
-            LastInternalException = ex;
-        }
-
-        try {
-            _eventController.DisableHandlers();
-        }
-        catch (Exception ex) {
-            Error(ex, "Unexpected error during Disable (Event Controller Handlers)");
             LastInternalException = ex;
         }
 
@@ -392,8 +349,6 @@ public abstract partial class Tweak // Internal
                     DisableCommand(c);
         }
 
-        _eventController.OnConfigChange(fieldName);
-
         try {
             OnConfigChange(fieldName);
         }
@@ -466,52 +421,6 @@ public abstract partial class Tweak // Internal
         }
     }
 
-    public void EnableEventHandlers() {
-        if (AreEventHandlersEnabled)
-            return;
-
-        foreach (var methodInfo in EventHandlers) {
-            var attr = methodInfo.GetCustomAttribute<TweakEventAttribute>()!;
-            var parameters = methodInfo.GetParameters();
-
-            if (parameters.Length != 2 || parameters[0].ParameterType != typeof(Type) || parameters[1].ParameterType != typeof(EventArgs)) {
-                Error($"Event handler method {methodInfo.Name} in {CachedType.Name} must have exactly two parameters: (Type, EventArgs)");
-                continue;
-            }
-
-            void handler(Type senderType, EventArgs args) {
-                try {
-                    methodInfo.Invoke(this, [senderType, args]);
-                }
-                catch (Exception ex) {
-                    Error(ex, $"Error invoking event handler {methodInfo.Name}");
-                }
-            }
-
-            foreach (var eventEnum in attr.Events) {
-                Service.TweakEventManager.Subscribe(eventEnum, handler);
-                if (!_eventHandlers.ContainsKey(eventEnum))
-                    _eventHandlers[eventEnum] = [];
-                _eventHandlers[eventEnum].Add(handler);
-            }
-        }
-
-        AreEventHandlersEnabled = true;
-    }
-
-    public void DisableEventHandlers() {
-        if (!AreEventHandlersEnabled)
-            return;
-
-        foreach (var (eventName, handlers) in _eventHandlers)
-            foreach (var handler in handlers)
-                Service.TweakEventManager.Unsubscribe(eventName, handler);
-        _eventHandlers.Clear();
-        AreEventHandlersEnabled = false;
-    }
-
-    public bool AreEventHandlersEnabled { get; private set; } = false;
-
     protected void DrawCommands() {
         var commandHandlers = CommandHandlers
         .Select(m => m.GetCustomAttribute<CommandHandlerAttribute>()!)
@@ -519,7 +428,7 @@ public abstract partial class Tweak // Internal
             // Show command if it has no config field dependency
             string.IsNullOrEmpty(attr.ConfigFieldName) ||
             // Or if the config field is enabled
-            (CachedConfigType != null && GetConfigObject() != null && (bool?)CachedConfigType.GetField(attr.ConfigFieldName)?.GetValue(GetConfigObject()) == true))
+            CachedConfigType != null && GetConfigObject() != null && (bool?)CachedConfigType.GetField(attr.ConfigFieldName)?.GetValue(GetConfigObject()) == true)
         .Where(attr => attr.Commands.Any(cmd => Svc.Commands.Commands.ContainsKey(cmd)));
 
         if (commandHandlers.Any()) {
