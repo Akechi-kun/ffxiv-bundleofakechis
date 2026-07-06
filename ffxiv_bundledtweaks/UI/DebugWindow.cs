@@ -6,7 +6,7 @@ using Dalamud.Bindings.ImGui;
 namespace ComplexTweaks.UI;
 
 internal class DebugWindow : Window {
-    public DebugWindow() : base($"{Name} - Debug v{P.Version.ToString(2)}###{nameof(DebugWindow)}") {
+    public DebugWindow() : base($"{Name} - Debug v{P.VersionString}###{nameof(DebugWindow)}") {
         SizeConstraints = new WindowSizeConstraints {
             MinimumSize = new Vector2(375, 330),
             MaximumSize = new Vector2(float.MaxValue, float.MaxValue)

@@ -17,24 +17,20 @@ public class Plugin : IDalamudPlugin {
     private const string Command = "/cbt";
     public static Plugin P { get; private set; } = null!;
     public static Config C { get; private set; } = null!;
-    public Version Version { get; private set; } = null!;
+    public string VersionString => Svc.Interface.Manifest.AssemblyVersion.ToString(2);
 
     public static readonly HashSet<Tweak> Tweaks = [];
     public readonly bool IsLocalCs;
 
-    public Plugin(IDalamudPluginInterface pluginInterface) {
+    public Plugin(IDalamudPluginInterface pluginInterface, IDataManager data, ISigScanner sigs) {
         P = this;
-        Version = P.GetType().Assembly.GetName().Version ?? new(0, 0);
+#if LOCAL_CS
+        pluginInterface.InitCustomClientStructs();
+        IsLocalCs = true;
+#endif
         ECommonsMain.Init(pluginInterface, P, ECommons.Module.DalamudReflector, ECommons.Module.ObjectFunctions);
         CLibMain.Init(pluginInterface, P, CLibModule.Automation);
         KamiToolKitLibrary.Initialize(pluginInterface, "CBT");
-
-#if LOCAL_CS
-        FFXIVClientStructs.Interop.Generated.Addresses.Register();
-        InteropGenerator.Runtime.Resolver.GetInstance.Setup(Svc.SigScanner.SearchBase, Svc.Data.GameData.Repositories["ffxiv"].Version, new(System.IO.Path.Join(pluginInterface.ConfigDirectory.FullName, "SigCache.json")));
-        InteropGenerator.Runtime.Resolver.GetInstance.Resolve();
-        IsLocalCs = true;
-#endif
 
         EzConfig.DefaultSerializationFactory = new YamlFactory();
         C = EzConfig.Init<Config>();
@@ -51,7 +47,7 @@ public class Plugin : IDalamudPlugin {
         }
 
         EzCmd.Add(Command, OnCommand, $"Opens the {Name} menu");
-        EzConfigGui.Init(new HaselWindow(), nameOverride: $"{Name} v{P.Version.ToString(2)}");
+        EzConfigGui.Init(new HaselWindow(), nameOverride: $"{Name} v{P.VersionString}");
         EzConfigGui.WindowSystem.AddWindow(new DebugWindow());
 
         SingletonServiceManager.Initialize(typeof(Service));

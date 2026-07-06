@@ -8,7 +8,7 @@ namespace ComplexTweaks.UI;
 public partial class HaselWindow : Window {
     // Style from HaselTweaks
     // https://github.com/Haselnussbomber/HaselTweaks
-    public HaselWindow() : base($"{Name} v{P.Version.ToString(2)}###{nameof(HaselWindow)}") {
+    public HaselWindow() : base($"{Name} v{P.VersionString}###{nameof(HaselWindow)}") {
         Size = new(SidebarWidth * 3.5f + ImGui.GetStyle().ItemSpacing.X + ImGui.GetStyle().FramePadding.X * 2, 500);
         Flags |= ImGuiWindowFlags.NoResize | ImGuiWindowFlags.NoSavedSettings;
         AllowClickthrough = false;
@@ -268,9 +268,9 @@ public partial class HaselWindow : Window {
         ImGui.SameLine();
         ImGui.DrawLink("Ko-fi", "Ko-fi", "https://ko-fi.com/croizat");
 
-        if (P.Version.ToString(2).Length > 1) {
-            ImGui.SetCursorPos(ImGui.GetCursorPos() + ImGui.GetContentRegionAvail() - ImGui.CalcTextSize($"v{P.Version.ToString(2)}"));
-            ImGui.TextUnformatted($"v{P.Version.ToString(2)}");
+        if (P.VersionString.Length > 1) {
+            ImGui.SetCursorPos(ImGui.GetCursorPos() + ImGui.GetContentRegionAvail() - ImGui.CalcTextSize($"v{P.VersionString}"));
+            ImGui.TextUnformatted($"v{P.VersionString}");
         }
     }
 }
