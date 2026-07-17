@@ -62,6 +62,12 @@ public unsafe partial class DebugLogging : Tweak {
         SendEventCompletePacketHook.Original(eventId, scene, a3, payload, payloadSize, a6);
     }
 
+    [SigHook("48 89 5C 24 ?? 57 48 83 EC 30 48 8B 05 ?? ?? ?? ?? 48 8B D9 41 0F B6 50 ??")]
+    internal void InventoryAck(InventoryManager* mgr, uint a1, void* a2) {
+        MethodBase.GetCurrentMethod()?.Log([(nint)mgr, a1, (nint)a2]);
+        InventoryAckHook.Original(mgr, a1, a2);
+    }
+
     private static string ToString(EventId eventid) => $"{eventid.Id}/{eventid.EntryId}/{eventid.ContentId}";
 
     private static string FormatPayload(uint* payload, byte payloadSize) {
