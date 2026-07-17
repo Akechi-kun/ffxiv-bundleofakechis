@@ -425,10 +425,29 @@ internal sealed class FateGrind(FateToolKit tweak) : TaskBase {
 
         using var scope = BeginScope(nameof(GenerateObstacleMap));
 
+        // bitmap is built via vnav and doesn't await the mesh still being built
+        if (!Svc.Navmesh.IsReady()) {
+            Status = "Waiting for Navmesh";
+            await WaitUntil(() => Svc.Navmesh.IsReady() || Svc.Navmesh.BuildProgress() >= 0, "WaitForBuildStart");
+            if (Svc.Navmesh.BuildProgress() >= 0)
+                await WaitWhile(() => Svc.Navmesh.BuildProgress() >= 0, "BuildMesh");
+            if (!Svc.Navmesh.IsReady()) {
+                Warning($"Navmesh not ready; skipping obstacle map for fate {evt.Id}");
+                return;
+            }
+        }
+
         // sometimes the center of a fate is unreachable (tower fate in amh araeng), so generate from a reachable point then compensate for being off center
         var safe = Svc.Navmesh.NearestPointReachable(evt.Position, 5, 5);
         float? margin = safe is { } ? Vector3.Distance(evt.Position, safe.Value) : null;
-        Svc.BossMod.Generate(safe ?? evt.Position, evt.Radius + margin ?? 10, false);
+        try {
+            Svc.BossMod.Generate(safe ?? evt.Position, evt.Radius + margin ?? 10, false);
+        }
+        catch (Exception ex) {
+            // shouldn't happen since we wait for the mesh above but just in case
+            Warning($"Obstacle map generation failed to start for fate {evt.Id}: {ex.Message}");
+            return;
+        }
         await WaitUntil(() => {
             var status = Svc.BossMod.GetGenerationStatus();
             if (status is TaskStatus.RanToCompletion) {
