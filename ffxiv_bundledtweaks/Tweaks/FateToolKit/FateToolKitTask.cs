@@ -90,6 +90,8 @@ internal sealed class FateGrind(FateToolKit tweak) : TaskBase {
 
     private GrindState State {
         get {
+            if (!Player.Available) return GrindState.SwapZones;
+
             if (WaitForExpiryFateId is { } waitId && PublicEvent.GetFateById(waitId) is null)
                 WaitForExpiryFateId = null;
 
