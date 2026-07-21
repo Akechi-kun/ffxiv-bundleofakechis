@@ -29,7 +29,7 @@ public class TweakConfigs {
     public FateToolKitConfig FateToolKit { get; init; } = new();
     public GMAlertConfiguration GMAlert { get; init; } = new();
     public HuntRelayHelperConfiguration HuntRelayHelper { get; init; } = new();
-    public MailEnhanacementsConfig MailEnhanacements { get; init; } = new();
+    //public MailEnhanacementsConfig MailEnhanacements { get; init; } = new();
     public SimpleCurrencyAlertConfig SimpleCurrencyAlertConfig { get; init; } = new();
 }
 

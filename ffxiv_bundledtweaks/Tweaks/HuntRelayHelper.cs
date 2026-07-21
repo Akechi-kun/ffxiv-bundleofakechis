@@ -8,7 +8,6 @@ using Dalamud.Interface.Utility.Raii;
 using Dalamud.Utility;
 using FFXIVClientStructs.FFXIV.Client.UI.Info;
 using Lumina.Excel.Sheets;
-using Lumina.Text.ReadOnly;
 using System.Data;
 using System.Text;
 using System.Text.RegularExpressions;

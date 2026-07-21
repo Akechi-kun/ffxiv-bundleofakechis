@@ -16,18 +16,9 @@
       },
       "ECommons": {
         "type": "Direct",
-        "requested": "[3.2.0.6, )",
-        "resolved": "3.2.0.6",
-        "contentHash": "ZONTpNsOLTlX0OPhBU/mHK9EWqmxgc2ZPwZtmV0rucsNyARXjeNsaGC9bcumGPBVpICTQBqeg4V1iew3OdmGYQ=="
-      },
-      "KamiToolKit": {
-        "type": "Direct",
-        "requested": "[1.1.2, )",
-        "resolved": "1.1.2",
-        "contentHash": "pyydp+XFd+E00uEXXd44GGNCCH2uAK1ndwjLVHKVrHg059g65ry+92a5UdDISWZRJMhK+LcDpDUPSijnFavCvQ==",
-        "dependencies": {
-          "SixLabors.ImageSharp": "3.1.12"
-        }
+        "requested": "[3.2.1.15, )",
+        "resolved": "3.2.1.15",
+        "contentHash": "2BowPSMoVC1v8E/jivCnbqbDLaNMN2uy2lih/hrEIANoh2B7PfydUb7zT/EOl86fEK6Hw88k1Vzvmoe/cHb3EA=="
       },
       "NetStone": {
         "type": "Direct",
@@ -433,7 +424,7 @@
       "autoretainerapi": {
         "type": "Project",
         "dependencies": {
-          "ECommons": "[3.1.0.1, )"
+          "ECommons": "[3.2.0.11, )"
         }
       },
       "croizat.clib": {

@@ -6,7 +6,6 @@ using ECommons;
 using ECommons.Configuration;
 using ECommons.SimpleGui;
 using ECommons.Singletons;
-using KamiToolKit;
 using System.Collections.Specialized;
 using System.Reflection;
 
@@ -30,7 +29,6 @@ public class Plugin : IDalamudPlugin {
 #endif
         ECommonsMain.Init(pluginInterface, P, ECommons.Module.DalamudReflector, ECommons.Module.ObjectFunctions);
         CLibMain.Init(pluginInterface, P, CLibModule.Automation);
-        KamiToolKitLibrary.Initialize(pluginInterface, "CBT");
 
         EzConfig.DefaultSerializationFactory = new YamlFactory();
         C = EzConfig.Init<Config>();
@@ -90,7 +88,6 @@ public class Plugin : IDalamudPlugin {
         Svc.Interface.ActivePluginsChanged -= OnPluginsChanged;
         CLibMain.Dispose();
         ECommonsMain.Dispose();
-        KamiToolKitLibrary.Dispose();
     }
 
     private void OnCommand(string command, string args) {
