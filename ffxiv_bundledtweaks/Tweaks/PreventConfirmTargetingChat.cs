@@ -1,7 +1,7 @@
 ﻿using FFXIVClientStructs.FFXIV.Client.UI;
 using FFXIVClientStructs.FFXIV.Component.GUI;
 
-namespace Automaton.Tweaks;
+namespace ComplexTweaks.Tweaks;
 
 [Tweak]
 public partial class PreventConfirmTargetingChat : Tweak {

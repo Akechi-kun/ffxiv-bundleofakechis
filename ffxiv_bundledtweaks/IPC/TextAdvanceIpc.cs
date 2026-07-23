@@ -1,6 +1,6 @@
 ﻿using ECommons.EzIpcManager;
 
-namespace Automaton.IPC;
+namespace ComplexTweaks.IPC;
 
 #nullable disable
 [Ipc(Ipc.TextAdvance)]

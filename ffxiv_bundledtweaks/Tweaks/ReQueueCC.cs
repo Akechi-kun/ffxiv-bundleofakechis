@@ -2,7 +2,7 @@
 using FFXIVClientStructs.FFXIV.Client.Game.UI;
 using FFXIVClientStructs.FFXIV.Client.UI.Agent;
 
-namespace Automaton.Tweaks;
+namespace ComplexTweaks.Tweaks;
 
 [Tweak]
 public class ReQueueCC : Tweak {
