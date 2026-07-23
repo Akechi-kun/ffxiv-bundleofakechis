@@ -251,8 +251,8 @@ public class HuntRelayHelper : Tweak<HuntRelayHelperConfiguration> {
     private void HandleRelayLink(uint _, SeString link) {
         var payload = link.Payloads.OfType<RawPayload>().Select(RelayPayload.Parse).FirstOrDefault(x => x != default);
         if (payload == default) { Error($"Failed to parse {nameof(RelayPayload)}"); return; }
-        if (Player.CsTerritoryIntendedUseEnum is TerritoryIntendedUse.CrystallineConflict or TerritoryIntendedUse.CrystallineConflictCustomMatch or TerritoryIntendedUse.DeepDungeon) {
-            Log($"Relay link ignored. Player in territory {Player.Territory.RowId} ({Player.TerritoryIntendedUse}) where chat is not permitted.");
+        if (Player.CsTerritoryIntendedUseEnum is TerritoryIntendedUse.CrystallineConflict or TerritoryIntendedUse.CrystallineConflictCustomMatch) {
+            Log($"Relay link ignored. Player in territory {Player.Territory.RowId} ({Player.TerritoryIntendedUse.Value.StructsEnum}) where chat is not permitted.");
             return;
         }
         if (payload == LastRelay) {
