@@ -21,7 +21,7 @@ public partial class PreventConfirmTargetingChat : Tweak {
             return HandleInputHook.Original(atkModule, inputData, isPadMouseModeEnabled);
         }
         catch (Exception ex) {
-            Error(ex, $"Error setting focused to chat to null");
+            Error(ex, $"Error clearing chat focus");
             return HandleInputHook.Original(atkModule, inputData, isPadMouseModeEnabled);
         }
     }
