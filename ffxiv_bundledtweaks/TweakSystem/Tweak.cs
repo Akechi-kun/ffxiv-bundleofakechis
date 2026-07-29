@@ -80,7 +80,7 @@ public abstract partial class Tweak : ITweak {
 
     protected Type? CachedConfigType { get; set; }
     protected Type? CachedWindowType { get; set; }
-    protected Window? _window;
+    protected IWindow? _window;
 
     protected virtual object? GetConfigObject() => null;
 
@@ -189,31 +189,14 @@ public abstract partial class Tweak // Internal
             return;
         }
 
-        if (CachedWindowType != null && _window == null) {
-            try {
-                var getWindowMethod = typeof(EzConfigGui).GetMethod("GetWindow", [])?.MakeGenericMethod(CachedWindowType);
-                if (getWindowMethod?.Invoke(null, null) is Window existingWindow)
-                    _window = existingWindow;
-                else {
-                    var constructor = CachedWindowType.GetConstructor([CachedType]);
-                    if (constructor != null)
-                        _window = (Window?)constructor.Invoke([this]);
-                    else {
-                        constructor = CachedWindowType.GetConstructor([]);
-                        _window = constructor != null
-                            ? (Window?)constructor.Invoke([])
-                            : throw new InvalidOperationException($"Window type {CachedWindowType.Name} must have either a parameterless constructor or a constructor that takes {CachedType.Name}.");
-                    }
-
-                    if (_window != null)
-                        EzConfigGui.WindowSystem.AddWindow(_window);
-                }
-            }
-            catch (Exception ex) {
-                Error(ex, $"Failed to create window {CachedWindowType.Name}");
-                LastInternalException = ex;
-                return;
-            }
+        try {
+            EnsureWindow();
+        }
+        catch (Exception ex) {
+            Error(ex, $"Failed to create window {CachedWindowType!.Name}");
+            LastInternalException = ex;
+            RemoveOwnedWindow();
+            return;
         }
 
         try {
@@ -230,6 +213,7 @@ public abstract partial class Tweak // Internal
         catch (Exception ex) {
             Error(ex, "Unexpected error during Enable (Hooks)");
             LastInternalException = ex;
+            RemoveOwnedWindow();
             return;
         }
 
@@ -239,6 +223,7 @@ public abstract partial class Tweak // Internal
         catch (Exception ex) {
             Error(ex, "Unexpected error during Enable");
             LastInternalException = ex;
+            RemoveOwnedWindow();
             return;
         }
 
@@ -251,7 +236,11 @@ public abstract partial class Tweak // Internal
     public bool MeetsClientStructsRequirements() => P.IsLocalCs || Svc.Interface.ClientStructsVersion <= RequiredClientStructsVersion.Max && Svc.Interface.ClientStructsVersion >= RequiredClientStructsVersion.Min;
 
     internal virtual void DisableInternal(bool isDisposing = false) {
-        if (!Enabled) return;
+        if (!Enabled) {
+            if (isDisposing)
+                RemoveOwnedWindow();
+            return;
+        }
 
         try {
             DisableCommands();
@@ -279,17 +268,53 @@ public abstract partial class Tweak // Internal
             LastInternalException = ex;
         }
 
-        if (_window != null && CachedWindowType != null) {
-            try {
-                EzConfigGui.WindowSystem.RemoveWindow(_window);
-                _window = null;
-            }
-            catch (Exception ex) {
-                Error(ex, $"Failed to remove window {CachedWindowType.Name}");
+        RemoveOwnedWindow();
+        Enabled = false;
+    }
+
+    private void EnsureWindow() {
+        if (CachedWindowType == null)
+            return;
+
+        var existing = EzConfigGui.WindowSystem.Windows.FirstOrDefault(w => w.GetType() == CachedWindowType);
+        if (existing != null) {
+            _window = existing;
+            return;
+        }
+
+        // window was stale somehow
+        if (_window != null && !EzConfigGui.WindowSystem.Windows.Contains(_window))
+            _window = null;
+
+        if (_window == null) {
+            var constructor = CachedWindowType.GetConstructor([CachedType]);
+            if (constructor != null)
+                _window = (Window?)constructor.Invoke([this]);
+            else {
+                constructor = CachedWindowType.GetConstructor([]);
+                _window = constructor != null
+                    ? (Window?)constructor.Invoke([])
+                    : throw new InvalidOperationException($"Window type {CachedWindowType.Name} must have either a parameterless constructor or a constructor that takes {CachedType.Name}.");
             }
         }
 
-        Enabled = false;
+        EzConfigGui.WindowSystem.AddWindow(_window!);
+    }
+
+    private void RemoveOwnedWindow() {
+        if (_window == null)
+            return;
+
+        try {
+            if (EzConfigGui.WindowSystem?.Windows.Contains(_window) == true)
+                EzConfigGui.WindowSystem.RemoveWindow(_window);
+        }
+        catch (Exception ex) {
+            Error(ex, $"Failed to remove window {CachedWindowType?.Name}");
+        }
+        finally {
+            _window = null;
+        }
     }
 
     internal virtual void DisposeInternal() {
