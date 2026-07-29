@@ -68,6 +68,24 @@ public unsafe partial class DebugLogging : Tweak {
         InventoryAckHook.Original(mgr, a1, a2);
     }
 
+    [AddressHook<EventFramework>(nameof(EventFramework.MemberFunctionPointers.ProcessEventYield))]
+    internal void ProcessEventYield(EventFramework* thisPtr, EventId eventId, short scene, byte yieldId, int* intParams, byte intParamCount) {
+        MethodBase.GetCurrentMethod()?.Log([(nint)thisPtr, eventId, scene, yieldId, (nint)intParams, intParamCount]);
+        ProcessEventYieldHook.Original(thisPtr, eventId, scene, yieldId, intParams, intParamCount);
+    }
+
+    [AddressHook<EventFramework>(nameof(EventFramework.MemberFunctionPointers.ProcessEventPlay))]
+    internal void ProcessEventPlay(EventFramework* thisPtr, GameObject* gameObject, EventId eventId, short scene, ulong sceneFlags, uint* sceneData, byte sceneDataCount) {
+        MethodBase.GetCurrentMethod()?.Log([(nint)thisPtr, (nint)gameObject, eventId, scene, sceneFlags, (nint) sceneData, sceneDataCount]);
+        ProcessEventPlayHook.Original(thisPtr, gameObject, eventId, scene, sceneFlags, sceneData, sceneDataCount);
+    }
+
+    [AddressHook<EventFramework>(nameof(EventFramework.MemberFunctionPointers.ProcessInitializeScene))]
+    internal void ProcessInitializeScene(EventFramework* thisPtr, GameObject* gameObject, EventId eventId, short scene, ulong sceneFlags, uint* sceneData, byte sceneDataCount) {
+        MethodBase.GetCurrentMethod()?.Log([(nint)thisPtr, (nint)gameObject, eventId, scene, sceneFlags, (nint)sceneData, sceneDataCount]);
+        ProcessInitializeSceneHook.Original(thisPtr, gameObject, eventId, scene, sceneFlags, sceneData, sceneDataCount);
+    }
+
     private static string ToString(EventId eventid) => $"{eventid.Id}/{eventid.EntryId}/{eventid.ContentId}";
 
     private static string FormatPayload(uint* payload, byte payloadSize) {
