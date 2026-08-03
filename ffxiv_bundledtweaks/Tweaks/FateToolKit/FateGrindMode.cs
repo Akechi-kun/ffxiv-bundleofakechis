@@ -207,7 +207,7 @@ public sealed class YokaiGrindMode : IFateGrindMode {
     };
 
     public static unsafe bool IsWatchEquipped() => InventoryManager.Instance()->GetInventoryContainer(InventoryType.EquippedItems)->GetInventorySlot(10)->ItemId == 15222;
-    public static unsafe RowRef<Companion> CurrentCompanion => Companion.GetRef(Player.Character->CompanionObject->Character.GameObject.BaseId);
+    public static unsafe RowRef<Companion> CurrentCompanion => Companion.GetRef(Player.Character->ChildObject->GameObject.BaseId);
 }
 
 public sealed class GemstoneGrindMode : IFateGrindMode {
