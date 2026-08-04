@@ -335,5 +335,7 @@ public sealed class YokaiGrindMode : IFateGrindMode {
 
     public static unsafe bool IsWatchEquipped() => InventoryManager.Instance()->GetInventoryContainer(InventoryType.EquippedItems)->GetInventorySlot(10)->ItemId == 15222;
     public static unsafe RowRef<Companion> CurrentCompanion
-        => Player.Mounted || Player.Character->ChildObject == null ? default : Companion.GetRef(Player.Character->ChildObject->GameObject.BaseId);
+        => Player.Character->CompanionData.CompanionObject is not null and var minion
+                ? Companion.GetRowRef(minion->BaseId)
+                : Companion.GetRowRef(Player.Character->CompanionData.CompanionId);
 }
