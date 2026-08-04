@@ -443,13 +443,20 @@ internal sealed class FateGrind(FateToolKit tweak) : TaskBase {
         var safe = Svc.Navmesh.NearestPointReachable(evt.Position, 5, 5);
         float? margin = safe is { } ? Vector3.Distance(evt.Position, safe.Value) : null;
         try {
-            Svc.BossMod.Generate(safe ?? evt.Position, evt.Radius + margin ?? 10, false);
+            if (!Svc.BossMod.Generate(safe ?? evt.Position, evt.Radius + margin ?? 10, false)) {
+                Warning($"Obstacle map generation failed to start for fate {evt.Id}");
+                _obstacleMapBlacklist.Add(evt.Id);
+                return;
+            }
         }
         catch (Exception ex) {
             // shouldn't happen since we wait for the mesh above but just in case
             Warning($"Obstacle map generation failed to start for fate {evt.Id}: {ex.Message}");
+            _obstacleMapBlacklist.Add(evt.Id);
             return;
         }
+
+        var generationFailed = false;
         await WaitUntil(() => {
             var status = Svc.BossMod.GetGenerationStatus();
             if (status is TaskStatus.RanToCompletion) {
@@ -458,10 +465,16 @@ internal sealed class FateGrind(FateToolKit tweak) : TaskBase {
             }
             if (status is TaskStatus.Faulted) {
                 Warning($"Obstacle map generation failed for fate {evt.Id}");
+                generationFailed = true;
                 return true; // allow moving without the map rather than getting stuck in an infinite wait
             }
             return false;
         }, "WaitForObstacleMap");
+
+        if (generationFailed) {
+            _obstacleMapBlacklist.Add(evt.Id);
+            return;
+        }
 
         if (Svc.BossMod.EvaluateTempMapQuality() is { } quality) {
             Log($"Generated obstacle map quality for fate {evt.Id}: {quality}");
