@@ -541,7 +541,7 @@ internal sealed class FateGrind(FateToolKit tweak) : TaskBase {
             var fromTerritoryId = Player.Territory.RowId;
             await Mount();
             await TeleportTo(destination, Vector3.Zero);
-            await tweak.GetCurrentMode().OnSwapZone(fromTerritoryId, destination, CancelToken);
+            await tweak.GetCurrentMode().OnSwapZone(fromTerritoryId, destination, Dismount, CancelToken);
         }
         else {
             using var scope = BeginScope("WaitForFates");
@@ -563,7 +563,7 @@ internal sealed class FateGrind(FateToolKit tweak) : TaskBase {
         }
         else
             Status = "ZoneItemTarget complete. Switching target.";
-        await tweak.GetCurrentMode().OnSwapZone(fromTerritoryId, destination, CancelToken);
+        await tweak.GetCurrentMode().OnSwapZone(fromTerritoryId, destination, Dismount, CancelToken);
     }
 
     private void HandleIntegrations() {

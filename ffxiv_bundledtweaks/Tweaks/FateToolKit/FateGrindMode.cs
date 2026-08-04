@@ -27,7 +27,7 @@ internal interface IFateGrindMode {
     string? GetRemainingDisplay(IFateGrindRunState state);
 
     IEnumerable<ZoneItemTarget>? GetZoneItemTargets(IFateGrindRunState? state = null);
-    Task OnSwapZone(uint fromTerritoryId, uint toTerritoryId, CancellationToken cancellationToken = default) => Task.CompletedTask;
+    Task OnSwapZone(uint fromTerritoryId, uint toTerritoryId, Func<Task> dismount, CancellationToken cancellationToken = default) => Task.CompletedTask;
 }
 
 public static class FateGrindModes {
@@ -264,7 +264,7 @@ public sealed class YokaiGrindMode : IFateGrindMode {
         return Yokai.Values.Any(e => NeedsFarm(e) && e.Zones.Any(z => z.RowId == territoryId));
     }
 
-    public async Task OnSwapZone(uint fromTerritoryId, uint toTerritoryId, CancellationToken cancellationToken) {
+    public async Task OnSwapZone(uint fromTerritoryId, uint toTerritoryId, Func<Task> dismount, CancellationToken cancellationToken) {
         if (Yokai.Values.FirstOrDefault(e => e.Zones.Any(z => z.RowId == toTerritoryId) && NeedsFarm(e)) is not { } entry)
             return;
 
@@ -275,6 +275,11 @@ public sealed class YokaiGrindMode : IFateGrindMode {
                 await NextFrames(30, cancellationToken);
         }
 
+        if (CurrentCompanion.RowId == entry.Minion.RowId)
+            return;
+
+        if (Player.Mounted)
+            await dismount(); // such a hack lol
         ECommons.Automation.Chat.SendMessage($"/minion {entry.Minion.Value.Singular}");
         while (CurrentCompanion.RowId != entry.Minion.RowId)
             await NextFrames(30, cancellationToken);
@@ -329,5 +334,6 @@ public sealed class YokaiGrindMode : IFateGrindMode {
     };
 
     public static unsafe bool IsWatchEquipped() => InventoryManager.Instance()->GetInventoryContainer(InventoryType.EquippedItems)->GetInventorySlot(10)->ItemId == 15222;
-    public static unsafe RowRef<Companion> CurrentCompanion => Companion.GetRef(Player.Character->ChildObject->GameObject.BaseId);
+    public static unsafe RowRef<Companion> CurrentCompanion
+        => Player.Mounted || Player.Character->ChildObject == null ? default : Companion.GetRef(Player.Character->ChildObject->GameObject.BaseId);
 }
