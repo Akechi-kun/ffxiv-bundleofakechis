@@ -16,26 +16,109 @@ public interface IFateGrindRunState {
     int CompletedCount { get; }
     int? RunUntilCompleted { get; }
     int? RemainingUntilCompleted { get; }
-    int RelicsCompletedForStep { get; }
 }
 
 internal interface IFateGrindMode {
     string DisplayName { get; }
     int UiPriority => 0;
 
-    /// <summary>Swap zone override</summary>
     IReadOnlySet<uint>? GetAllowedZones();
-
-    /// <summary>Condition for mode being done (items collected, quest done, etc)</summary>
     bool IsComplete(IFateGrindRunState state);
-
-    /// <summary>Optional chip display for progress</summary>
     string? GetRemainingDisplay(IFateGrindRunState state);
 
     IEnumerable<ZoneItemTarget>? GetZoneItemTargets(IFateGrindRunState? state = null);
     Task OnSwapZone(uint fromTerritoryId, uint toTerritoryId, CancellationToken cancellationToken = default) => Task.CompletedTask;
-    bool UsesRelicsCompletedForStep() => false;
-    IReadOnlyList<uint>? RelicItemIds => null;
+}
+
+public static class FateGrindModes {
+    internal static IReadOnlyList<IFateGrindMode> All { get; } = Build();
+    internal static IFateGrindMode? GetByDisplayName(string displayName) => All.FirstOrDefault(m => m.DisplayName == displayName);
+    internal static IFateGrindMode None => All.First(m => m.UiPriority == -1);
+
+    private static IReadOnlyList<IFateGrindMode> Build() {
+        var zeniths = RelicItem.GetItemsByStep(2);
+        var animateds = QuestClassJobReward.GetRelicsByRow(3);
+        var augmented = QuestClassJobReward.GetRelicsByRow(17);
+
+        return [
+            new NoneGrindMode(),
+            new GemstoneGrindMode(),
+            new YokaiGrindMode(),
+
+            new ZoneItemGrindMode {
+                DisplayName = "Atma (Zodiac)",
+                Goals = [
+                    new(7851, [148]), new(7852, [146]), new(7853, [139]), new(7854, [152]),
+                    new(7855, [145]), new(7856, [134]), new(7857, [140]), new(7858, [180]),
+                    new(7859, [135]), new(7860, [154]), new(7861, [141]), new(7862, [138]),
+                ],
+                Kind = ZoneItemGoalKind.PerRelicRemaining,
+                PerRelic = (1, zeniths.Count - 1), // subtract pld shield
+                RelicItemIds = [.. zeniths.Select(r => r.RowId)],
+                IsAvailable = () => zeniths.Any(i => i.Value.Handle.IsEquipped),
+                UnavailableMessage = "Need relic equipped!",
+            },
+            new ZoneItemGrindMode {
+                DisplayName = "Luminous Crystals (Anima)",
+                Goals = [
+                    new(13569, [397]), new(13570, [401]), new(13571, [402]),
+                    new(13572, [398]), new(13573, [400]), new(13574, [399]),
+                ],
+                Kind = ZoneItemGoalKind.PerRelicRemaining,
+                PerRelic = (1, animateds.Count - 1), // subtract pld shield
+                RelicItemIds = [.. animateds.Select(r => r.RowId)],
+            },
+            new ZoneItemGrindMode {
+                DisplayName = "Memories (Resistance)",
+                Goals = [
+                    new(31573, [397, 401]), // Coerthas Western Highlands, Sea of Clouds
+                    new(31574, [398, 400]), // Dravanian Forelands, Churning Mists
+                    new(31575, [399, 402]), // Dravanian Hinterlands, Azys Lla
+                ],
+                Kind = ZoneItemGoalKind.PerRelicRemaining,
+                PerRelic = (20, augmented.Count - 1), // subtract pld shield
+                RelicItemIds = [.. augmented.Select(r => r.RowId)],
+            },
+            new ZoneItemGrindMode {
+                DisplayName = "Law's Order (Resistance)",
+                Goals = [
+                    new(32957, [612, 620, 621], 18), // Fringes, Peaks, Lochs
+                    new(32958, [613, 614, 622], 18), // Ruby Sea, Yanxia, Azim Steppe
+                ],
+                IsAvailable = () => QuestAccepted(69575), // The Resistance Remembers
+                IsFullyDone = () => QuestComplete(69575),
+                UnavailableMessage = $"Need Quest {Quest.GetRow(69575).Name}",
+            },
+            new ZoneItemGrindMode {
+                DisplayName = "Demiatmas (Phantom)",
+                Goals = [
+                    new(47744, [1187], 3), // Urqopacha
+                    new(47745, [1188], 3), // Kozama'uka
+                    new(47746, [1189], 3), // Yak T'el
+                    new(47747, [1190], 3), // Shaaloani
+                    new(47748, [1191], 3), // Heritage Found
+                    new(47749, [1192], 3), // Living Memory
+                ],
+                IsAvailable = () => QuestAccepted(70855), // Arcane Artistry
+                IsFullyDone = () => QuestComplete(70855),
+                UnavailableMessage = $"Need Quest {Quest.GetRow(70855).Name}",
+            },
+            new ZoneItemGrindMode {
+                DisplayName = "Paste (Phantom)",
+                Goals = [
+                    new(50059, [.. TerritoryType
+                        .Where(r => r.IsInUse && !r.IsPvpZone && r.TerritoryIntendedUse.Value.StructsEnum is TerritoryIntendedUse.Overworld && r.ExVersion.RowId is 5)
+                        .Select(r => r.RowId)], 1200),
+                ],
+                IsAvailable = () => QuestAccepted(70991), // In Pursuit of Perfection
+                IsFullyDone = () => QuestComplete(70991),
+                UnavailableMessage = $"Need Quest {Quest.GetRow(70991).Name}",
+            },
+        ];
+    }
+
+    private static unsafe bool QuestAccepted(uint questId) => QuestManager.Instance()->IsQuestAccepted(questId);
+    private static bool QuestComplete(uint questId) => QuestManager.IsQuestComplete(questId);
 }
 
 public sealed class NoneGrindMode : IFateGrindMode {
@@ -43,113 +126,147 @@ public sealed class NoneGrindMode : IFateGrindMode {
     public int UiPriority => -1;
 
     public IReadOnlySet<uint>? GetAllowedZones() => null;
-    public bool IsComplete(IFateGrindRunState state) => state.RunUntilCompleted is { } runUntil && state.CompletedCount >= runUntil;
+    public bool IsComplete(IFateGrindRunState _) => false;
     public string? GetRemainingDisplay(IFateGrindRunState state) => state.RemainingUntilCompleted is { } r && r > 0 ? $"{r} fates" : null;
     public IEnumerable<ZoneItemTarget>? GetZoneItemTargets(IFateGrindRunState? state = null) => null;
 }
 
-public static class FateGrindModes {
-    private static readonly List<IFateGrindMode> _discovered;
-    private static readonly List<IFateGrindMode> _registered = [];
+public sealed class GemstoneGrindMode : IFateGrindMode {
+    private const uint BicolorGemstone = 26807;
 
-    static FateGrindModes() {
-        var iface = typeof(IFateGrindMode);
-        _discovered = [.. typeof(IFateGrindMode).Assembly
-            .GetTypes()
-            .Where(t => t is { IsClass: true, IsAbstract: false } && iface.IsAssignableFrom(t) && t.GetConstructor(Type.EmptyTypes) != null)
-            .Select(t => (IFateGrindMode)Activator.CreateInstance(t)!)
-            .OrderBy(m => m.DisplayName)];
+    public string DisplayName => "Gemstones";
 
-        var zeniths = RelicItem.GetItemsByStep(2);
-        Register(new RelicItemMultiZoneGrindMode(
-            "Atma (Zodiac)",
-            [(7851, [148]), (7852, [146]), (7853, [139]), (7854, [152]), (7855, [145]), (7856, [134]), (7857, [140]), (7858, [180]), (7859, [135]), (7860, [154]), (7861, [141]), (7862, [138])],
-            relicItemIds: [.. zeniths.Select(r => r.RowId)],
-            perRelicInfo: (1, zeniths.Count - 1), // subtract pld shield
-            requiredCondition: () => zeniths.Any(i => i.Value.Handle.IsEquipped)));
-
-        var animateds = QuestClassJobReward.GetRelicsByRow(3);
-        Register(new RelicItemMultiZoneGrindMode(
-            "Luminous Crystals (Anima)",
-            [(13569, [397]), (13570, [401]), (13571, [402]), (13572, [398]), (13573, [400]), (13574, [399])],
-            relicItemIds: [.. animateds.Select(r => r.RowId)],
-            perRelicInfo: (1, animateds.Count - 1))); // subtract pld shield
-
-        var augmented = QuestClassJobReward.GetRelicsByRow(17);
-        Register(new RelicItemMultiZoneGrindMode(
-            "Memories (Resistance)",
-            [
-                (31573, [397, 401]), // Coerthas Western Highlands, Sea of Clouds
-                (31574, [398, 400]), // Dravanian Forelands, Churning Mists
-                (31575, [399, 402]), // Dravanian Hinterlands, Azys Lla
-            ],
-            relicItemIds: [.. augmented.Select(r => r.RowId)],
-            perRelicInfo: (20, augmented.Count - 1))); // subtract pld shield
-
-        Register(new RelicItemMultiZoneGrindMode(
-            "Law's Order (Resistance)",
-            [
-                (32957, [612, 620, 621], 18), // Fringes, Peaks, Lochs
-                (32958, [613, 614, 622], 18), // Ruby Sea, Yanxia, Azim Steppe
-            ],
-            questId: 69575)); // The Resistance Remembers
-
-        Register(new RelicItemMultiZoneGrindMode(
-            "Demiatmas (Phantom)",
-            [
-                (47744, [1187], 3), // Urqopacha
-                (47745, [1188], 3), // Kozama'uka
-                (47746, [1189], 3), // Yak T'el
-                (47747, [1190], 3), // Shaaloani
-                (47748, [1191], 3), // Heritage Found
-                (47749, [1192], 3), // Living Memory
-            ],
-            questId: 70855)); // Arcane Artistry
-
-        Register(new RelicItemMultiZoneGrindMode(
-            "Paste (Phantom)",
-            [(50059, TerritoryType.Where(r => r.IsInUse && !r.IsPvpZone && r.TerritoryIntendedUse.Value.StructsEnum is TerritoryIntendedUse.Overworld && r.ExVersion.RowId is 5).Select(r => r.RowId).ToList(), 1200)],
-            questId: 70991)); // In Pursuit of Perfection
-    }
-
-    /// <summary>Discovered modes (None, Gemstone, etc.) by UiPriority then name; registered relic modes in expansion/registration order.</summary>
-    internal static IReadOnlyList<IFateGrindMode> All => [.. _discovered.OrderBy(m => m.UiPriority).ThenBy(m => m.DisplayName), .. _registered];
-
-    internal static IFateGrindMode? GetByDisplayName(string displayName) => All.FirstOrDefault(m => m.DisplayName == displayName);
-    internal static IFateGrindMode? GetNoneMode() => All.FirstOrDefault(m => m.UiPriority == -1);
-
-    internal static void Register(IFateGrindMode mode) {
-        if (All.Any(m => m.DisplayName == mode.DisplayName)) return;
-        _registered.Add(mode);
-    }
-}
-
-public sealed class YokaiGrindMode : IFateGrindMode {
-    public string DisplayName => "Yo-kai Watch (Medals)";
-
+    // shb+ zones, prio highest expac
     public IReadOnlySet<uint>? GetAllowedZones() {
-        if (GetCurrentMinionEntry() is { } entry)
-            return entry.Zones.Select(z => z.RowId).ToHashSet();
-        // return all possible zones so the zone selector still gets disabled
-        return Yokai.Values.SelectMany(e => e.Zones.Select(z => z.RowId)).ToHashSet();
+        var unlocked = TerritoryType.Where(r => r.IsInUse && r.TerritoryIntendedUse.Value.StructsEnum is TerritoryIntendedUse.Overworld && r.ExVersion.RowId >= 3 && !r.IsPvpZone && r.IsPrimaryAetheryteUnlocked).ToList();
+        if (unlocked.Count == 0)
+            return new HashSet<uint>();
+        var topEx = unlocked.Max(r => r.ExVersion.RowId);
+        return unlocked.Where(r => r.ExVersion.RowId == topEx).Select(r => r.RowId).ToHashSet();
     }
 
-    public bool IsComplete(IFateGrindRunState state)
-        => state.RunUntilCompleted is { } runUntil && state.CompletedCount >= runUntil;
+    public bool IsComplete(IFateGrindRunState _) => GetGemstoneRemaining() == 0;
 
-    public string? GetRemainingDisplay(IFateGrindRunState state) {
-        if (state.RemainingUntilCompleted is { } r && r > 0) return $"{r} fates";
-        var entry = GetCurrentMinionEntry();
-        if (entry is null) return null;
-        var count = GetItemCount(entry.Medal.RowId);
-        var name = entry.Medal.Value.Name.ToString() ?? $"Item {entry.Medal.RowId}";
-        return count < 10 ? $"{name} {count}/10" : null;
+    public string? GetRemainingDisplay(IFateGrindRunState _) {
+        var remaining = GetGemstoneRemaining();
+        return remaining > 0 ? $"{remaining} left" : null;
     }
 
     public IEnumerable<ZoneItemTarget>? GetZoneItemTargets(IFateGrindRunState? state = null) => null;
+    private static unsafe uint GetGemstoneRemaining() => CurrencyManager.Instance()->GetItemCountRemaining(BicolorGemstone);
+}
+
+public enum ZoneItemGoalKind {
+    FixedPerItem,
+    PerRelicRemaining,
+}
+
+public readonly record struct ItemZoneGoal(uint ItemId, IReadOnlyList<uint> Zones, int? FixedRequired = null);
+
+public sealed class ZoneItemGrindMode : IFateGrindMode {
+    public required string DisplayName { get; init; }
+    public int UiPriority { get; init; } = 100;
+    public required IReadOnlyList<ItemZoneGoal> Goals { get; init; }
+    public ZoneItemGoalKind Kind { get; init; } = ZoneItemGoalKind.FixedPerItem;
+    public (int PerRelic, int TotalRelics)? PerRelic { get; init; }
+    public IReadOnlyList<uint>? RelicItemIds { get; init; }
+    public Func<bool>? IsAvailable { get; init; }
+    public Func<bool>? IsFullyDone { get; init; }
+    public string? UnavailableMessage { get; init; }
+
+    public IReadOnlySet<uint>? GetAllowedZones()
+        => Goals.SelectMany(g => g.Zones).Where(id => id != 0).ToHashSet();
+
+    public bool IsComplete(IFateGrindRunState state) {
+        if (IsFullyDone?.Invoke() ?? false)
+            return true;
+        if (!(IsAvailable?.Invoke() ?? true))
+            return false;
+        foreach (var goal in Goals)
+            if (GetItemCount(goal.ItemId) < GetEffectiveRequired(goal)) return false;
+        return true;
+    }
+
+    public string? GetRemainingDisplay(IFateGrindRunState state) {
+        if (IsComplete(state))
+            return "Done";
+        if (!(IsAvailable?.Invoke() ?? true))
+            return UnavailableMessage ?? "Unavailable";
+        var total = Goals.Sum(g => Math.Max(0, GetEffectiveRequired(g) - GetItemCount(g.ItemId)));
+        return total == 0 ? null : $"{total} left";
+    }
+
+    public IEnumerable<ZoneItemTarget>? GetZoneItemTargets(IFateGrindRunState? state = null) {
+        foreach (var goal in Goals) {
+            var total = GetEffectiveRequired(goal);
+            if (total <= 0) continue;
+            var remaining = Math.Max(0, total - GetItemCount(goal.ItemId));
+            if (remaining <= 0) continue;
+            foreach (var territoryId in goal.Zones.Where(id => id != 0))
+                yield return new ZoneItemTarget(territoryId, goal.ItemId, total);
+        }
+    }
+
+    private int GetEffectiveRequired(ItemZoneGoal goal) {
+        if (Kind == ZoneItemGoalKind.PerRelicRemaining && PerRelic is (var per, var totalRelics)) {
+            var done = FateToolKit.GetRelicsCompletedForStep(RelicItemIds);
+            return Math.Max(0, (totalRelics - done) * per);
+        }
+        return goal.FixedRequired ?? 0;
+    }
+
+    private static unsafe int GetItemCount(uint itemId) => InventoryManager.Instance()->GetInventoryItemCount(itemId);
+}
+
+public sealed class YokaiGrindMode : IFateGrindMode {
+    private const int MedalsRequired = 10;
+
+    public string DisplayName => "Yo-kai Watch (Medals)";
+
+    public IReadOnlySet<uint>? GetAllowedZones() {
+        var needing = EntriesNeedingFarm().ToList();
+        if (needing.Count > 0)
+            return needing.SelectMany(e => e.Zones.Select(z => z.RowId)).ToHashSet();
+        // keep zone selector disabled when mode supplies zones
+        return Yokai.Values.SelectMany(e => e.Zones.Select(z => z.RowId)).ToHashSet();
+    }
+
+    public bool IsComplete(IFateGrindRunState _) => !EntriesNeedingFarm().Any();
+
+    public string? GetRemainingDisplay(IFateGrindRunState state) {
+        if (state.RemainingUntilCompleted is { } r && r > 0) return $"{r} fates";
+        if (IsComplete(state)) return "Done";
+
+        var entry = GetCurrentMinionEntry();
+        if (entry is not null && NeedsFarm(entry)) {
+            var count = GetItemCount(entry.Medal.RowId);
+            var name = entry.Medal.Value.Name.ToString() ?? $"Item {entry.Medal.RowId}";
+            return $"{name} {count}/{MedalsRequired}";
+        }
+
+        var remaining = EntriesNeedingFarm().Sum(e => Math.Max(0, MedalsRequired - GetItemCount(e.Medal.RowId)));
+        return remaining > 0 ? $"{remaining} medals left" : null;
+    }
+
+    public IEnumerable<ZoneItemTarget>? GetZoneItemTargets(IFateGrindRunState? state = null) {
+        // One entry at a time so shared zones (e.g. Enma/Damona) don't block swaps.
+        var entry = GetCurrentMinionEntry() is { } current && NeedsFarm(current) ? current : EntriesNeedingFarm().FirstOrDefault();
+        if (entry is null)
+            return null;
+
+        return entry.Zones.Select(z => new ZoneItemTarget(z.RowId, entry.Medal.RowId, MedalsRequired));
+    }
+
+    /// <summary>True when this zone still has farm work but the summoned minion is not the one that needs it.</summary>
+    public static bool NeedsMinionResync(uint territoryId) {
+        if (GetCurrentMinionEntry() is { } current && NeedsFarm(current))
+            return false;
+        return Yokai.Values.Any(e => NeedsFarm(e) && e.Zones.Any(z => z.RowId == territoryId));
+    }
 
     public async Task OnSwapZone(uint fromTerritoryId, uint toTerritoryId, CancellationToken cancellationToken) {
-        if (Yokai.Values.FirstOrDefault(e => e.Zones.Any(z => z.RowId == toTerritoryId) && GetItemCount(e.Medal.RowId) < 10 && e.Unlocked) is not { } entry) return;
+        if (Yokai.Values.FirstOrDefault(e => e.Zones.Any(z => z.RowId == toTerritoryId) && NeedsFarm(e)) is not { } entry)
+            return;
 
         var watch = new ItemHandle(15222);
         if (!IsWatchEquipped() && watch.GetCount() > 0) {
@@ -162,6 +279,11 @@ public sealed class YokaiGrindMode : IFateGrindMode {
         while (CurrentCompanion.RowId != entry.Minion.RowId)
             await NextFrames(30, cancellationToken);
     }
+
+    private static IEnumerable<YokaiEntry> EntriesNeedingFarm() => Yokai.Values.Where(NeedsFarm);
+
+    private static bool NeedsFarm(YokaiEntry entry)
+        => entry.Unlocked && GetItemCount(entry.Weapon.RowId) == 0 && GetItemCount(entry.Medal.RowId) < MedalsRequired;
 
     private static Task NextFrames(int n, CancellationToken ct) => Svc.Framework.DelayTicks(n, ct);
 
@@ -208,131 +330,4 @@ public sealed class YokaiGrindMode : IFateGrindMode {
 
     public static unsafe bool IsWatchEquipped() => InventoryManager.Instance()->GetInventoryContainer(InventoryType.EquippedItems)->GetInventorySlot(10)->ItemId == 15222;
     public static unsafe RowRef<Companion> CurrentCompanion => Companion.GetRef(Player.Character->ChildObject->GameObject.BaseId);
-}
-
-public sealed class GemstoneGrindMode : IFateGrindMode {
-    private const uint BicolorGemstone = 26807;
-
-    public string DisplayName => "Gemstones";
-
-    // shb+ zones, prio highest expac
-    public IReadOnlySet<uint>? GetAllowedZones() {
-        var unlocked = TerritoryType.Where(r => r.IsInUse && r.TerritoryIntendedUse.Value.StructsEnum is TerritoryIntendedUse.Overworld && r.ExVersion.RowId >= 3 && !r.IsPvpZone && r.IsPrimaryAetheryteUnlocked).ToList();
-        if (unlocked.Count == 0)
-            return new HashSet<uint>();
-        var topEx = unlocked.Max(r => r.ExVersion.RowId);
-        return unlocked.Where(r => r.ExVersion.RowId == topEx).Select(r => r.RowId).ToHashSet();
-    }
-
-    public bool IsComplete(IFateGrindRunState _) => GetGemstoneRemaining() == 0;
-
-    public string? GetRemainingDisplay(IFateGrindRunState _) {
-        var remaining = GetGemstoneRemaining();
-        return remaining > 0 ? $"{GetGemstoneRemaining()} left" : null;
-    }
-
-    public IEnumerable<ZoneItemTarget>? GetZoneItemTargets(IFateGrindRunState? state = null) => null;
-    private static unsafe uint GetGemstoneRemaining() => CurrencyManager.Instance()->GetItemCountRemaining(BicolorGemstone);
-}
-
-// generic mode for relics where you have to collect x per relic or in total
-public sealed class RelicZoneItemGrindMode(string displayName, IEnumerable<(uint TerritoryId, uint ItemId, int RequiredCount)> targets) : IFateGrindMode {
-    public string DisplayName { get; } = displayName;
-
-    private readonly List<(uint TerritoryId, uint ItemId, int RequiredCount)> _targets = [.. targets];
-
-    public IReadOnlySet<uint>? GetAllowedZones() => _targets.Select(t => t.TerritoryId).ToHashSet();
-
-    public bool IsComplete(IFateGrindRunState _) {
-        foreach (var (_, itemId, required) in _targets) {
-            if (GetItemCount(itemId) < required) return false;
-        }
-        return true;
-    }
-
-    public string? GetRemainingDisplay(IFateGrindRunState _) {
-        var total = _targets.Sum(t => Math.Max(0, t.RequiredCount - GetItemCount(t.ItemId)));
-        return total == 0 ? null : $"{total} left";
-    }
-
-    public IEnumerable<ZoneItemTarget>? GetZoneItemTargets(IFateGrindRunState? state = null)
-        => _targets.Select(t => new ZoneItemTarget(t.TerritoryId, t.ItemId, t.RequiredCount));
-
-    private static unsafe int GetItemCount(uint itemId) => InventoryManager.Instance()->GetInventoryItemCount(itemId);
-}
-
-public sealed class RelicItemMultiZoneGrindMode(
-    string displayName,
-    IEnumerable<(uint ItemId, IReadOnlyList<uint> TerritoryIds, int? TotalRequired)> itemZones,
-    IReadOnlyList<uint>? relicItemIds = null,
-    (int PerRelic, int TotalRelics)? perRelicInfo = null,
-    Func<bool>? requiredCondition = null,
-    Func<bool>? questCompleteOverride = null,
-    uint? questId = null) : IFateGrindMode {
-
-    public RelicItemMultiZoneGrindMode(
-        string displayName,
-        IEnumerable<(uint ItemId, IReadOnlyList<uint> TerritoryIds)> itemZones,
-        IReadOnlyList<uint>? relicItemIds,
-        (int PerRelic, int TotalRelics)? perRelicInfo,
-        Func<bool>? requiredCondition = null,
-        Func<bool>? questCompleteOverride = null,
-        uint? questId = null)
-        : this(displayName, itemZones.Select(x => (x.ItemId, x.TerritoryIds, (int?)null)), relicItemIds, perRelicInfo, requiredCondition, questCompleteOverride, questId) { }
-
-    public string DisplayName { get; } = displayName;
-
-    private readonly List<(uint ItemId, IReadOnlyList<uint> TerritoryIds, int? TotalRequired)> _itemZones = [.. itemZones];
-    private readonly (int PerRelic, int TotalRelics)? _perRelicInfo = perRelicInfo;
-    private readonly uint? _questId = questId;
-    private readonly unsafe Func<bool>? _requiredCondition = questId is { } q ? () => QuestManager.Instance()->IsQuestAccepted(q) : requiredCondition;
-    private readonly Func<bool>? _questCompleteOverride = questId is { } q ? () => QuestManager.IsQuestComplete(q) : questCompleteOverride;
-
-    public IReadOnlyList<uint>? RelicItemIds => relicItemIds;
-
-    public bool UsesRelicsCompletedForStep() => _perRelicInfo.HasValue;
-
-    public IReadOnlySet<uint>? GetAllowedZones()
-        => _itemZones.SelectMany(x => x.TerritoryIds).Where(id => id != 0).ToHashSet();
-
-    public bool IsComplete(IFateGrindRunState state) {
-        if (_questCompleteOverride?.Invoke() ?? false)
-            return true;
-        if (!_requiredCondition?.Invoke() ?? false)
-            return false;
-        foreach (var entry in _itemZones)
-            if (GetItemCount(entry.ItemId) < GetEffectiveRequired(entry, state)) return false;
-        return true;
-    }
-
-    public string? GetRemainingDisplay(IFateGrindRunState state) {
-        if (IsComplete(state))
-            return "Done";
-        if (!_requiredCondition?.Invoke() ?? false)
-            return _questId is { } q ? $"Need Quest #{q}" : "Need relic equipped!";
-        var total = _itemZones.Sum(e => Math.Max(0, GetEffectiveRequired(e, state) - GetItemCount(e.ItemId)));
-        return total == 0 ? null : $"{total} left";
-    }
-
-    public IEnumerable<ZoneItemTarget>? GetZoneItemTargets(IFateGrindRunState? state = null) {
-        foreach (var entry in _itemZones) {
-            var total = GetEffectiveRequired(entry, state);
-            if (total <= 0) continue;
-            var current = GetItemCount(entry.ItemId);
-            var remaining = Math.Max(0, total - current);
-            if (remaining <= 0) continue;
-            foreach (var territoryId in entry.TerritoryIds.Where(id => id != 0))
-                yield return new ZoneItemTarget(territoryId, entry.ItemId, total);
-        }
-    }
-
-    private int GetEffectiveRequired((uint ItemId, IReadOnlyList<uint> TerritoryIds, int? TotalRequired) entry, IFateGrindRunState? state) {
-        if (_perRelicInfo is (var per, var totalRelics)) {
-            var done = state?.RelicsCompletedForStep ?? 0;
-            return Math.Max(0, (totalRelics - done) * per);
-        }
-        return entry.TotalRequired ?? 0;
-    }
-
-    private static unsafe int GetItemCount(uint itemId) => InventoryManager.Instance()->GetInventoryItemCount(itemId);
 }

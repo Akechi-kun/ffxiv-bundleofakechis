@@ -90,7 +90,6 @@ public class FateToolKit : Tweak<FateToolKitConfig, FateToolKitWindow>, IFateGri
     public int CompletedCount { get; private set; }
     public int? RunUntilCompleted { get; private set; }
     public int? RemainingUntilCompleted => RunUntilCompleted is { } runUntil ? Math.Max(0, runUntil - CompletedCount) : null;
-    public int RelicsCompletedForStep => GetRelicsCompletedForStep(GetCurrentMode().RelicItemIds);
     internal HashSet<uint> SelectedSwapZones { get; } = [];
     internal string SelectedModeId {
         get;
@@ -134,8 +133,8 @@ public class FateToolKit : Tweak<FateToolKitConfig, FateToolKitWindow>, IFateGri
             return;
 
         CompletedCount++;
+        RefreshZoneItemTargets();
         StopIfNoRemaining();
-        CheckItemTargetCompletion();
     }
 
     private void RunUntil(int runUntil) {
@@ -155,9 +154,19 @@ public class FateToolKit : Tweak<FateToolKitConfig, FateToolKitWindow>, IFateGri
 
     internal bool IsZoneItemTargetComplete(uint currentTerritoryId, out uint destinationTerritoryId) {
         destinationTerritoryId = 0;
-        var forZone = ZoneItemTargets.Where(t => t.TerritoryId == currentTerritoryId).ToList();
-        if (forZone.Count == 0 || !forZone.All(t => t.IsComplete))
+        RefreshZoneItemTargets();
+        if (ZoneItemTargets.Count == 0)
             return false;
+
+        var stillNeededHere = ZoneItemTargets.Any(t => t.TerritoryId == currentTerritoryId && !t.IsComplete);
+        if (stillNeededHere) {
+            if (GetCurrentMode() is YokaiGrindMode && YokaiGrindMode.NeedsMinionResync(currentTerritoryId)) {
+                destinationTerritoryId = currentTerritoryId;
+                return true;
+            }
+            return false;
+        }
+
         if (GetNextPreferredSwapZone(currentTerritoryId) is { } next) {
             destinationTerritoryId = next;
             return true;
@@ -168,8 +177,8 @@ public class FateToolKit : Tweak<FateToolKitConfig, FateToolKitWindow>, IFateGri
     internal IFateGrindMode GetCurrentMode() {
         var displayName = SelectedModeId;
         if (string.IsNullOrEmpty(displayName))
-            return FateGrindModes.GetNoneMode() ?? FateGrindModes.All[0];
-        return FateGrindModes.GetByDisplayName(displayName) ?? FateGrindModes.GetNoneMode() ?? FateGrindModes.All[0];
+            return FateGrindModes.None;
+        return FateGrindModes.GetByDisplayName(displayName) ?? FateGrindModes.None;
     }
 
     /// <summary>Returns whether the relic (by item ID) has completed the associated quest for this step. Fill in with quest/achievement check.</summary>
