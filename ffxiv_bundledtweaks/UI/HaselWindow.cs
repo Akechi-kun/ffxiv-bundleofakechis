@@ -25,6 +25,7 @@ public partial class HaselWindow : Window {
     public override void OnClose() {
         _splashText = null;
         AsciiSplash.Reset();
+        ConfigService.Get().Save();
     }
 
     public override void Draw() {

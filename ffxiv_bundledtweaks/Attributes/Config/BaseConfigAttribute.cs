@@ -12,7 +12,6 @@ public abstract class BaseConfigAttribute : Attribute {
     public abstract void Draw(Tweak tweak, object config, FieldInfo fieldInfo);
 
     protected void OnChangeInternal(Tweak tweak, FieldInfo fieldInfo) {
-        //C.SaveConfiguration($"ez{tweak.Name}.json");
         tweak.CachedType.GetMethod(nameof(Tweak.OnConfigChangeInternal), BindingFlags.Instance | BindingFlags.NonPublic)?.Invoke(tweak, [fieldInfo.Name]);
     }
 

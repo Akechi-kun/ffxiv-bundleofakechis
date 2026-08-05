@@ -1,6 +1,8 @@
 using ComplexTweaks.Configuration;
 using System.IO;
 using YamlDotNet.Serialization;
+using YamlDotNet.Serialization.TypeInspectors;
+using YamlDotNet.Serialization.TypeResolvers;
 
 namespace ComplexTweaks.Services;
 
@@ -20,7 +22,7 @@ public sealed class ConfigService : IPluginService {
 
     public void Save() {
         try {
-            var yaml = new SerializerBuilder().Build().Serialize(Config);
+            var yaml = Serializer.Serialize(Config);
             File.WriteAllText(ConfigPath, yaml);
         }
         catch (Exception ex) {
@@ -34,7 +36,7 @@ public sealed class ConfigService : IPluginService {
                 return new Config();
 
             var yaml = File.ReadAllText(ConfigPath);
-            return new DeserializerBuilder().IgnoreUnmatchedProperties().Build().Deserialize<Config>(yaml) ?? new Config();
+            return Deserializer.Deserialize<Config>(yaml) ?? new Config();
         }
         catch (Exception ex) {
             IPluginLog.Get().Error(ex, $"[{nameof(ConfigService)}] Failed to load config, using defaults");
@@ -60,4 +62,8 @@ public sealed class ConfigService : IPluginService {
         if (migrated)
             Save();
     }
+
+    // because I need to use fields and not just props
+    private static readonly ISerializer Serializer = new SerializerBuilder().WithTypeInspector(inner => new CompositeTypeInspector(new ReadableFieldsTypeInspector(new StaticTypeResolver()),inner)).Build();
+    private static readonly IDeserializer Deserializer = new DeserializerBuilder().IgnoreUnmatchedProperties().Build();
 }

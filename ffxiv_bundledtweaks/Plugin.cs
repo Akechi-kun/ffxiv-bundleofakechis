@@ -66,6 +66,7 @@ public class Plugin : IDalamudPlugin {
         }
         C.EnabledTweaks.CollectionChanged -= OnChange;
         Svc.Interface.ActivePluginsChanged -= OnPluginsChanged;
+        ConfigService.Get().Save();
         CLibMain.Dispose();
     }
 

@@ -366,6 +366,8 @@ public abstract partial class Tweak // Internal
             LastInternalException = ex;
             return;
         }
+
+        ConfigService.Get().Save();
     }
 
     protected virtual void EnableCommands(bool onlyAbsent = false) {
