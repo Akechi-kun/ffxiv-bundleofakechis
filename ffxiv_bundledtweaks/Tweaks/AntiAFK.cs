@@ -3,12 +3,13 @@
 namespace ComplexTweaks.Tweaks;
 
 [Tweak]
-internal class AntiAFK : Tweak {
+public partial class AntiAFK : Tweak {
     public override string Name => "Anti-AFK";
     public override string Description => "Prevents being kicked for being AFK.";
 
-    public override void Enable() => IFramework.Get().Update += OnUpdate;
-    public override void Disable() => IFramework.Get().Update -= OnUpdate;
-
-    private unsafe void OnUpdate(IFramework framework) => InputTimerModule.Instance()->ResetAfkTimer();
+    [SigHook("E8 ?? ?? ?? ?? 48 8B 8B ?? ?? ?? ?? 48 8B 01 FF 90 ?? ?? ?? ?? 84 C0")]
+    internal unsafe void InputTimerModule_Update(InputTimerModule* thisPtr, float delta) {
+        thisPtr->ResetAfkTimer();
+        InputTimerModule_UpdateHook.Original(thisPtr, delta);
+    }
 }

@@ -3,7 +3,6 @@ using Dalamud.Game.Addon.Events;
 using Dalamud.Game.Gui.Dtr;
 using Dalamud.Interface.Utility.Raii;
 using ECommons;
-using ECommons.ImGuiMethods;
 using FFXIVClientStructs.FFXIV.Client.Game.Control;
 using FFXIVClientStructs.FFXIV.Client.System.Framework;
 using FFXIVClientStructs.FFXIV.Client.System.Input;
@@ -22,7 +21,7 @@ public class ClickToMoveConfiguration {
 }
 
 [Tweak]
-public unsafe class ClickToMove : Tweak<ClickToMoveConfiguration> {
+public unsafe partial class ClickToMove : Tweak<ClickToMoveConfiguration> {
     public override string Name => "Click to Move";
     public override string Description => "Like those other games. Supports clicking on the map.";
 
@@ -30,13 +29,11 @@ public unsafe class ClickToMove : Tweak<ClickToMoveConfiguration> {
 
     public override void Enable() {
         movement = new();
-        IFramework.Get().Update += MoveTo;
         IAddonLifecycle.Get().RegisterListener(AddonEvent.PostReceiveEvent, "AreaMap", HandleMapClick);
     }
 
     public override void Disable() {
         movement.Dispose();
-        IFramework.Get().Update -= MoveTo;
         IAddonLifecycle.Get().UnregisterListener(HandleMapClick);
     }
 
@@ -113,40 +110,36 @@ public unsafe class ClickToMove : Tweak<ClickToMoveConfiguration> {
         }
     }
 
-    private bool wasPressed = false;
-    private void MoveTo(IFramework framework) {
-        if (!Config.WorldClick.Enabled) return;
-        if (IObjectTable.Get().LocalPlayer is not { Available: true, IsBusy: false } player) return;
+    [AddressHook<AtkInputManager>(nameof(AtkInputManager.MemberFunctionPointers.HandleInput))]
+    internal unsafe void AtkInputManager_HandleInput(AtkInputManager* thisPtr, AtkUnitManager* unitManager, AtkCollisionManager* collisionManager) {
+        AtkInputManager_HandleInputHook.Original(thisPtr, unitManager, collisionManager);
+        if (IObjectTable.Get().LocalPlayer is not { } player) return;
 
-        if (Config.WorldClick.MovementType != MovementType.Pathfind && player.FlatDistanceTo(movement.DesiredPosition) < 0.05f) {
-            movement.Enabled = false;
-        }
+        if (movement.Enabled && Vector3.Distance(movement.DesiredPosition, player.Position) <= 0.05f) movement.Enabled = false;
 
-        var isPressed = ClickedInWorld();
-        if (!wasPressed && isPressed)
-            wasPressed = true;
-        else if (wasPressed && !isPressed) {
-            wasPressed = false;
-            if (!Framework.Instance()->WindowInactive) {
-                IGameGui.Get().ScreenToWorld(ImGui.GetIO().MousePos, out var pos, 100000f);
-                if (Config.WorldClick.MovementType == MovementType.Pathfind) {
-                    if (Svc.Navmesh.IsRunning()) Svc.Navmesh.Stop();
-                    Svc.Navmesh.PathfindAndMoveTo(pos, false);
-                }
-                else {
-                    movement.Enabled = true;
-                    movement.DesiredPosition = pos;
-                }
-            }
-        }
-    }
-
-    private bool ClickedInWorld()
-        => MouseButtonFlags.LBUTTON.IsPressed() && Utils.IsClickingInGameWorld() && Config.ClickModifier switch {
+        if (!InputId.MOUSE_OK.IsReleased()) return;
+        var modifierOk = Config.ClickModifier switch {
             ClickModifierKeys.None => true,
-            ClickModifierKeys.Shift => ImGuiEx.Shift,
-            ClickModifierKeys.Ctrl => ImGuiEx.Ctrl,
-            ClickModifierKeys.Alt => ImGuiEx.Alt,
+            ClickModifierKeys.Shift => UIInputData.Instance()->CurrentKeyModifier.HasFlag(KeyModifierFlag.Shift),
+            ClickModifierKeys.Ctrl => UIInputData.Instance()->CurrentKeyModifier.HasFlag(KeyModifierFlag.Ctrl),
+            ClickModifierKeys.Alt => UIInputData.Instance()->CurrentKeyModifier.HasFlag(KeyModifierFlag.Alt),
             _ => false
         };
+        if (!modifierOk) return;
+
+        if (!Config.WorldClick.Enabled) return;
+        if (Framework.Instance()->WindowInactive) return;
+        if (player is not { Available: true, IsBusy: false }) return;
+        if (!Utils.IsClickingInGameWorld()) return;
+
+        IGameGui.Get().ScreenToWorld(ImGui.GetIO().MousePos, out var pos, 100000f);
+        if (Config.WorldClick.MovementType == MovementType.Pathfind) {
+            if (Svc.Navmesh.IsRunning()) Svc.Navmesh.Stop();
+            Svc.Navmesh.PathfindAndMoveTo(pos, false);
+        }
+        else {
+            movement.Enabled = true;
+            movement.DesiredPosition = pos;
+        }
+    }
 }

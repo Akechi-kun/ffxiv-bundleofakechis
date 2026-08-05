@@ -1,7 +1,9 @@
-using Dalamud.Game.ClientState.Objects.SubKinds;
+using Dalamud.Bindings.ImGui;
 using Dalamud.Interface;
 using Dalamud.Interface.Components;
-using Dalamud.Bindings.ImGui;
+using FFXIVClientStructs.FFXIV.Client.Game.Character;
+using FFXIVClientStructs.FFXIV.Client.Game.Control;
+using FFXIVClientStructs.FFXIV.Client.Game.Network;
 using System.Threading.Tasks;
 
 namespace ComplexTweaks.Tweaks;
@@ -18,17 +20,9 @@ public class GMAlertConfiguration {
 }
 
 [Tweak]
-public class GMAlert : Tweak<GMAlertConfiguration> {
+public partial class GMAlert : Tweak<GMAlertConfiguration> {
     public override string Name => "GM Alert";
     public override string Description => "Various alerts for when a GM is nearby.";
-
-    public override void Enable() {
-        IFramework.Get().Update += OnUpdate;
-    }
-
-    public override void Disable() {
-        IFramework.Get().Update -= OnUpdate;
-    }
 
     private string _cmd = string.Empty;
     public override void DrawConfig() {
@@ -72,34 +66,28 @@ public class GMAlert : Tweak<GMAlertConfiguration> {
         }
     }
 
-    public bool sent;
-    private unsafe void OnUpdate(IFramework framework) {
-        if (!IObjectTable.Get().LocalPlayer.Available) return;
+    [SigHook("48 89 5C 24 ?? 57 48 83 EC 20 0F B6 42 1B")]
+    internal unsafe Character* CharacterSetupContainer_InitPlayer(CharacterSetupContainer* thisPtr, SpawnPlayerPacket* packet) {
+        var res = CharacterSetupContainer_InitPlayerHook.Original(thisPtr, packet);
+        var player = thisPtr->OwnerObject;
+        if (player == null || Control.GetLocalPlayer() == player) return res;
 
-        var gms = IObjectTable.Get().OfType<IPlayerCharacter>().Where(pc => pc.EntityId != 0xE000000 && pc.Character->CharacterData.OnlineStatus is <= 3 and > 0);
-
-        if (!gms.Any()) {
-            sent = false;
-            return;
-        }
-
-        if (sent) return;
-
-        foreach (var player in gms) {
+        if (packet->GMRank != 0 || player->CharacterData.OnlineStatus is >= 1 and <= 3) {
             if (Config.Toast)
-                IToastGui.Get().ShowNormal($"GM {player.Name} is nearby!");
+                IToastGui.Get().ShowNormal($"GM {player->NameString} is nearby!");
             if (Config.ChatMessage)
-                ModuleMessage($"GM {player.Name} is nearby!");
+                ModuleMessage($"GM {player->NameString} is nearby!");
             if (Config.Sound)
                 for (var i = 0; i < Config.BeepCount; i++)
                     Task.Run(() => Console.Beep(Config.BeepFrequency, Config.BeepDuration));
-        }
-        sent = true;
 
-        if (Config.Commands.Count > 0)
-            foreach (var cmd in Config.Commands)
-                IChatGui.Get().ExecuteCommand(cmd);
-        if (Config.KillGame)
-            IChatGui.Get().ExecuteCommand("/xlkill");
+            if (Config.Commands.Count > 0)
+                foreach (var cmd in Config.Commands)
+                    IChatGui.Get().ExecuteCommand(cmd);
+            if (Config.KillGame)
+                IChatGui.Get().ExecuteCommand("/xlkill");
+        }
+
+        return res;
     }
 }
