@@ -56,7 +56,7 @@ public partial class AutoInvite : Tweak<AutoInviteConfiguration> {
             return;
         }
 
-        if (!IPlayerState.Get().IsPartyLeader) {
+        if (IPlayerState.Get() is { InParty: true, IsPartyLeader: false }) {
             Log("Skipping invite: not party leader.");
             return;
         }
