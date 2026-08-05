@@ -2,7 +2,6 @@ using clib;
 using ComplexTweaks.Configuration;
 using ComplexTweaks.UI;
 using Dalamud.Plugin;
-using ECommons;
 using ECommons.Configuration;
 using ECommons.SimpleGui;
 using ECommons.Singletons;
@@ -27,7 +26,6 @@ public class Plugin : IDalamudPlugin {
         pluginInterface.InitCustomClientStructs();
         IsLocalCs = true;
 #endif
-        ECommonsMain.Init(pluginInterface, P, ECommons.Module.DalamudReflector, ECommons.Module.ObjectFunctions);
         CLibMain.Init(pluginInterface, P, CLibModule.Automation);
 
         EzConfig.DefaultSerializationFactory = new YamlFactory();
@@ -44,7 +42,7 @@ public class Plugin : IDalamudPlugin {
             }
         }
 
-        EzCmd.Add(Command, OnCommand, $"Opens the {Name} menu");
+        ICommandManager.Get().AddHandler(Command, new(OnCommand) { HelpMessage = $"Opens the {Name} menu" });
         EzConfigGui.Init(new HaselWindow(), nameOverride: $"{Name} v{P.VersionString}");
         EzConfigGui.WindowSystem.AddWindow(new DebugWindow());
 
@@ -58,7 +56,7 @@ public class Plugin : IDalamudPlugin {
     public static void OnChange(object? sender, NotifyCollectionChangedEventArgs e) {
         foreach (var t in Tweaks) {
             if (C.EnabledTweaks.Contains(t.InternalName) && !t.Enabled)
-                TryExecute(t.EnableInternal);
+                t.EnableInternal();
             else if (!C.EnabledTweaks.Contains(t.InternalName) && t.Enabled || t.Enabled && t.IsDebug && !C.ShowDebug)
                 t.DisableInternal();
             EzConfig.Save();
@@ -69,25 +67,25 @@ public class Plugin : IDalamudPlugin {
         foreach (var tweak in Tweaks) {
             if (C.EnabledTweaks.Contains(tweak.InternalName) && !tweak.Enabled && !tweak.Outdated && !tweak.Disabled)
                 if (tweak.CanBeEnabled())
-                    TryExecute(tweak.EnableInternal);
+                    tweak.EnableInternal();
 
             if (tweak.Enabled && !tweak.CanBeEnabled())
-                TryExecute(() => tweak.DisableInternal());
+                tweak.DisableInternal();
 
             if (tweak.Enabled && tweak.CanBeEnabled())
-                TryExecute(tweak.RefreshCommands);
+                tweak.RefreshCommands();
         }
     }
 
     public void Dispose() {
+        ICommandManager.Get().RemoveHandler(Command);
         foreach (var tweak in Tweaks) {
             Svc.Log.Debug($"Disposing {tweak.InternalName}");
-            TryExecute(tweak.DisposeInternal);
+            tweak.DisposeInternal();
         }
         C.EnabledTweaks.CollectionChanged -= OnChange;
         Svc.Interface.ActivePluginsChanged -= OnPluginsChanged;
         CLibMain.Dispose();
-        ECommonsMain.Dispose();
     }
 
     private void OnCommand(string command, string args) {
@@ -131,8 +129,7 @@ public class Plugin : IDalamudPlugin {
                 Tweaks.Add((Tweak)Activator.CreateInstance(tweakType)!);
             }
             catch (Exception ex) {
-                Svc.Log.Error($"Failed to initialize {tweakType.Name}", ex);
-                ex.Log();
+                ex.Log($"Failed to initialize {tweakType.Name}");
             }
         }
 
@@ -143,7 +140,7 @@ public class Plugin : IDalamudPlugin {
             if (C.EnabledTweaks.Contains(tweak.InternalName) && tweak.IsDebug && !C.ShowDebug)
                 C.EnabledTweaks.Remove(tweak.InternalName);
 
-            TryExecute(tweak.EnableInternal);
+            tweak.EnableInternal();
         }
     }
 }

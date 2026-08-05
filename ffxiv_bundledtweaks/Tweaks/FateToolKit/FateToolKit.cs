@@ -73,12 +73,12 @@ public class FateToolKit : Tweak<FateToolKitConfig, FateToolKitWindow>, IFateGri
     );
 
     private static readonly Dictionary<FateSortCriteria, Func<PublicEvent, IComparable>> SortKeys = new() {
-        [FateSortCriteria.HasBonusWithTwist] = f => f.HasBonus && Player.Status.HasTwistOfFate(),
+        [FateSortCriteria.HasBonusWithTwist] = f => f.HasBonus && (IObjectTable.Get().LocalPlayer?.StatusList.HasTwistOfFate() ?? false),
         [FateSortCriteria.Progress] = f => f.Progress,
         [FateSortCriteria.HasBonus] = f => f.HasBonus,
         // Unactivated fates report negative time; treat them as non-urgent.
         [FateSortCriteria.TimeRemainingUrgent] = f => f.TimeRemaining is >= 0 and < MinTimeToPrioritise,
-        [FateSortCriteria.Distance] = f => Player.DistanceTo(f.Position),
+        [FateSortCriteria.Distance] = f => IObjectTable.Get().LocalPlayer?.DistanceTo(f.Position) ?? 0,
         // Only rank by remaining time for active + urgent fates.
         // Non-urgent and unactivated fates tie here so later criteria (e.g. distance) can decide.
         [FateSortCriteria.TimeRemaining] = f => f.TimeRemaining is >= 0 and < MinTimeToPrioritise ? f.TimeRemaining : MinTimeToPrioritise,

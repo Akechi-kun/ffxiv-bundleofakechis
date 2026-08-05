@@ -16,7 +16,7 @@ public partial class InstantReturn : Tweak {
 
     [AddressHook<AgentReturn>(nameof(AgentReturn.MemberFunctionPointers.Return))]
     private unsafe void AgentReturn_Return(AgentReturn* agent) {
-        if (ActionManager.Instance()->GetActionStatus(ActionType.GeneralAction, 6) != 0 || Player.IsInPvP)
+        if (ActionManager.Instance()->GetActionStatus(ActionType.GeneralAction, 6) != 0 || GameMain.IsInPvPInstance())
             AgentReturn_ReturnHook.Original(agent);
 
         // there's some condition that party disbanding requires but can't find it so we're retrying

@@ -29,7 +29,7 @@ public class ColorConfigAttribute : BaseConfigAttribute {
 
         DrawConfigInfos(fieldInfo);
 
-        if (!attr?.Description.IsNullOrEmpty() ?? false)
+        if (!attr?.Description.IsEmpty ?? false)
             ImGui.TextColoredWrapped(Colors.Grey, attr!.Description);
     }
 }

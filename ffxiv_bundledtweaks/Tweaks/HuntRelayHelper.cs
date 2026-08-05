@@ -228,7 +228,7 @@ public class HuntRelayHelper : Tweak<HuntRelayHelperConfiguration> {
                     Locality.PlayerHomeWorld => Svc.PlayerState.HomeWorld.Value,
                     Locality.PlayerCurrentWorld => Svc.PlayerState.CurrentWorld.Value,
                     Locality.SenderHomeWorld => message.Sender.Payloads.OfType<TextPayload>().Select(p => p.Text!.Contains((char)SeIconChar.CrossWorld)
-                        ? FindRow<World>(x => x!.IsPublic && p.Text.Split((char)SeIconChar.CrossWorld)[1].Contains(x.Name.ToString(), StringComparison.OrdinalIgnoreCase))
+                        ? World.FirstOrNull(x => x!.IsPublic && p.Text.Split((char)SeIconChar.CrossWorld)[1].Contains(x.Name.ToString(), StringComparison.OrdinalIgnoreCase))
                         : Svc.PlayerState.CurrentWorld.Value)
                         .FirstOrDefault(Svc.PlayerState.CurrentWorld.Value),
                     _ => null
@@ -251,8 +251,8 @@ public class HuntRelayHelper : Tweak<HuntRelayHelperConfiguration> {
     private void HandleRelayLink(uint _, SeString link) {
         var payload = link.Payloads.OfType<RawPayload>().Select(RelayPayload.Parse).FirstOrDefault(x => x != default);
         if (payload == default) { Error($"Failed to parse {nameof(RelayPayload)}"); return; }
-        if (Player.CsTerritoryIntendedUseEnum is TerritoryIntendedUse.CrystallineConflict or TerritoryIntendedUse.CrystallineConflictCustomMatch) {
-            Log($"Relay link ignored. Player in territory {Player.Territory.RowId} ({Player.TerritoryIntendedUse.Value.StructsEnum}) where chat is not permitted.");
+        if (IPlayerState.Get().TerritoryIntendedUse is TerritoryIntendedUse.CrystallineConflict or TerritoryIntendedUse.CrystallineConflictCustomMatch) {
+            Log($"Relay link ignored. Player in territory {IPlayerState.Get().Territory.RowId} ({IPlayerState.Get().TerritoryIntendedUse}) where chat is not permitted.");
             return;
         }
         if (payload == LastRelay) {
@@ -276,7 +276,7 @@ public class HuntRelayHelper : Tweak<HuntRelayHelperConfiguration> {
             }
 
             TaskManager.Enqueue(() => {
-                if (Player.Available) // messages can't be sent when travelling between zones where your player goes null
+                if (IObjectTable.Get().LocalPlayer.Available) // messages can't be sent when travelling between zones where your player goes null
                 {
                     Svc.Chat.SendMessageUnsafe([.. Encoding.UTF8.GetBytes($"/{command} "), .. channelName.StartsWith("Novice") ? nnRelay.ToArray() : relay.ToArray()]);
                     return true;
@@ -371,9 +371,9 @@ public class HuntRelayHelper : Tweak<HuntRelayHelperConfiguration> {
         World? partial = null;
         if (Config.AllowPartialWorldMatches)
             foreach (var word in RemoveConflicts(text).Split(' ').Where(t => !ECommons.GenericHelpers.IsNullOrEmpty(t) && t.Length > 2))
-                partial ??= FindRow<World>(x => x.IsPublic && x.DataCenter.RowId == Svc.PlayerState.CurrentWorld.Value.DataCenter.RowId && x.Name.ExtractText().Contains(word.FilterNonAlphanumeric(), StringComparison.OrdinalIgnoreCase));
+                partial ??= World.FirstOrNull(x => x.IsPublic && x.DataCenter.RowId == Svc.PlayerState.CurrentWorld.Value.DataCenter.RowId && x.Name.ExtractText().Contains(word.FilterNonAlphanumeric(), StringComparison.OrdinalIgnoreCase));
 
-        return (partial ?? FindRow<World>(x => x.IsPublic && RemoveConflicts(text).Contains(x.Name.ExtractText(), StringComparison.OrdinalIgnoreCase)) ?? null, heuristicInstance != 0 ? (uint)heuristicInstance : (uint)mapInstance, (uint)relayType);
+        return (partial ?? World.FirstOrNull(x => x.IsPublic && RemoveConflicts(text).Contains(x.Name.ExtractText(), StringComparison.OrdinalIgnoreCase)) ?? null, heuristicInstance != 0 ? (uint)heuristicInstance : (uint)mapInstance, (uint)relayType);
     }
 
     // I think this is the only case where an S rank has the name of a world contained within it

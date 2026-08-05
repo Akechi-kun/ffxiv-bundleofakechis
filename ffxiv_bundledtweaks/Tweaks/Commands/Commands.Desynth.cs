@@ -15,12 +15,12 @@ public partial class Commands : Tweak<CommandsConfiguration> {
         if (!uint.TryParse(arguments, out var itemId)) return;
         var item = new ItemHandle(itemId);
         if (!item.TrySetItemLocation()) {
-            DuoLog.Error($"Failed to find item {item} in inventory");
+            IPluginLog.Get().DuoLogError($"Failed to find item {item} in inventory");
             return;
         }
 
         if (item.GameData.Value.Desynth == 0) {
-            DuoLog.Error($"Item {item} is not desynthable");
+            IPluginLog.Get().DuoLogError($"Item {item} is not desynthable");
             return;
         }
 

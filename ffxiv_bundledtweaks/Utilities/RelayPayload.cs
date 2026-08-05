@@ -11,7 +11,7 @@ public sealed class RelayPayload(MapLinkPayload mapLink, uint worldId, uint? ins
     private const byte EmbeddedInfoTypeByte = (byte)(EmbeddedInfoType.DalamudLink + 4);
 
     public MapLinkPayload MapLink => mapLink;
-    public World World => GetRow<World>(worldId)!.Value;
+    public World World => World.GetRow(worldId);
     public uint? Instance => instance ?? default;
     public uint RelayType => relayType;
     public uint OriginChannel => originChannel;

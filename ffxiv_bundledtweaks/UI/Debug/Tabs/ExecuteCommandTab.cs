@@ -175,11 +175,12 @@ internal unsafe class ExecuteCommandTab : DebugTab {
     }
 
     private Vector3 GetExecuteLocation() {
+        if (IObjectTable.Get().LocalPlayer is not { Position: var playerPos }) return Vector3.Zero;
         var pos = locationSource switch {
-            ExecuteLocationSource.MouseWorld => Svc.GameGui.ScreenToWorld(ImGui.GetMousePos(), out var world) ? world : Player.Position,
-            ExecuteLocationSource.Target => Svc.Targets.Target?.Position ?? Player.Position,
+            ExecuteLocationSource.MouseWorld => Svc.GameGui.ScreenToWorld(ImGui.GetMousePos(), out var world) ? world : playerPos,
+            ExecuteLocationSource.Target => Svc.Targets.Target?.Position ?? playerPos,
             ExecuteLocationSource.Custom => customLocation,
-            _ => Player.Position,
+            _ => playerPos,
         };
         return pos;
     }

@@ -35,7 +35,7 @@ public unsafe class AutoFollow : Tweak<AutoFollowConfiguration> {
 
     [CommandHandler("/autofollow", "Enable AutoFollow")]
     internal void OnCommand(string command, string arguments) {
-        if (!arguments.IsNullOrEmpty()) {
+        if (!arguments.IsEmpty) {
             if (Svc.Objects.FirstOrDefault(o => o.Name.TextValue.ToLowerInvariant().Contains(arguments, StringComparison.InvariantCultureIgnoreCase)) is { } obj) {
                 _master = MasterRef.FromObject(obj);
                 Svc.Toasts.ShowNormal($"Auto following {obj.Name}");
@@ -85,9 +85,9 @@ public unsafe class AutoFollow : Tweak<AutoFollowConfiguration> {
     }
 
     private void Follow(IFramework framework) {
-        if (!Player.Available) return;
+        if (IObjectTable.Get().LocalPlayer is not { } player) return;
         if (!Svc.Condition[ConditionFlag.InFlight] && TaskManager.IsBusy) return; // want to abort, not return, if in flight
-        if (_master.IsEmpty && Config.AutoFollowName.IsNullOrEmpty()) return;
+        if (_master.IsEmpty && Config.AutoFollowName.IsEmpty) return;
 
         if (!TryGetMaster(out var master)) {
             movement.Enabled = false;
@@ -113,7 +113,7 @@ public unsafe class AutoFollow : Tweak<AutoFollowConfiguration> {
             if (TryDismount(master)) return;
         }
 
-        if (Player.DistanceTo(master) <= Config.DistanceToKeep) {
+        if (player.DistanceTo(master) <= Config.DistanceToKeep) {
             movement.Enabled = false;
             return;
         }
@@ -123,15 +123,15 @@ public unsafe class AutoFollow : Tweak<AutoFollowConfiguration> {
     }
 
     private bool TryGetMaster([NotNullWhen(true)] out IGameObject? master) {
-        master = Svc.Objects.FirstOrDefault(x => !_master.IsEmpty && _master.Matches(x) || !Config.AutoFollowName.IsNullOrEmpty() && x.Name.TextValue.EqualsIgnoreCase(Config.AutoFollowName));
+        master = Svc.Objects.FirstOrDefault(x => !_master.IsEmpty && _master.Matches(x) || !Config.AutoFollowName.IsEmpty && x.Name.TextValue.EqualsIgnoreCase(Config.AutoFollowName));
         return master != null;
     }
 
     private bool ShouldStopForConfig(IGameObject master) {
-        if (Config.DisableIfFurtherThan > 0 && Player.DistanceTo(master) >= Config.DisableIfFurtherThan)
+        if (Config.DisableIfFurtherThan > 0 && master.DistanceTo() >= Config.DisableIfFurtherThan)
             return true;
 
-        if (Config.OnlyInDuty && !Player.IsInDuty)
+        if (Config.OnlyInDuty && !IPlayerState.Get().IsInDuty)
             return true;
 
         if (Config.ExcludeCombat && Svc.Condition[ConditionFlag.InCombat])
@@ -142,11 +142,11 @@ public unsafe class AutoFollow : Tweak<AutoFollowConfiguration> {
 
     private bool TrySprint(DGameObject master) {
         if (master is IBattleChara { StatusList: var status } && status.Any(s => s.StatusId is 50)) {
-            if (MJIManager.Instance()->IsPlayerInSanctuary && Player.Status.None(s => s.StatusId is 50)) {
+            if (MJIManager.Instance()->IsPlayerInSanctuary && (IObjectTable.Get().LocalPlayer?.StatusList.None(s => s.StatusId is 50) ?? false)) {
                 return ActionManager.Instance()->UseAction(ActionType.Action, 31314);
             }
             else {
-                if (Player.Status.None(s => s.StatusId is 50))
+                if (IObjectTable.Get().LocalPlayer?.StatusList.None(s => s.StatusId is 50) ?? false)
                     return ActionManager.Instance()->UseAction(ActionType.GeneralAction, 4);
             }
         }
@@ -157,7 +157,7 @@ public unsafe class AutoFollow : Tweak<AutoFollowConfiguration> {
         if (!Svc.Party.Any(p => p.EntityId == master.GameObjectId) || !master.CanRidePillion())
             return false;
 
-        if (Player.DistanceTo(master) > 3) {
+        if (master.DistanceTo() > 3) {
             movement.Enabled = true;
             movement.DesiredPosition = master.Position;
             return true;

@@ -12,7 +12,7 @@ public unsafe partial class AutoBusy : Tweak {
 
     [AddressHook<ActionManager>(nameof(ActionManager.MemberFunctionPointers.UseAction))]
     private bool UseAction(ActionManager* self, ActionType actionType, uint actionId, ulong targetId, uint extraParam, ActionManager.UseActionMode mode, uint comboRouteId, bool* outOptAreaTargeted) {
-        if (actionType is ActionType.Action && actionId is 5 && Player.OnlineStatus.RowId is not 12) {
+        if (actionType is ActionType.Action && actionId is 5 && IObjectTable.Get().LocalPlayer is { OnlineStatus.RowId: not 12 }) {
             Log($"Casting teleport. Busy status on");
             InfoProxyDetail.Instance()->SendOnlineStatusUpdate(12);
         }
@@ -21,7 +21,7 @@ public unsafe partial class AutoBusy : Tweak {
 
     [AddressHook<PacketDispatcher>(nameof(PacketDispatcher.MemberFunctionPointers.HandleActorControlPacket))]
     internal void HandleActorControlPacket(uint entityId, uint category, uint a1, uint a2, uint a3, uint a4, uint a5, uint a6, uint a7, uint a8, GameObjectId targetId, bool isRecorded) {
-        if (entityId == Player.Object?.EntityId && Player.OnlineStatus.RowId is 12) {
+        if (entityId == IObjectTable.Get().LocalPlayer?.EntityId && IObjectTable.Get().LocalPlayer is { OnlineStatus.RowId: 12 }) {
             if (category is 15) { // CancelCast
                 Log($"Teleport cancelled. Busy status off");
                 InfoProxyDetail.Instance()->RefreshOnlineStatus();
@@ -39,7 +39,7 @@ public unsafe partial class AutoBusy : Tweak {
     // Supposedly too early? I don't know how that'd be possible
     [SigHook("E8 ?? ?? ?? ?? 41 0F B6 56 ?? 44 0F 28 8C 24 ?? ?? ?? ??")]
     private void* Character_CompleteCast(GameObject* thisPtr, ActionType actionType, uint actionId, int a4, GameObjectId objectId, float* a6, float value, ushort a8, int a9, uint entityId) {
-        if (thisPtr->GetGameObjectId() == Player.GameObject->GetGameObjectId() && actionType is ActionType.Action && actionId is 5 && Player.OnlineStatus.RowId is 12) {
+        if (thisPtr->GetGameObjectId() == IObjectTable.Get().LocalPlayer?.GameObjectId && actionType is ActionType.Action && actionId is 5 && IObjectTable.Get().LocalPlayer is { OnlineStatus.RowId: 12 }) {
             Log($"Teleport cast finished. Busy status off");
             InfoProxyDetail.Instance()->RefreshOnlineStatus();
         }

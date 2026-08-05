@@ -62,14 +62,12 @@ public class AchievementTrackerWindow(AchievementTracker tweak) : Window($"Achie
     private string _search = string.Empty;
     private DateTime _lastCall;
 
-    public override bool DrawConditions() => Player.Available;
+    public override bool DrawConditions() => IObjectTable.Get().LocalPlayer.Available;
 
     public override void Draw() {
-        TryExecute(() => {
-            DrawSearch();
-            ImGui.SpacedSeparator();
-            DrawAchievements();
-        });
+        DrawSearch();
+        ImGui.SpacedSeparator();
+        DrawAchievements();
     }
 
     private void DrawSearch() {
@@ -92,7 +90,7 @@ public class AchievementTrackerWindow(AchievementTracker tweak) : Window($"Achie
         if (ImGui.Selectable("(None)", selectedAchievement == null))
             selectedAchievement = null;
 
-        foreach (var achv in GetSheet<Sheets.Achievement>().Where(x => !x.Name.ToString().IsNullOrEmpty() && x.Name.ToString().Contains(_search, StringComparison.CurrentCultureIgnoreCase))) {
+        foreach (var achv in Sheets.Achievement.Where(x => !x.Name.ToString().IsEmpty && x.Name.ToString().Contains(_search, StringComparison.CurrentCultureIgnoreCase))) {
             using var _ = ImRaii.PushId($"###achievement{achv.RowId}");
             var selected = ImGui.Selectable($"{achv.Name}", achv.RowId == selectedAchievement?.RowId);
 
@@ -101,8 +99,8 @@ public class AchievementTrackerWindow(AchievementTracker tweak) : Window($"Achie
                     tweak.Config.Achievements.Add(new AchievementTracker.Achv {
                         ID = achv.RowId,
                         Name = achv.Name.ToString(),
-                        Description = GetRow<Sheets.Achievement>(achv.RowId)!.Value.Description.ToString(),
-                        Points = GetRow<Sheets.Achievement>(achv.RowId)!.Value.Points
+                        Description = Sheets.Achievement.GetRowOrNull(achv.RowId)?.Description.ToString() ?? string.Empty,
+                        Points = Sheets.Achievement.GetRowOrNull(achv.RowId)?.Points ?? 0
                     });
                     tweak.RequestUpdate(achv.RowId);
                 }
@@ -151,7 +149,7 @@ public class AchievementTrackerWindow(AchievementTracker tweak) : Window($"Achie
     }
 
     private void DrawAchievementsList(List<AchievementTracker.Achv> achievements) {
-        foreach (var (achv, i) in achievements.WithIndex()) {
+        foreach (var (i, achv) in achievements.Index()) {
             if (tweak.Config.AutoRemoveCompleted && achv.Completed) {
                 tweak.Config.Achievements.Remove(achv);
                 continue;

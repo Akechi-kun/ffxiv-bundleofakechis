@@ -1,42 +1,22 @@
-﻿using ECommons.ImGuiMethods;
+﻿using Dalamud.Bindings.ImGui;
 using FFXIVClientStructs.FFXIV.Client.Game;
+using FFXIVClientStructs.FFXIV.Client.Game.Event;
 using FFXIVClientStructs.FFXIV.Client.Game.Object;
 using FFXIVClientStructs.FFXIV.Client.UI.Agent;
-using FFXIVClientStructs.FFXIV.Component.GUI;
-using Dalamud.Bindings.ImGui;
 using Lumina.Excel.Sheets;
-using FFXIVClientStructs.FFXIV.Client.Game.Event;
 
 namespace ComplexTweaks.UI.Debug.Tabs;
 
 internal unsafe class ToolsTab : DebugTab {
     public override void Draw() {
-        List<string> cantSpend = [];
-        if (ImGui.Button("Spend Nuts")) {
-            if (TryGetAddonByName<AtkUnitBase>("ShopExchangeCurrency", out var addon)) {
-                const uint nuts = 26533;
-                var nutsAmt = InventoryManager.Instance()->GetInventoryItemCount(nuts);
-                var nutsCost = 25;
-                var freeslots = InventoryManager.Instance()->GetEmptySlotsInBag() + InventoryManager.GetEmptySlots(InventoryType.ArmoryRings!);
-                var tobuy = (uint)Math.Min(nutsAmt / nutsCost, freeslots);
-                Svc.Log.Info($"{InventoryManager.Instance()->GetEmptySlotsInBag()} {InventoryManager.GetEmptySlots(InventoryType.ArmoryRings!)} {nutsAmt} {nutsAmt / nutsCost} {tobuy}");
-                Callback.Fire(addon, true, 0, 49, tobuy);
-            }
-            else
-                cantSpend.Add("ShopExchangeCurrency not open");
-        }
-        if (ImGui.IsItemHovered()) ImGui.SetTooltip($"Buys the most amount of {GetRow<Item>(34922)?.Name}");
-        cantSpend.ForEach(x => ImGui.TextColored(EzColor.RedBright, x));
-
         if (ImGui.Button("Use all items")) {
             foreach (var c in InventoryType.Bags) {
                 var cont = InventoryManager.Instance()->GetInventoryContainer(c);
                 for (var i = 0; i < cont->Size; ++i) {
                     var slot = cont->GetInventorySlot(i);
-                    var item = GetRow<Item>(slot->ItemId)!;
-                    if (item.Value.ItemSortCategory.Value.Param is 175 or 160) {
+                    if (Item.TryGetRow(slot->ItemId, out var row) && row.ItemSortCategory.Value.Param is 175 or 160) {
                         Service.TaskManager.Enqueue(() => AgentInventoryContext.Instance()->UseItem(slot->ItemId));
-                        Service.TaskManager.Enqueue(() => !Player.IsBusy);
+                        Service.TaskManager.Enqueue(() => !IObjectTable.Get().LocalPlayer?.IsBusy ?? false);
                     }
                     //ActionManager.Instance()->UseAction(ActionType.Item, slot->ItemId);
                 }

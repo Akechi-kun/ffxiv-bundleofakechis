@@ -12,7 +12,7 @@ public class AutoMerge : Tweak {
 
     private unsafe void OnSetup(AddonEvent type, AddonArgs args) {
         try {
-            if (Player.IsBusy || !Svc.Condition.CanMoveItems()) return;
+            if (IObjectTable.Get().LocalPlayer.IsBusy || !Svc.Condition.CanMoveItems()) return;
             var inv = InventoryManager.Instance();
 
             var incompleteStacks = InventoryType.Bags

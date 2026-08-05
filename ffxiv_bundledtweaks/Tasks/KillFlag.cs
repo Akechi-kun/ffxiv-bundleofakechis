@@ -12,22 +12,22 @@ public sealed class KillFlag(string world) : TaskBase {
     private const float TARGET_APPROACH_DISTANCE = 3.0f;
 
     protected override async Task Execute() {
-        if (!world.IsNullOrEmpty())
+        if (!world.IsEmpty)
             await HandleWorldTravel();
 
-        await MoveToFlag(MovementConfig.Default.WithOptions(MovementOptions.Mount | (Player.MapFlag.TerritoryId != 180 ? MovementOptions.Fly : MovementOptions.None)).WithTolerance(5f));
+        await MoveToFlag(MovementConfig.Default.WithOptions(MovementOptions.Mount | (IPlayerState.Get().MapFlag.TerritoryId != 180 ? MovementOptions.Fly : MovementOptions.None)).WithTolerance(5f));
         using var stop = new OnDispose(() => Service.BossMod.ClearActive());
         await Kill();
     }
 
     private async Task HandleWorldTravel() {
-        if (C.EnabledTweaks.Contains(nameof(InstantReturn)) && Player.Territory.RowId != Player.HomeAetheryteTerritory.RowId) {
+        if (C.EnabledTweaks.Contains(nameof(InstantReturn)) && IPlayerState.Get().Territory.RowId != IPlayerState.Get().HomeAetheryte.Value.Territory.RowId) {
             Svc.Chat.SendMessage("/return");
-            await WaitUntilTerritory(Player.HomeAetheryteTerritory.RowId);
+            await WaitUntilTerritory(IPlayerState.Get().HomeAetheryte.Value.Territory.RowId);
         }
         Service.Lifestream.ExecuteCommand(world);
         await WaitUntilThenFalse(() => Service.Lifestream.IsBusy(), "LifestreamWaitForFinish");
-        await WaitUntil(() => !Player.IsBusy, "WaitForAvailable");
+        await WaitWhileBusy();
     }
 
     private async Task Kill() {
@@ -50,14 +50,14 @@ public sealed class KillFlag(string world) : TaskBase {
     private IGameObject? FindHuntTarget()
         => Svc.Navmesh.FlagToPoint() is not { } fp ? null
             : Svc.Objects.Where(o => o is IBattleNpc { NameId: > 0 } && Vector3.Distance(o.Position, fp) <= HUNT_DETECTION_RADIUS)
-            .Select(o => (Object: o, Distance: Vector3.Distance(o.Position, fp), Row: FindRow<NotoriousMonster>(r => o.BaseId == r.BNpcBase.RowId)))
+            .Select(o => (Object: o, Distance: Vector3.Distance(o.Position, fp), Row: NotoriousMonster.FirstOrNull(r => o.BaseId == r.BNpcBase.RowId)))
             .Where(t => t.Row.HasValue)
             .OrderBy(t => (t.Distance, -t.Row!.Value.Rank))
             .Select(t => t.Object)
             .FirstOrDefault();
 
     private async Task MoveIfNoLoS(DGameObject target) {
-        if (!Player.Object.IsInLineOfSight(target.Position)) {
+        if (!target.IsInLineOfSight()) {
             Log($"No line of sight to {target.Name}, moving...");
             var validPosition = Service.Navmesh.PointOnFloor(target.Position, false, 5);
             if (validPosition.HasValue) {

@@ -37,14 +37,14 @@ public class EnhancedLoginLogout : Tweak<EnhancedLoginLogoutConfig> {
                 Name = "Global",
             });
         }
-        if (Config.Chars.All(c => c.CID != Player.CID) && !Player.Name.IsNullOrEmpty()) // there's a delay after getting a cid before you have a name
+        if (Config.Chars.All(c => c.CID != IPlayerState.Get().ContentId) && !IPlayerState.Get().CharacterName.IsEmpty) // there's a delay after getting a cid before you have a name
         {
             Config.Chars.Add(new CharacterCommands {
-                CID = Player.CID,
-                Name = Player.Name ?? "null",
+                CID = IPlayerState.Get().ContentId,
+                Name = IPlayerState.Get().CharacterName,
             });
         }
-        Config.Chars.RemoveAll(c => c.LoginCommands.Count == 0 && c.CID != 0 && c.CID != Player.CID);
+        Config.Chars.RemoveAll(c => c.LoginCommands.Count == 0 && c.CID != 0 && c.CID != IPlayerState.Get().ContentId);
 
         foreach (var c in Config.Chars.OrderByDescending(x => x.Name == "Global")) {
             ImGui.DrawSection(c.Name, drawSeparator: false);
@@ -70,7 +70,7 @@ public class EnhancedLoginLogout : Tweak<EnhancedLoginLogoutConfig> {
     private string ConvertToCommand(string cmd) => cmd.StartsWith('/') ? cmd : $"/{cmd}";
     private void RunCommands() {
         if (Service.AutoRetainerIPC.IsLoaded && !Config.RunCommandsWhenARIsActive && (Service.AutoRetainerIPC.IsBusy() || Service.AutoRetainerIPC.GetMultiModeEnabled())) return;
-        foreach (var chr in Config.Chars.Where(x => x.CID == 0 || x.CID == Player.CID).OrderByDescending(x => x.Name == "Global"))
+        foreach (var chr in Config.Chars.Where(x => x.CID == 0 || x.CID == IPlayerState.Get().ContentId).OrderByDescending(x => x.Name == "Global"))
             foreach (var cmd in chr.LoginCommands.Where(c => c.Length >= 3)) {
                 TaskManager.EnqueueDelay(250);
                 TaskManager.Enqueue(() => Svc.Chat.SendMessage(cmd));

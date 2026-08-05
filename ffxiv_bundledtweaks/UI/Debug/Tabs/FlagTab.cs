@@ -9,19 +9,19 @@ internal unsafe class FlagTab : DebugTab {
         ImGui.TextUnformatted($"IsFlagMarkerSet: {AgentMap.Instance()->FlagMarkerCount > 0}");
         if (!(AgentMap.Instance()->FlagMarkerCount > 0)) return;
 
-        ImGui.TextUnformatted($"Territory: {Player.MapFlag.TerritoryId} {GetRow<TerritoryType>(Player.MapFlag.TerritoryId)!.Value.Name}");
-        var row = GetRow<Sheets.Map>(Player.MapFlag.MapId);
+        ImGui.TextUnformatted($"Territory: {IPlayerState.Get().MapFlag.TerritoryId} {TerritoryType.GetRowOrNull(IPlayerState.Get().MapFlag.TerritoryId)?.Name}");
+        var row = Map.GetRowOrNull(IPlayerState.Get().MapFlag.MapId);
         if (row is { } map)
             ImGui.TextUnformatted($"[{map.RowId}] Size: {map.SizeFactor}, Offset: {map.OffsetX}, {map.OffsetY} Territory: {map.TerritoryType.Value.Name}");
 
-        ImGui.TextUnformatted($"Map Position: {new Vector2(Player.MapFlag.XFloat, Player.MapFlag.YFloat)}");
+        ImGui.TextUnformatted($"Map Position: {IPlayerState.Get().MapFlag.Position}");
 
         if (Svc.Navmesh.FlagToPoint() is not { } pos) return;
         ImGui.TextUnformatted($"World Position: {pos}");
 
-        var territory = Player.MapFlag.TerritoryId;
+        var territory = IPlayerState.Get().MapFlag.TerritoryId;
         var closest = Coords.FindClosestAetheryte(territory, pos);
-        var aetherytes = FindRows<Aetheryte>(x => x.Territory.RowId == territory).OrderBy(a => (pos - Coords.AetherytePosition(a)).LengthSquared());
+        var aetherytes = Aetheryte.Where(x => x.Territory.RowId == territory).OrderBy(a => (pos - Coords.AetherytePosition(a)).LengthSquared());
 
         foreach (var aetheryte in aetherytes) {
             ImGui.TextUnformatted($"[{aetheryte.RowId}]");

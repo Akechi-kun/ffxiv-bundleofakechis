@@ -1,4 +1,5 @@
 ﻿using ComplexTweaks.Structs;
+using Dalamud.Game.ClientState.Objects.SubKinds;
 using FFXIVClientStructs.FFXIV.Client.Game.Control;
 using FFXIVClientStructs.FFXIV.Client.Game.UI;
 using FFXIVClientStructs.FFXIV.Client.UI.Agent;
@@ -7,15 +8,15 @@ using FFXIVClientStructs.FFXIV.Client.UI.Agent;
 namespace ComplexTweaks.Utilities.Extensions;
 
 public static unsafe class PlayerExtensions {
-    extension(Player) {
-        public static float CurrentSpeed => ((ControlCustom*)Control.Instance())->CurrentGroundSpeed;
-        public static float Speed { get => Player.CurrentSpeed / 6f; set => SetSpeed(6 * value); }
-        public static byte ReviveState => Player.IsDead ? AgentRevive.Instance()->ReviveState : (byte)0;
+    extension(IPlayerCharacter pc) {
+        public float CurrentSpeed => ((ControlCustom*)Control.Instance())->CurrentGroundSpeed;
+        public float Speed { get => pc.CurrentSpeed / 6f; set => SetSpeed(6 * value); }
+        public byte ReviveState => pc.IsDead ? AgentRevive.Instance()->ReviveState : (byte)0;
 
         public static FlagMapMarker MapFlag => AgentMap.Instance()->FlagMapMarkers[0];
-        public static List<MapMarkerData> QuestLocations => [.. FFXIVClientStructs.FFXIV.Client.Game.UI.Map.Instance()->QuestMarkers.ToArray().SelectMany(i => i.MarkerData.ToList())];
+        public static List<MapMarkerData> QuestLocations => [.. Map.Instance()->QuestMarkers.ToArray().SelectMany(i => i.MarkerData.ToList())];
 
-        public static void SetPosition(Vector3 destination) => Player.GameObject->SetPosition(destination.X, destination.Y, destination.Z);
+        public void SetPosition(Vector3 destination) => pc.Character->SetPosition(destination.X, destination.Y, destination.Z);
 
         private static void SetSpeed(float speedBase) {
             ((ControlCustom*)Control.Instance())->GroundSpeedBase = speedBase;

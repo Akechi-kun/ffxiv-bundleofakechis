@@ -56,7 +56,7 @@ public class TimezoneTranslator : Tweak {
 
     private void OnChatMessage(IHandleableChatMessage message) {
         if (message.LogKind is not XivChatType.Notice) return;
-        if (message.Message.TextValue.IsNullOrEmpty()) return;
+        if (message.Message.TextValue.IsEmpty) return;
 
         if (_kvp.TryGetValue(Svc.ClientState.ClientLanguage, out var conf)) {
             var regex = conf.Culture.GetFullDateTimeRegexPattern();

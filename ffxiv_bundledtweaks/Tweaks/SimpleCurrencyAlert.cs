@@ -105,8 +105,8 @@ public class SimpleCurrencyAlert : Tweak<SimpleCurrencyAlertConfig> {
             _ => ItemId,
         };
 
-        public ushort Icon => (ushort)(CurrentItemId != 0 ? GetRow<Item>(CurrentItemId)?.Icon ?? 0 : 0);
-        public string Name => CurrentItemId != 0 ? GetRow<Item>(CurrentItemId)?.Name.ToString() ?? string.Empty : string.Empty;
+        public ushort Icon => (ushort)(CurrentItemId != 0 ? Item.GetRow(CurrentItemId).Icon : 0);
+        public string Name => CurrentItemId != 0 ? Item.GetRow(CurrentItemId).Name.ToString() : string.Empty;
 
         public string DisplayName => Type switch {
             SpecialCurrencyType.Tomestone => GetTomestoneDisplayName(LogicalId),
@@ -123,13 +123,13 @@ public class SimpleCurrencyAlert : Tweak<SimpleCurrencyAlertConfig> {
     private sealed record CurrencyEntry(SpecialCurrencyType Type, uint LogicalId, uint ItemId, string DisplayName);
 
     private static uint GetTomestoneItemId(uint tomestoneRowId)
-        => Svc.Data.GetExcelSheet<TomestonesItem>().Where(t => t.Tomestones.IsValid && t.Tomestones.RowId == tomestoneRowId).Select(t => t.Item.RowId).FirstOrNull() ?? 0;
+        => TomestonesItem.FirstOrNull(t => t.Tomestones.IsValid && t.Tomestones.RowId == tomestoneRowId) is { Item.RowId: var itemId } ? itemId : 0;
 
     private static string GetTomestoneDisplayName(uint tomestoneRowId) => tomestoneRowId switch {
         2 => "Unlimited Tomestone",
         3 => "Limited Tomestone",
         4 => "Discontinued Tomestone",
-        _ => Item.GetRef(tomestoneRowId).Value.Name.ToString()
+        _ => Item.GetRowRef(tomestoneRowId).Value.Name.ToString()
     };
 
     private static unsafe string GetSpecialBucketDisplayName(byte specialId) {
@@ -140,7 +140,7 @@ public class SimpleCurrencyAlert : Tweak<SimpleCurrencyAlertConfig> {
             4 => "Levelling Gatherers' Scrip",
             6 => "Capstone Crafters' Scrip",
             7 => "Capstone Gatherers' Scrip",
-            _ => Item.GetRef(CurrencyManager.Instance()->GetItemIdBySpecialId(specialId)).Value.Name.ToString()
+            _ => Item.GetRowRef(CurrencyManager.Instance()->GetItemIdBySpecialId(specialId)).Value.Name.ToString()
         };
     }
 
@@ -192,7 +192,7 @@ public class SimpleCurrencyAlert : Tweak<SimpleCurrencyAlertConfig> {
         var totalFixedWidth = ImGui.IconUnitHeight() + thresholdWidth + ImGui.IconUnitWidth() * 2 + ImGui.GetStyle().ItemSpacing.X * 4 + ImGui.GetStyle().FramePadding.X * 2 + ImGui.GetStyle().WindowPadding.X * 2;
         var nameWidth = Math.Max(100f, ImGui.GetContentRegionAvail().X - totalFixedWidth);
 
-        foreach (var (alert, idx) in alerts.WithIndex()) {
+        foreach (var (idx, alert) in alerts.Index()) {
             using var id = ImRaii.PushId($"{alert.Type}_{alert.LogicalId}_{alert.ItemId}_{idx}");
 
             if (alert.Icon != 0) {

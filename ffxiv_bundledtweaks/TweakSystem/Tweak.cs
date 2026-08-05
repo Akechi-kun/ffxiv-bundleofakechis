@@ -521,37 +521,37 @@ public abstract partial class Tweak // Logging
         => Information(exception, messageTemplate);
 
     public void Verbose(string messageTemplate)
-        => PluginLog.Verbose($"[{InternalName}] {messageTemplate}");
+        => IPluginLog.Get().Verbose($"[{InternalName}] {messageTemplate}");
 
     public void Verbose(Exception exception, string messageTemplate)
         => exception.LogVerbose($"[{InternalName}] {messageTemplate}");
 
     public void Debug(string messageTemplate)
-        => PluginLog.Debug($"[{InternalName}] {messageTemplate}");
+        => IPluginLog.Get().Debug($"[{InternalName}] {messageTemplate}");
 
     public void Debug(Exception exception, string messageTemplate)
         => exception.LogDebug($"[{InternalName}] {messageTemplate}");
 
     public void Information(string messageTemplate)
-        => PluginLog.Information($"[{InternalName}] {messageTemplate}");
+        => IPluginLog.Get().Information($"[{InternalName}] {messageTemplate}");
 
     public void Information(Exception exception, string messageTemplate)
         => exception.LogInfo($"[{InternalName}] {messageTemplate}");
 
     public void Warning(string messageTemplate)
-        => PluginLog.Warning($"[{InternalName}] {messageTemplate}");
+        => IPluginLog.Get().Warning($"[{InternalName}] {messageTemplate}");
 
     public void Warning(Exception exception, string messageTemplate)
         => exception.LogWarning($"[{InternalName}] {messageTemplate}");
 
     public void Error(string messageTemplate)
-        => PluginLog.Error($"[{InternalName}] {messageTemplate}");
+        => IPluginLog.Get().Error($"[{InternalName}] {messageTemplate}");
 
     public void Error(Exception exception, string messageTemplate)
         => exception.Log($"[{InternalName}] {messageTemplate}");
 
     public void Fatal(string messageTemplate)
-        => PluginLog.Fatal($"[{InternalName}] {messageTemplate}");
+        => IPluginLog.Get().Fatal($"[{InternalName}] {messageTemplate}");
 
     public void Fatal(Exception exception, string messageTemplate)
         => exception.LogFatal($"[{InternalName}] {messageTemplate}");

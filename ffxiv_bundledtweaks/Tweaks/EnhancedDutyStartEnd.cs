@@ -78,7 +78,7 @@ public class EnhancedDutyStartEnd : Tweak<EnhancedDutyStartEndConfiguration> {
     }
 
     private void OnDutyStart(IDutyStateEventArgs args) {
-        if (!Config.StartMsg.IsNullOrEmpty()) {
+        if (!Config.StartMsg.IsEmpty) {
             if (Config.StartMsg.StartsWith('/'))
                 ECommons.Automation.Chat.SendMessage(Config.StartMsg);
             else
@@ -93,8 +93,8 @@ public class EnhancedDutyStartEnd : Tweak<EnhancedDutyStartEndConfiguration> {
 
     private static uint _territoryID;
     private void OnDutyComplete(IDutyStateEventArgs args) {
-        _territoryID = Player.Territory.RowId;
-        if (!Config.EndMsg.IsNullOrEmpty()) {
+        _territoryID = IPlayerState.Get().Territory.RowId;
+        if (!Config.EndMsg.IsEmpty) {
             if (Config.EndMsg.StartsWith('/'))
                 ECommons.Automation.Chat.SendMessage(Config.EndMsg);
             else

@@ -14,7 +14,7 @@ public sealed class DoQuest(Quest row) : TaskBase {
     private async Task MoveToLevelRow(RowRef<Level> row) {
         using var scope = BeginScope("MoveToLevelLocation");
         var destination = row.Value.ToVector3();
-        if (Player.Territory.RowId != row.Value.Territory.RowId)
+        if (IPlayerState.Get().Territory.RowId != row.Value.Territory.RowId)
             await TeleportTo(row.Value.Territory.RowId, destination);
 
         await MoveTo(destination, MovementConfig.InteractRange);

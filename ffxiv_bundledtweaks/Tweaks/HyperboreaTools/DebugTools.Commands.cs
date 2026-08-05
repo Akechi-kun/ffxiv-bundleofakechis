@@ -19,20 +19,20 @@ public partial class DebugTools : Tweak<DebugToolsConfiguration> {
 
     [CommandHandler("/noclip", "Enable NoClip", nameof(Config.EnableNoClip))]
     private void OnNoClip(string command, string arguments) {
-        if (Player.IsInPvP) return;
+        if (GameMain.IsInPvPInstance()) return;
         ncActive ^= true;
         Config.NoClipSpeed = float.TryParse(arguments, out var speed) ? speed : Config.NoClipSpeed;
     }
 
     [CommandHandler(["/move", "/speed"], "Modify your movement speed", nameof(Config.EnableMoveSpeed))]
     private void OnMoveSpeed(string command, string arguments) {
-        if (Player.IsInPvP) return;
-        Player.Speed = float.TryParse(arguments, out var speed) ? speed : 1.0f;
+        if (GameMain.IsInPvPInstance() || IObjectTable.Get().LocalPlayer is not { } player) return;
+        player.Speed = float.TryParse(arguments, out var speed) ? speed : 1.0f;
     }
 
     [CommandHandler("/ada", "Call actions directly.", nameof(Config.EnableDirectActions))]
     private unsafe void OnDirectAction(string command, string arguments) {
-        if (Player.IsInPvP) return;
+        if (GameMain.IsInPvPInstance()) return;
         try {
             var args = arguments.Split(' ');
             var actionType = ParseActionType(args[0]);
@@ -55,27 +55,27 @@ public partial class DebugTools : Tweak<DebugToolsConfiguration> {
 
     [CommandHandler("/tpmarker", "Teleport to a given marker", nameof(Config.EnableTPMarker))]
     private unsafe void OnTeleportMarker(string command, string arguments) {
-        if (Player.IsInPvP) return;
+        if (GameMain.IsInPvPInstance() || IObjectTable.Get().LocalPlayer is not { } player) return;
         if (int.TryParse(arguments, out var i)) {
             var m = MarkingController.Instance()->FieldMarkers[i];
             Vector3? markerPos = m.Active ? new(m.X / 1000.0f, m.Y / 1000.0f, m.Z / 1000.0f) : null;
             if (markerPos is { } pos)
-                Player.SetPosition(pos);
+                player.SetPosition(pos);
         }
     }
 
     [CommandHandler("/tpoff", "Teleport from your current position, offset by arguments", nameof(Config.EnableTPOffset))]
     private void OnTeleportOffset(string command, string arguments) {
-        if (Player.IsInPvP) return;
+        if (GameMain.IsInPvPInstance() || IObjectTable.Get().LocalPlayer is not { } player) return;
         if (arguments.TryParseVector3(out var v))
-            Player.SetPosition(Player.Position + v);
+            player.SetPosition(player.Position + v);
     }
 
     [CommandHandler("/tpabs", "Teleport to a given absolute position", nameof(Config.EnableTPAbsolute))]
     private void OnTeleportAbsolute(string command, string arguments) {
-        if (Player.IsInPvP) return;
+        if (GameMain.IsInPvPInstance() || IObjectTable.Get().LocalPlayer is not { } player) return;
         if (arguments.TryParseVector3(out var v))
-            Player.SetPosition(v);
+            player.SetPosition(v);
     }
 }
 

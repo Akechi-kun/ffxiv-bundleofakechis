@@ -45,7 +45,7 @@ public class LalaLookup : Tweak {
             case "ContentMemberList": // Eureka/Bozja/...
             case "BeginnerChatList":
                 return menuTargetDefault.TargetName != string.Empty && menuTargetDefault is { TargetContentId: not 0 }
-                       && (GetSheet<World>()?.FirstOrDefault(x => x.RowId == menuTargetDefault.TargetHomeWorld.RowId).IsPublic ?? false);
+                       && (World.FirstOrNull(x => x.RowId == menuTargetDefault.TargetHomeWorld.RowId)?.IsPublic ?? false);
             default:
                 break;
         }
@@ -62,7 +62,7 @@ public class LalaLookup : Tweak {
         if (menuArgs.Target is not MenuTargetDefault menuTargetDefault) return;
 
         var playerName = menuTargetDefault.TargetName;
-        var world = GetSheet<World>()?.FirstOrDefault(x => x.RowId == menuTargetDefault.TargetHomeWorld.RowId);
+        var world = World.FirstOrNull(x => x.RowId == menuTargetDefault.TargetHomeWorld.RowId);
         if (world is not { IsPublic: true }) {
             ModuleMessage($"Unable to find world for {playerName}");
             return;

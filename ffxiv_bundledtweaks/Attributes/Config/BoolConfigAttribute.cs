@@ -13,7 +13,7 @@ public class BoolConfigAttribute : BaseConfigAttribute {
             .FirstOrDefault(mi => mi.GetCustomAttribute<CommandHandlerAttribute>()?.ConfigFieldName == fieldInfo.Name);
         var cmdAttr = cmdMethod?.GetCustomAttribute<CommandHandlerAttribute>();
         var missingIpcs = Service.IPC.GetMissing(cmdMethod);
-        var label = cmdAttr?.Commands.FirstOrDefault() ?? (!attr?.Label.IsNullOrEmpty() ?? false ? attr!.Label : fieldInfo.Name.SplitWords());
+        var label = cmdAttr?.Commands.FirstOrDefault() ?? (!attr?.Label.IsEmpty ?? false ? attr!.Label : fieldInfo.Name.SplitWords());
 
         if (missingIpcs.Length > 0 && !value) {
             using var disabled = ImRaii.Disabled(true);
@@ -32,7 +32,7 @@ public class BoolConfigAttribute : BaseConfigAttribute {
 
         DrawConfigInfos(fieldInfo);
 
-        var desc = !cmdAttr?.HelpMessage.IsNullOrEmpty() ?? false ? cmdAttr!.HelpMessage : !attr?.Description.IsNullOrEmpty() ?? false ? attr!.Description : null;
+        var desc = !cmdAttr?.HelpMessage.IsEmpty ?? false ? cmdAttr!.HelpMessage : !attr?.Description.IsEmpty ?? false ? attr!.Description : null;
         if (desc != null) {
             ImGui.PushCursorY(-3);
             using var descriptionIndent = ImGui.ConfigIndent();

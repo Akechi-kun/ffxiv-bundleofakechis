@@ -201,7 +201,7 @@
 //        private async Task CloseMail() {
 //            using var scope = BeginScope(nameof(CloseMail));
 //            AtkUnitBase.CloseAddon("LetterList");
-//            await WaitWhile(() => Player.IsBusy, "WaitCloseMail");
+//            await WaitWhile(() => IObjectTable.Get().LocalPlayer.IsBusy, "WaitCloseMail");
 //        }
 
 //        private async Task OpenSaddlebag() {

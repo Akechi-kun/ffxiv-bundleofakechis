@@ -23,10 +23,10 @@ public class MousePositionOverlay : Window {
         var pos = ImGui.GetMousePos();
         if (Svc.GameGui.ScreenToWorld(pos, out var res)) {
             var col = GradientColor.Get(EzColor.RedBright, EzColor.YellowBright);
-            DrawRingWorld(res, 0.5f, col.ToUint(), 2f);
+            DrawRingWorld(res, 0.5f, ImGui.ColorConvertFloat4ToU32(col), 2f);
             var l = MathF.Sqrt(2f) / 2f * 0.5f;
-            DrawLineWorld(res + new Vector3(-l, 0, -l), res + new Vector3(l, 0, l), col.ToUint(), 2f);
-            DrawLineWorld(res + new Vector3(l, 0, -l), res + new Vector3(-l, 0, l), col.ToUint(), 2f);
+            DrawLineWorld(res + new Vector3(-l, 0, -l), res + new Vector3(l, 0, l), ImGui.ColorConvertFloat4ToU32(col), 2f);
+            DrawLineWorld(res + new Vector3(l, 0, -l), res + new Vector3(-l, 0, l), ImGui.ColorConvertFloat4ToU32(col), 2f);
         }
     }
 

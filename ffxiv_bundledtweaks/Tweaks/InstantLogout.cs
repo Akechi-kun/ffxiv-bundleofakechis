@@ -10,7 +10,7 @@ namespace ComplexTweaks.Tweaks;
 [Tweak]
 public unsafe partial class InstantLogout : Tweak {
     public override string Name => "Instant Logout";
-    public override string Description => "Skips the 20 second countdown when logging out outside of a sanctuary";
+    public override string Description => "Skips the 20 second countdown when logging out outside of a sanctuary. Skips inside duties.";
 
     [AddressHook<ShellCommandModule>(nameof(ShellCommandModule.MemberFunctionPointers.ExecuteCommandInner))]
     private void ExecuteCommandInner(ShellCommandModule* commandModule, Utf8String* rawMessage, UIModule* uiModule) {
@@ -21,9 +21,9 @@ public unsafe partial class InstantLogout : Tweak {
         }
 
         // ToString is needed so that the implicit equals doesn't try to turn msg into a ROSSSS (which will crash with payloads like translate)
-        if (GetRow<TextCommand>(172) is { Command: var cmd, Alias: var alias } && (cmd.ToString() == msg || alias.ToString() == msg) && ShouldInstantLogout())
+        if (TextCommand.GetRow(172) is { Command: var cmd, Alias: var alias } && (cmd.ToString() == msg || alias.ToString() == msg) && ShouldInstantLogout())
             AgentLobby.Instance()->HandleLogout(false, 60);
-        if (GetRow<TextCommand>(173) is { Command: var cmd2, Alias: var alias2 } && (cmd2.ToString() == msg || alias2.ToString() == msg) && ShouldInstantLogout())
+        if (TextCommand.GetRow(173) is { Command: var cmd2, Alias: var alias2 } && (cmd2.ToString() == msg || alias2.ToString() == msg) && ShouldInstantLogout())
             AgentLobby.Instance()->HandleLogout(true, 60);
 
         ExecuteCommandInnerHook.Original(commandModule, rawMessage, uiModule);
@@ -66,5 +66,5 @@ public unsafe partial class InstantLogout : Tweak {
 
     // only trigger instant when the 20s would trigger since this causes "the selected character was not logged out properly" and I'd like to do that as infrequently as possible
     // TODO: figure out what needs to be done before HandleLogout to not have the above happen
-    private bool ShouldInstantLogout() => !Player.IsInDuty && !TerritoryInfo.Instance()->InSanctuary;
+    private bool ShouldInstantLogout() => IPlayerState.Get() is { IsInDuty: false } or { IsInDuty: true, IsInSoloDuty: true } && !TerritoryInfo.Instance()->InSanctuary;
 }

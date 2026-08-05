@@ -22,7 +22,7 @@ internal class WondrousTailsClickToOpen : Tweak {
     public override void Enable() {
         Svc.AddonLifecycle.RegisterListener(AddonEvent.PostSetup, "WeeklyBingo", OnAddonSetup);
         Svc.AddonLifecycle.RegisterListener(AddonEvent.PreFinalize, "WeeklyBingo", OnAddonFinalize);
-        _sheet = [.. GetSheet<ContentFinderCondition>().Where(x => !x.MSQRoulette)];
+        _sheet = [.. ContentFinderCondition.Where(x => !x.MSQRoulette)];
     }
 
     public override void Disable() {
@@ -48,7 +48,7 @@ internal class WondrousTailsClickToOpen : Tweak {
             QueueInfo->QueueRoulette((byte)duties.First());
         }
         else {
-            if (GetRow<ContentFinderCondition>(duties.First())?.ClassJobLevelRequired < PlayerState.Instance()->MaxLevel - 20) {
+            if (ContentFinderCondition.GetRowOrNull(duties.First())?.ClassJobLevelRequired < PlayerState.Instance()->MaxLevel - 20) {
                 ContentsFinder.Instance()->IsUnrestrictedParty = true;
                 var d = duties.First();
                 QueueInfo->QueueDuties(&d, 1);
@@ -83,9 +83,9 @@ internal class WondrousTailsClickToOpen : Tweak {
 
         if (selectedTask is PlayerState.WeeklyBingoTaskStatus.Open) {
             var dutiesForTask = GetInstanceListFromId(bingoData);
-            var duties = FindRows<ContentFinderCondition>(c => dutiesForTask.Contains(c.TerritoryType.RowId)).Select(x => x.RowId).ToList();
+            var duties = ContentFinderCondition.Where(c => dutiesForTask.Contains(c.TerritoryType.RowId)).Select(x => x.RowId).ToList();
             if (ImGuiEx.Ctrl) {
-                if (GetRow<ContentFinderCondition>(duties.First())?.ClassJobLevelRequired < PlayerState.Instance()->MaxLevel - 20)
+                if (ContentFinderCondition.GetRowOrNull(duties.First())?.ClassJobLevelRequired < PlayerState.Instance()->MaxLevel - 20)
                     QueueDuty([duties.First()], false);
                 else
                     QueueDuty(duties, false);
@@ -106,7 +106,7 @@ internal class WondrousTailsClickToOpen : Tweak {
     }
 
     private List<uint> GetInstanceListFromId(uint orderDataId) {
-        var bingoOrderData = GetSheet<WeeklyBingoOrderData>().GetRow(orderDataId);
+        var bingoOrderData = WeeklyBingoOrderData.GetRow(orderDataId);
         Debug($"{nameof(OnDutySlotClick)}: [row={bingoOrderData.RowId}; type={bingoOrderData.Type}; text={bingoOrderData.Text.Value.Description};]");
         switch (bingoOrderData.Type) {
             // Specific Duty
@@ -177,7 +177,9 @@ internal class WondrousTailsClickToOpen : Tweak {
 
             // Multi-instance raids
             case 4:
-                return GetRow<WeeklyBingoMultipleOrder>(bingoOrderData.Data.RowId)?.Content.Where(c => c.IsValid && c.RowId != 0).Select(c => c.Value.ContentFinderCondition.Value.TerritoryType.RowId).ToList() ?? [];
+                if (WeeklyBingoMultipleOrder.TryGetRow(bingoOrderData.Data.RowId, out var row))
+                    return [.. row.Content.Where(c => c.IsValid && c.RowId != 0).Select(c => c.Value.ContentFinderCondition.Value.TerritoryType.RowId)];
+                return [];
             // Levelling Dungeons Range
             case 5:
                 return [.. _sheet

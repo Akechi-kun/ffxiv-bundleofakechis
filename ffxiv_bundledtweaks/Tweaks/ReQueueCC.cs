@@ -1,6 +1,7 @@
 ﻿using Dalamud.Game.Chat;
 using FFXIVClientStructs.FFXIV.Client.Game.UI;
 using FFXIVClientStructs.FFXIV.Client.UI.Agent;
+using Lumina.Extensions;
 
 namespace ComplexTweaks.Tweaks;
 

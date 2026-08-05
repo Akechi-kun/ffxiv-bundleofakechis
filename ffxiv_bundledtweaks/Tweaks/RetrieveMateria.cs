@@ -20,7 +20,7 @@ internal class RetrieveMateria : Tweak {
             PrefixChar = 'C',
             Name = "Retrieve All Materia",
             OnClicked = (a) => Svc.Automation.Start(new RetrieveAllMateria(inv.TargetItem.Value)),
-            IsEnabled = !Player.IsBusy,
+            IsEnabled = !IObjectTable.Get().LocalPlayer.IsBusy,
         });
     }
 

@@ -4,7 +4,9 @@ using Dalamud.Game.Gui.Dtr;
 using Dalamud.Interface.Utility.Raii;
 using ECommons;
 using ECommons.ImGuiMethods;
+using FFXIVClientStructs.FFXIV.Client.Game.Control;
 using FFXIVClientStructs.FFXIV.Client.System.Framework;
+using FFXIVClientStructs.FFXIV.Client.System.Input;
 using FFXIVClientStructs.FFXIV.Client.UI;
 using FFXIVClientStructs.FFXIV.Client.UI.Agent;
 using FFXIVClientStructs.FFXIV.Component.GUI;
@@ -87,7 +89,7 @@ public unsafe class ClickToMove : Tweak<ClickToMoveConfiguration> {
     }
 
     private void HandleMapClick(AddonEvent type, AddonArgs args) {
-        if (!Config.MapClick.Enabled) return;
+        if (!Config.MapClick.Enabled || IObjectTable.Get().LocalPlayer is not { } player) return;
         if (args is AddonReceiveEventArgs { AtkEventType: AddonEventType.MouseDown } receiveArgs) {
             if (receiveArgs.AtkEventData.As<AtkEventData.AtkMouseData>()->ButtonId != 0) return; // left click only
             if (AgentMap.Instance()->CurrentMapId != AgentMap.Instance()->SelectedMapId) return;
@@ -102,10 +104,10 @@ public unsafe class ClickToMove : Tweak<ClickToMoveConfiguration> {
 
             if (args.GetAddon<AddonAreaMap>()->GetMouseWorldCoords() is { } coords) {
                 if (Config.MapClick.MovementType is MovementType.Pathfind)
-                    Svc.Navmesh.PathfindAndMoveTo(coords.OnMesh(), Player.CanFly);
+                    Svc.Navmesh.PathfindAndMoveTo(coords.OnMesh(), Control.CanFly);
                 else {
                     movement.Enabled = true;
-                    movement.DesiredPosition = new(coords.X, Player.Position.Y, coords.Y);
+                    movement.DesiredPosition = new(coords.X, player.Position.Y, coords.Y);
                 }
             }
         }
@@ -114,9 +116,9 @@ public unsafe class ClickToMove : Tweak<ClickToMoveConfiguration> {
     private bool wasPressed = false;
     private void MoveTo(IFramework framework) {
         if (!Config.WorldClick.Enabled) return;
-        if (!Player.Available || Player.IsBusy) return;
+        if (IObjectTable.Get().LocalPlayer is not { Available: true, IsBusy: false } player) return;
 
-        if (Config.WorldClick.MovementType != MovementType.Pathfind && Player.Object.FlatDistanceTo(movement.DesiredPosition) < 0.05f) {
+        if (Config.WorldClick.MovementType != MovementType.Pathfind && player.FlatDistanceTo(movement.DesiredPosition) < 0.05f) {
             movement.Enabled = false;
         }
 
@@ -140,7 +142,7 @@ public unsafe class ClickToMove : Tweak<ClickToMoveConfiguration> {
     }
 
     private bool ClickedInWorld()
-        => IsKeyPressed(ECommons.Interop.LimitedKeys.LeftMouseButton) && Utils.IsClickingInGameWorld() && Config.ClickModifier switch {
+        => MouseButtonFlags.LBUTTON.IsPressed() && Utils.IsClickingInGameWorld() && Config.ClickModifier switch {
             ClickModifierKeys.None => true,
             ClickModifierKeys.Shift => ImGuiEx.Shift,
             ClickModifierKeys.Ctrl => ImGuiEx.Ctrl,

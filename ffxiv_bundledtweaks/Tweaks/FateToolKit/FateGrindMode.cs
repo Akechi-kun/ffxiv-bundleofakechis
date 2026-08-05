@@ -275,13 +275,13 @@ public sealed class YokaiGrindMode : IFateGrindMode {
                 await NextFrames(30, cancellationToken);
         }
 
-        if (CurrentCompanion.RowId == entry.Minion.RowId)
+        if (IPlayerState.Get().Minion.RowId == entry.Minion.RowId)
             return;
 
-        if (Player.Mounted)
+        if (ICondition.Get()[ConditionFlag.Mounted])
             await dismount(); // such a hack lol
         ECommons.Automation.Chat.SendMessage($"/minion {entry.Minion.Value.Singular}");
-        while (CurrentCompanion.RowId != entry.Minion.RowId)
+        while (IPlayerState.Get().Minion.RowId != entry.Minion.RowId)
             await NextFrames(30, cancellationToken);
     }
 
@@ -293,7 +293,7 @@ public sealed class YokaiGrindMode : IFateGrindMode {
     private static Task NextFrames(int n, CancellationToken ct) => Svc.Framework.DelayTicks(n, ct);
 
     private static YokaiEntry? GetCurrentMinionEntry()
-        => Yokai.Values.FirstOrDefault(e => e.Minion.RowId == CurrentCompanion.RowId);
+        => Yokai.Values.FirstOrDefault(e => e.Minion.RowId == IPlayerState.Get().Minion.RowId);
 
     private static unsafe int GetItemCount(uint itemId) => InventoryManager.Instance()->GetInventoryItemCount(itemId);
 
@@ -304,10 +304,10 @@ public sealed class YokaiGrindMode : IFateGrindMode {
         public List<RowRef<TerritoryType>> Zones { get; init; }
 
         public YokaiEntry(uint minion, uint medal, uint weapon, uint[] zones) {
-            Minion = Companion.GetRef(minion);
-            Medal = Item.GetRef(medal);
-            Weapon = Item.GetRef(weapon);
-            Zones = [.. zones.Select(z => TerritoryType.GetRef(z))];
+            Minion = Companion.GetRowRef(minion);
+            Medal = Item.GetRowRef(medal);
+            Weapon = Item.GetRowRef(weapon);
+            Zones = [.. zones.Select(z => TerritoryType.GetRowRef(z))];
         }
 
         public unsafe bool Unlocked => UIState.Instance()->IsCompanionUnlocked(Minion.RowId);
@@ -334,8 +334,4 @@ public sealed class YokaiGrindMode : IFateGrindMode {
     };
 
     public static unsafe bool IsWatchEquipped() => InventoryManager.Instance()->GetInventoryContainer(InventoryType.EquippedItems)->GetInventorySlot(10)->ItemId == 15222;
-    public static unsafe RowRef<Companion> CurrentCompanion
-        => Player.Character->CompanionData.CompanionObject is not null and var minion
-                ? Companion.GetRowRef(minion->BaseId)
-                : Companion.GetRowRef(Player.Character->CompanionData.CompanionId);
 }

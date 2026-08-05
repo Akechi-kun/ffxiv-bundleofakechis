@@ -29,7 +29,7 @@ internal class AutoEquipXPBoosts : Tweak {
     ];
 
     private void CheckForLevelSync(uint classJobId, uint level) {
-        if (!Player.IsInDuty) return;
+        if (!IPlayerState.Get().IsInDuty) return;
         var expItems = _expItems.GroupBy(x => x.GameData.Value.EquipSlotCategory.RowId)
             .Where(group => group.Any(x => level <= x.MaxLevel && x.GameData.Value.Handle.HasItem))
             .Select(group => group.Where(x => level <= x.MaxLevel && x.GameData.Value.Handle.HasItem)
@@ -40,7 +40,7 @@ internal class AutoEquipXPBoosts : Tweak {
     }
 
     private readonly unsafe struct ExpItem(uint ItemId, int MaxLevel, int Percent) {
-        public RowRef<Item> GameData { get; init; } = Item.GetRef(ItemId);
+        public RowRef<Item> GameData { get; init; } = Item.GetRowRef(ItemId);
         public int MaxLevel { get; init; } = MaxLevel;
         public int Percent { get; init; } = Percent;
         public readonly ExcelRow* Row = Framework.Instance()->ExcelModuleInterface->ExdModule->GetRowBySheetIndexAndRowIndex(10, ItemId);
@@ -51,16 +51,16 @@ internal class AutoEquipXPBoosts : Tweak {
     private sealed class EquipItems(List<ExpItem> expItems) : TaskBase {
         protected override async Task Execute() {
             using var scope = BeginScope("EquipItems");
-            await WaitWhile(() => Player.IsBusy, "WaitForLoad");
-            if (Player.CsTerritoryIntendedUseEnum is not (TerritoryIntendedUse.Dungeon or TerritoryIntendedUse.Raid1 or TerritoryIntendedUse.Raid2 or TerritoryIntendedUse.AllianceRaid)) return;
-            if (Player.ContentFinderCondition is { Value.ContentType.RowId: 28 }) return; // skip ults
+            await WaitWhileBusy();
+            if (Svc.PlayerState.TerritoryIntendedUse is not (TerritoryIntendedUse.Dungeon or TerritoryIntendedUse.Raid1 or TerritoryIntendedUse.Raid2 or TerritoryIntendedUse.AllianceRaid)) return;
+            if (Svc.PlayerState.ContentFinderCondition is { Value.ContentType.RowId: 28 }) return; // skip ults
 
             foreach (var expItem in expItems) {
                 if (!expItem.Handle.CanEquip(out var errorMsg)) {
                     Log($"Can't equip [#{expItem.GameData.RowId}] {expItem.GameData.Value.Name}: {errorMsg.Value.Text}");
                     continue;
                 }
-                await WaitWhile(() => Player.IsBusy, "WaitForNotBusy");
+                await WaitWhileBusy();
                 await WaitUntil(() => Svc.Condition.HasPermission([109, 134]), "WaitForPermission");
                 expItem.Handle.Equip();
             }

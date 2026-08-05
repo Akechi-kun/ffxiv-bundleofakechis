@@ -10,19 +10,19 @@ namespace ComplexTweaks.UI.Debug.Tabs;
 internal class QuestsTab : DebugTab {
     private uint _questId;
     public override void Draw() {
-        if (ImGuiEx.ExcelSheetCombo("##Foods", out Quest i, _ => $"[{_questId}] {GetRow<Quest>(_questId)?.Name}", x => $"[{x.RowId}] {x.Name}", x => !x.Name.IsEmpty)) {
+        if (ImGuiEx.ExcelSheetCombo("##Foods", out Quest i, _ => $"[{_questId}] {Quest.GetRow(_questId).Name}", x => $"[{x.RowId}] {x.Name}", x => !x.Name.IsEmpty)) {
             _questId = i.RowId;
         }
 
         if (ImGui.Button("copy uniques")) {
             List<string> strings = [];
-            foreach (var q in GetSheet<Quest>().Where(q => !q.Name.IsEmpty))
+            foreach (var q in Quest.Where(q => !q.Name.IsEmpty))
                 foreach (var p in q.QuestParams.Where(p => !p.ScriptInstruction.IsEmpty))
                     strings.Add(Regex.Replace(p.ScriptInstruction.ToString(), "[0-9]", ""));
             ImGui.SetClipboardText($"{string.Join("\n", strings.Distinct().OrderBy(x => x))}");
         }
 
-        if (GetRow<Quest>(_questId) is { } row) {
+        if (Quest.TryGetRow(_questId, out var row)) {
             if (ImGui.Button("go to quest start"))
                 Svc.Automation.Start(new DoQuest(row));
             ImGui.Text($"IssuerLocation: {row.IssuerLocation.ToStringExtended()}");

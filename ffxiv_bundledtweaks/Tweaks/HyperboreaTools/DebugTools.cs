@@ -1,8 +1,7 @@
 using Dalamud.Bindings.ImGui;
-using Dalamud.Game.ClientState.Keys;
-using ECommons.Interop;
 using FFXIVClientStructs.FFXIV.Client.Game.Control;
 using FFXIVClientStructs.FFXIV.Client.System.Framework;
+using FFXIVClientStructs.FFXIV.Client.System.Input;
 using FFXIVClientStructs.FFXIV.Client.UI.Agent;
 using FFXIVClientStructs.FFXIV.Component.GUI;
 using FFXIVClientStructs.Interop;
@@ -31,7 +30,7 @@ public partial class DebugTools : Tweak<DebugToolsConfiguration> {
     public override string Description => "Debug tools for use in hyperborea/firewall";
 
     public override void Enable() {
-        _keys = GetSheet<ConfigKey>().Where(x => x.RowId is >= 12 and <= 18).ToDictionary(x => x.Label.ToString(), x => x);
+        _keys = ConfigKey.Where(x => x.RowId is >= 12 and <= 18).ToDictionary(x => x.Label.ToString(), x => x);
         Svc.AddonLifecycle.RegisterListener(AddonEvent.PostSetup, "MJICraftSchedule", OnSetup);
         Svc.ClientState.EnterPvP += OnEnterPvP;
         Svc.Framework.Update += OnUpdate;
@@ -44,18 +43,18 @@ public partial class DebugTools : Tweak<DebugToolsConfiguration> {
     }
 
     private unsafe void OnUpdate(IFramework framework) {
-        if (!Player.Available || IsOccupied()) return;
+        if (IObjectTable.Get().LocalPlayer is not { } player || ICondition.Get().IsUnavailable()) return;
 
         ShowMouseOverlay = false;
 
         if (tpActive) {
-            if (!Framework.Instance()->WindowInactive && IsKeyPressed([LimitedKeys.LeftControlKey, LimitedKeys.RightControlKey]) && Utils.IsClickingInGameWorld()) {
+            if (!Framework.Instance()->WindowInactive && SeVirtualKey.CONTROL.IsDown() && Utils.IsClickingInGameWorld()) {
                 ShowMouseOverlay = true;
                 var pos = ImGui.GetMousePos();
                 if (Svc.GameGui.ScreenToWorld(pos, out var res)) {
-                    if (IsKeyPressed(LimitedKeys.LeftMouseButton)) {
+                    if (MouseButtonFlags.LBUTTON.IsPressed()) {
                         if (!IsLButtonPressed)
-                            Player.SetPosition(res);
+                            player.SetPosition(res);
                         IsLButtonPressed = true;
                     }
                     else
@@ -65,21 +64,21 @@ public partial class DebugTools : Tweak<DebugToolsConfiguration> {
         }
 
         if (ncActive && !Framework.Instance()->WindowInactive) {
-            var cx = Player.Position.X;
-            var cy = Player.Position.Z;
+            var cx = player.Position.X;
+            var cy = player.Position.Z;
             var angle = MathF.PI - CameraManager.Instance()->GetActiveCamera()->DirH;
             if (_keys["JUMP"].IsHeldRaw())
-                Player.SetPosition((Player.Position.X, Player.Position.Y + Config.NoClipSpeed, Player.Position.Z).ToVector3());
-            if (Svc.KeyState.GetRawValue(VirtualKey.LSHIFT) != 0 || IsKeyPressed(LimitedKeys.LeftShiftKey))
-                Player.SetPosition((Player.Position.X, Player.Position.Y - Config.NoClipSpeed, Player.Position.Z).ToVector3());
+                player.SetPosition((player.Position.X, player.Position.Y + Config.NoClipSpeed, player.Position.Z).ToVector3());
+            if (SeVirtualKey.SHIFT.IsDown())
+                player.SetPosition((player.Position.X, player.Position.Y - Config.NoClipSpeed, player.Position.Z).ToVector3());
             if (_keys["MOVE_FORE"].IsHeldRaw())
-                Player.SetPosition(Player.Position.AddZ(Config.NoClipSpeed).RotatePoint(cx, cy, angle));
+                player.SetPosition(player.Position.AddZ(Config.NoClipSpeed).RotatePoint(cx, cy, angle));
             if (_keys["MOVE_BACK"].IsHeldRaw())
-                Player.SetPosition(Player.Position.AddZ(-Config.NoClipSpeed).RotatePoint(cx, cy, angle));
+                player.SetPosition(player.Position.AddZ(-Config.NoClipSpeed).RotatePoint(cx, cy, angle));
             if (_keys["MOVE_LEFT"].IsHeldRaw() || _keys["MOVE_STRIFE_L"].IsHeldRaw())
-                Player.SetPosition(Player.Position.AddX(Config.NoClipSpeed).RotatePoint(cx, cy, angle));
+                player.SetPosition(player.Position.AddX(Config.NoClipSpeed).RotatePoint(cx, cy, angle));
             if (_keys["MOVE_RIGHT"].IsHeldRaw() || _keys["MOVE_STRIFE_R"].IsHeldRaw())
-                Player.SetPosition(Player.Position.AddX(-Config.NoClipSpeed).RotatePoint(cx, cy, angle));
+                player.SetPosition(player.Position.AddX(-Config.NoClipSpeed).RotatePoint(cx, cy, angle));
         }
     }
 
@@ -106,7 +105,7 @@ public partial class DebugTools : Tweak<DebugToolsConfiguration> {
 
     // prevent entering pvp with debug options enabled
     private void OnEnterPvP() {
-        Player.Speed = 1.0f;
+        IObjectTable.Get().LocalPlayer.Speed = 1.0f;
         tpActive = false;
         ncActive = false;
         ShowMouseOverlay = false;

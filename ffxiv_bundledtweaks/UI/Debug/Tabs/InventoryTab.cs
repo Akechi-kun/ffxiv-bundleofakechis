@@ -22,7 +22,7 @@ internal unsafe class InventoryTab : DebugTab {
         }
     }
 
-    private List<Pointer<InventoryItem>> FilteredItems => [.. InventoryItems.Where(x => GetRow<Item>(x.Value->ItemId)?.Name.ExtractText().ToLowerInvariant().Contains(searchFilter.ToLowerInvariant()) ?? false)];
+    private List<Pointer<InventoryItem>> FilteredItems => [.. InventoryItems.Where(x => Item.GetRowOrNull(x.Value->ItemId)?.Name.ExtractText().Contains(searchFilter, StringComparison.InvariantCultureIgnoreCase) ?? false)];
     private string searchFilter = "";
 
     public override void Draw() {
@@ -43,9 +43,9 @@ internal unsafe class InventoryTab : DebugTab {
                     var cont = InventoryManager.Instance()->GetInventoryContainer(container);
                     for (var i = 0; i < cont->Size; i++) {
                         var slot = cont->GetInventorySlot(i);
-                        if (!searchFilter.IsNullOrEmpty() && GetRow<Item>(slot->ItemId) is { Name: var name } && name.ExtractText().Contains(searchFilter)) continue;
+                        if (!searchFilter.IsEmpty && Item.GetRow(slot->ItemId) is { Name: var name } && name.ExtractText().Contains(searchFilter)) continue;
                         ImGui.TableNextColumn();
-                        if (GetRow<Item>(slot->ItemId) is { } row)
+                        if (Item.GetRowOrNull(slot->ItemId) is { } row)
                             ImGui.TextUnformatted($"[{slot->ItemId}] {row.Name}");
                         ImGui.TableNextColumn();
                         ImGui.TextUnformatted($"{cont->Type}");

@@ -22,7 +22,7 @@ public unsafe class RaptureGearsetModuleTab : DebugTab {
             using var node = ImRaii.TreeNode($"##Gearset{i}", ImGuiTreeNodeFlags.SpanAvailWidth);
 
             ImGui.SameLine(ImGui.GetStyle().FramePadding.X * 3f + ImGui.GetFontSize(), 0);
-            ImGui.TextUnformatted($"Gearset #{i}: {gearset->NameString} [{GetRow<ClassJob>(gearset->ClassJob)?.Abbreviation} | {gearset->GlamourSetLink} | {gearset->ItemLevel} | {gearset->BannerIndex}]");
+            ImGui.TextUnformatted($"Gearset #{i}: {gearset->NameString} [{ClassJob.GetRowOrNull(gearset->ClassJob)?.Abbreviation} | {gearset->GlamourSetLink} | {gearset->ItemLevel} | {gearset->BannerIndex}]");
             ImGui.SameLine(0, ImGui.GetStyle().FramePadding.X * 3);
 
             ImGui.NewLine();
@@ -52,7 +52,7 @@ public unsafe class RaptureGearsetModuleTab : DebugTab {
                 ImGui.TextUnformatted(item.ItemId.ToString());
 
                 ImGui.TableNextColumn();
-                ImGui.TextUnformatted(GetRow<Item>(item.ItemId)?.Name.ToString());
+                ImGui.TextUnformatted(Item.GetRowOrNull(item.ItemId)?.Name.ToString());
             }
         }
     }

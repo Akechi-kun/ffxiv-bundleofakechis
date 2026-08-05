@@ -34,7 +34,7 @@ public class FateToolKitWindow : MinimisableWindow {
 
     protected override Vector2 MinimisedSize => new(700, 90);
 
-    public override bool DrawConditions() => Player.Available;
+    public override bool DrawConditions() => IObjectTable.Get().LocalPlayer.Available;
 
     protected override void DrawContent(bool minimised) {
         _tweak.SyncRunningState();
@@ -360,6 +360,6 @@ public class FateToolKitWindow : MinimisableWindow {
         .Replace("{Id}", fate.Id.ToString())
         .Replace("{Progress}", fate.Progress.ToString())
         .Replace("{TimeRemaining}", fate.TimeRemaining >= 0 ? TimeSpan.FromSeconds(fate.TimeRemaining).ToString(@"mm\:ss") : "∞")
-        .Replace("{Distance}", Player.Available ? Player.DistanceTo(fate.Position).ToString("F1") : "?")
+        .Replace("{Distance}", IObjectTable.Get().LocalPlayer?.DistanceTo(fate.Position).ToString("F1") ?? "?")
         .Replace("{State}", fate.State.ToString());
 }

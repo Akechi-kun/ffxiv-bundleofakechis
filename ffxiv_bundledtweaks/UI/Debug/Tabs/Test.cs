@@ -29,8 +29,8 @@ internal unsafe class TestTab : DebugTab {
         if (Svc.Targets.Target != null)
             ImGui.Text($"In Interact Range: {Svc.Targets.Target.IsInInteractRange()}");
 
-        ImGui.Text($"{ExdModule.GetRoleForClassJobId(Player.ClassJob.RowId)}");
+        ImGui.Text($"{ExdModule.GetRoleForClassJobId(IPlayerState.Get().ClassJob.RowId)}");
 
-        ImGui.Text($"Target LoS: {Svc.Targets.Target?.IsInLineOfSight(Player.Position) ?? false}");
+        ImGui.Text($"Target LoS: {Svc.Targets.Target?.IsInLineOfSight() ?? false}");
     }
 }

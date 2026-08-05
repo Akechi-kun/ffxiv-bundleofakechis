@@ -34,7 +34,7 @@ public class CharacterBlacklistConfigAttribute : BaseConfigAttribute {
             OnChangeInternal(tweak, fieldInfo);
         }
 
-        if (!attr?.Description.IsNullOrEmpty() ?? false)
+        if (!attr?.Description.IsEmpty ?? false)
             ImGui.TextColoredWrapped(Colors.Grey, attr!.Description);
     }
 }

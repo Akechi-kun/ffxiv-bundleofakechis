@@ -1,6 +1,7 @@
 using FFXIVClientStructs.FFXIV.Client.Game.UI;
 using FFXIVClientStructs.FFXIV.Client.System.Framework;
 using FFXIVClientStructs.FFXIV.Client.UI.Agent;
+using Lumina.Extensions;
 
 namespace ComplexTweaks.Tweaks;
 
@@ -14,8 +15,8 @@ internal class AutoQueue : Tweak {
     public override void Disable() => Svc.ClientState.TerritoryChanged -= OnTerritoryChanged;
 
     private void OnTerritoryChanged(uint obj) {
-        if (Player.IsInDuty || Player.IsPenalised) return;
-        TaskManager.Enqueue(() => !Player.IsBusy);
+        if (IPlayerState.Get() is { IsInDuty: true } or { IsPenalised: true }) return;
+        TaskManager.Enqueue(() => !IObjectTable.Get().LocalPlayer.IsBusy);
         TaskManager.Enqueue(() => Svc.Party.All(p => !p.Territory.Value.IsDuty), "WaitForPartyNotInDuty");
         TaskManager.Enqueue(Svc.Condition.CanQueue, "WaitForQueueCondition");
         TaskManager.Enqueue(QueueSelectedDuty);

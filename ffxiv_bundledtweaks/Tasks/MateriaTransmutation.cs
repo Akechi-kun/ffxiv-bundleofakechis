@@ -13,7 +13,7 @@ public sealed class MateriaTransmutation : TaskBase {
 
     private List<MateriaWrapper> GetMateria() {
         List<MateriaWrapper> materia = [];
-        foreach (var row in FindRows<Materia>(x => x.Item.FirstOrDefault().RowId != 0))
+        foreach (var row in Materia.Where(x => x.Item.FirstOrDefault().RowId != 0))
             foreach (var item in row.Item)
                 if (item.RowId != 0)
                     materia.Add(new MateriaWrapper(item.RowId));
@@ -90,7 +90,7 @@ public sealed class MateriaTransmutation : TaskBase {
     private class MateriaWrapper(uint itemId) {
         public ItemHandle Item { get; } = itemId;
         public int Quantity => Item.GetCount(false);
-        public MateriaType Type => GetRow<Materia>(Item)!.Value.BaseParam.RowId switch {
+        public MateriaType Type => Materia.GetRowOrNull(Item)?.BaseParam.RowId switch {
             70 or 71 or 11 => MateriaType.Crafting, // craftsmanship, control, cp
             72 or 73 or 10 => MateriaType.Gathering, // gathering, perception, gp
             _ => MateriaType.Combat,
