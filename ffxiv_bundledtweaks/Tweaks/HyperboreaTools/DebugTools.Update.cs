@@ -17,7 +17,7 @@ public partial class DebugTools : Tweak<DebugToolsConfiguration> {
         if (!Framework.Instance()->WindowInactive && SeVirtualKey.CONTROL.IsDown() && Utils.IsClickingInGameWorld()) {
             ShowMouseOverlay = true;
             var pos = ImGui.GetMousePos();
-            if (Svc.GameGui.ScreenToWorld(pos, out var res)) {
+            if (IGameGui.Get().ScreenToWorld(pos, out var res)) {
                 if (MouseButtonFlags.LBUTTON.IsPressed()) {
                     if (!IsLButtonPressed)
                         player.SetPosition(res);

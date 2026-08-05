@@ -143,7 +143,7 @@ public class FateToolKitWindow : MinimisableWindow {
                 var isBlacklisted = _tweak.IsBlacklisted(fate);
 
                 if (fate.HasBonus) {
-                    ImGui.Image(Svc.Texture.GetFromGameIcon(new Dalamud.Interface.Textures.GameIconLookup(65001)).GetWrapOrEmpty().Handle, new Vector2(ImGui.IconUnitHeight()));
+                    ImGui.Image(ITextureProvider.Get().GetFromGameIcon(new Dalamud.Interface.Textures.GameIconLookup(65001)).GetWrapOrEmpty().Handle, new Vector2(ImGui.IconUnitHeight()));
                     ImGui.SameLine(0f, 0f);
                 }
 
@@ -157,7 +157,7 @@ public class FateToolKitWindow : MinimisableWindow {
                         if (Svc.Navmesh.IsRunning())
                             Svc.Navmesh.Stop();
                         else
-                            Svc.Navmesh.PathfindAndMoveTo(fate.Position.RandomPoint(fate.Radius * 0.5f).OnMesh(), Svc.Condition[ConditionFlag.InFlight]);
+                            Svc.Navmesh.PathfindAndMoveTo(fate.Position.RandomPoint(fate.Radius * 0.5f).OnMesh(), ICondition.Get()[ConditionFlag.InFlight]);
                     }
                 }
 

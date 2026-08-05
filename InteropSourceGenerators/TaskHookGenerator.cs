@@ -93,7 +93,7 @@ internal sealed class TaskHookGenerator : IIncrementalGenerator {
         else if (attrName.Contains("SigHookAttribute") || attrMetadataName.Contains("SigHookAttribute")) {
             if (attr.ConstructorArguments.Length > 0) {
                 var signature = (string)attr.ConstructorArguments[0].Value!;
-                addressName = $"Svc.SigScanner.ScanText(\"{signature}\")";
+                addressName = $"ISigScanner.Get().ScanText(\"{signature}\")";
             }
         }
 
@@ -182,7 +182,7 @@ internal sealed class TaskHookGenerator : IIncrementalGenerator {
                     continue;
                 }
                 var wrapperName = $"{hookInfo.MethodInfo.Name}_Wrapper";
-                writer.WriteLine($"{hookInfo.MethodInfo.Name}Hook = Svc.Hook.HookFromAddress<{hookInfo.MethodInfo.Name}Delegate>({hookInfo.AddressName}, {wrapperName});");
+                writer.WriteLine($"{hookInfo.MethodInfo.Name}Hook = IGameInteropProvider.Get().HookFromAddress<{hookInfo.MethodInfo.Name}Delegate>({hookInfo.AddressName}, {wrapperName});");
             }
         }
 

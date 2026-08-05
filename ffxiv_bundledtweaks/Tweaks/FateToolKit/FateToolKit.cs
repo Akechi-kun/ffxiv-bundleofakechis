@@ -125,8 +125,8 @@ public class FateToolKit : Tweak<FateToolKitConfig, FateToolKitWindow>, IFateGri
         }
     }
 
-    public override void Enable() => Svc.AddonLifecycle.RegisterListener(AddonEvent.PostSetup, "FateReward", OnFateRewardPostSetup);
-    public override void Disable() => Svc.AddonLifecycle.UnregisterListener(OnFateRewardPostSetup);
+    public override void Enable() => IAddonLifecycle.Get().RegisterListener(AddonEvent.PostSetup, "FateReward", OnFateRewardPostSetup);
+    public override void Disable() => IAddonLifecycle.Get().UnregisterListener(OnFateRewardPostSetup);
 
     private void OnFateRewardPostSetup(AddonEvent type, AddonArgs args) {
         if (!Running)

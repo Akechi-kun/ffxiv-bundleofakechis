@@ -18,7 +18,7 @@ public partial class AntiStatus : Tweak {
             return BewitchHook.Original(gameObj, x, y, z, a5, a6);
         }
         catch (Exception ex) {
-            Svc.Log.Error(ex.Message, ex);
+            IPluginLog.Get().Error(ex.Message, ex);
             return BewitchHook.Original(gameObj, x, y, z, a5, a6);
         }
     }

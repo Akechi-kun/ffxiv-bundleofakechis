@@ -12,16 +12,16 @@ public sealed class WindowsService : IPluginService, IDisposable {
     private DebugWindow? _debugWindow;
 
     public WindowsService() {
-        EnsureMainWindow();
-        EnsureDebugWindow();
+        GetMainWindow();
+        GetDebugWindow();
 
         Svc.Interface.UiBuilder.Draw += Draw;
         Svc.Interface.UiBuilder.OpenMainUi += ToggleMain;
     }
 
-    public void ToggleMain() => EnsureMainWindow().Toggle();
+    public void ToggleMain() => GetMainWindow().Toggle();
 
-    public void ToggleDebug() => EnsureDebugWindow().Toggle();
+    public void ToggleDebug() => GetDebugWindow().Toggle();
 
     public void AddWindow(Window window) {
         if (!WindowSystem.Windows.Contains(window))
@@ -50,7 +50,7 @@ public sealed class WindowsService : IPluginService, IDisposable {
 
     private void Draw() => WindowSystem.Draw();
 
-    private HaselWindow EnsureMainWindow() {
+    private HaselWindow GetMainWindow() {
         if (_mainWindow != null)
             return _mainWindow;
         _mainWindow = new HaselWindow();
@@ -58,7 +58,7 @@ public sealed class WindowsService : IPluginService, IDisposable {
         return _mainWindow;
     }
 
-    private DebugWindow EnsureDebugWindow() {
+    private DebugWindow GetDebugWindow() {
         if (_debugWindow != null)
             return _debugWindow;
         _debugWindow = new DebugWindow();

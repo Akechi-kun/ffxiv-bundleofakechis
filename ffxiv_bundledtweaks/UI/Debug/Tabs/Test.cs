@@ -26,11 +26,11 @@ internal unsafe class TestTab : DebugTab {
 
         ImGui.Text($"{InfoProxyNoviceNetwork.IsInNoviceNetwork()}");
 
-        if (Svc.Targets.Target != null)
-            ImGui.Text($"In Interact Range: {Svc.Targets.Target.IsInInteractRange()}");
+        if (ITargetManager.Get().Target != null)
+            ImGui.Text($"In Interact Range: {ITargetManager.Get().Target?.IsInInteractRange()}");
 
         ImGui.Text($"{ExdModule.GetRoleForClassJobId(IPlayerState.Get().ClassJob.RowId)}");
 
-        ImGui.Text($"Target LoS: {Svc.Targets.Target?.IsInLineOfSight() ?? false}");
+        ImGui.Text($"Target LoS: {ITargetManager.Get().Target?.IsInLineOfSight() ?? false}");
     }
 }

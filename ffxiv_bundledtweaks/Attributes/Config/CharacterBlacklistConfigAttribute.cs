@@ -12,7 +12,7 @@ public class CharacterBlacklistConfigAttribute : BaseConfigAttribute {
 
         ImGui.DrawSection($"Character Blacklist ({value.Count} excluded)");
 
-        var currentCharacterId = Svc.PlayerState.ContentId;
+        var currentCharacterId = IPlayerState.Get().ContentId;
         var isExcluded = value.Contains(currentCharacterId);
 
         if (!isExcluded) {

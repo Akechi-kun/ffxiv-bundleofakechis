@@ -22,7 +22,7 @@ public static class ImGuiExtensions {
         }
 
         public static void DrawLink(string label, string title, string url) {
-            ImGui.TextUnformatted(label);
+            ImGui.Text(label);
 
             if (ImGui.IsItemHovered()) {
                 ImGui.SetMouseCursor(ImGuiMouseCursor.Hand);
@@ -77,7 +77,7 @@ public static class ImGuiExtensions {
         public static void Icon(FontAwesomeIcon icon, EzColor? col = null, string? tooltip = null) {
             using (col is { } c ? ImRaii.PushColor(ImGuiCol.Text, c.Vector4) : null) {
                 using (ImRaii.PushFont(UiBuilder.IconFont))
-                    ImGui.TextUnformatted(icon.ToIconString());
+                    ImGui.Text(icon.ToIconString());
             }
             if (tooltip is { } && ImGui.IsItemHovered())
                 ImGui.SetTooltip(tooltip);
@@ -194,7 +194,7 @@ public static class ImGuiExtensions {
         public static void PathfindButton(NavmeshIPC nav, Vector3 pos) {
             if (ImGuiComponents.IconButton($"###Pathfind{pos}", FontAwesomeIcon.Map)) {
                 if (!nav.IsRunning())
-                    nav.PathfindAndMoveTo(pos, Svc.Condition[ConditionFlag.InFlight]);
+                    nav.PathfindAndMoveTo(pos, ICondition.Get()[ConditionFlag.InFlight]);
                 else
                     nav.Stop();
             }
@@ -216,7 +216,7 @@ public static class ImGuiExtensions {
             );
 
             using var _ = ImRaii.PushColor(ImGuiCol.Text, interpolatedColor);
-            ImGui.TextUnformatted(text);
+            ImGui.Text(text);
 
             if (elapsedTime >= duration)
                 startTime = currentTime;
@@ -243,15 +243,15 @@ public static class ImGuiExtensions {
 
         public static void DrawTableColumn(string name) {
             ImGui.TableNextColumn();
-            ImGui.TextUnformatted(name);
+            ImGui.Text(name);
         }
 
         public static void FieldAndValue(string field, object value, bool? valueCondition = null) {
             using (var _ = ImRaii.PushColor(ImGuiCol.Text, (uint)Colors.Field))
-                ImGui.TextUnformatted($"{field}:");
+                ImGui.Text($"{field}:");
             ImGui.SameLine();
             using (var _ = ImRaii.PushColor(ImGuiCol.Text, EzColor.White.Vector4))
-                ImGui.TextUnformatted($"{(valueCondition is { } condition && condition || valueCondition is not { } ? value : "N/A")}");
+                ImGui.Text($"{(valueCondition is { } condition && condition || valueCondition is not { } ? value : "N/A")}");
         }
 
         public static void SpacedSeparator() {

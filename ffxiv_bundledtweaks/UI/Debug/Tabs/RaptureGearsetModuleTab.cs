@@ -22,7 +22,7 @@ public unsafe class RaptureGearsetModuleTab : DebugTab {
             using var node = ImRaii.TreeNode($"##Gearset{i}", ImGuiTreeNodeFlags.SpanAvailWidth);
 
             ImGui.SameLine(ImGui.GetStyle().FramePadding.X * 3f + ImGui.GetFontSize(), 0);
-            ImGui.TextUnformatted($"Gearset #{i}: {gearset->NameString} [{ClassJob.GetRowOrNull(gearset->ClassJob)?.Abbreviation} | {gearset->GlamourSetLink} | {gearset->ItemLevel} | {gearset->BannerIndex}]");
+            ImGui.Text($"Gearset #{i}: {gearset->NameString} [{ClassJob.GetRowOrNull(gearset->ClassJob)?.Abbreviation} | {gearset->GlamourSetLink} | {gearset->ItemLevel} | {gearset->BannerIndex}]");
             ImGui.SameLine(0, ImGui.GetStyle().FramePadding.X * 3);
 
             ImGui.NewLine();
@@ -46,13 +46,13 @@ public unsafe class RaptureGearsetModuleTab : DebugTab {
                 var item = gearset->GetItem((RaptureGearsetModule.GearsetItemIndex)j);
                 ImGui.TableNextRow();
                 ImGui.TableNextColumn();
-                ImGui.TextUnformatted(j.ToString());
+                ImGui.Text(j.ToString());
 
                 ImGui.TableNextColumn();
-                ImGui.TextUnformatted(item.ItemId.ToString());
+                ImGui.Text(item.ItemId.ToString());
 
                 ImGui.TableNextColumn();
-                ImGui.TextUnformatted(Item.GetRowOrNull(item.ItemId)?.Name.ToString());
+                ImGui.Text(Item.GetRowOrNull(item.ItemId)?.Name.ToString());
             }
         }
     }

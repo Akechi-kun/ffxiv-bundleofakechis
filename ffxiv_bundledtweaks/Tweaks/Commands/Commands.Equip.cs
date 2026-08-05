@@ -17,7 +17,7 @@ public partial class Commands : Tweak<CommandsConfiguration> {
         if (item.CanEquip(out var logMessage))
             item.Equip();
         else
-            Svc.Log.Warning($"Unable to equip item {item}: {logMessage.Value.Text}");
+            IPluginLog.Get().Warning($"Unable to equip item {item}: {logMessage.Value.Text}");
     }
 }
 

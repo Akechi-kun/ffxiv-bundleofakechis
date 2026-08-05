@@ -28,15 +28,15 @@ public class EnhancedDutyStartEnd : Tweak<EnhancedDutyStartEndConfiguration> {
     public override string Description => "Automatically execute certain actions when the duty starts or ends.";
 
     public override void Enable() {
-        Svc.DutyState.DutyStarted += OnDutyStart;
-        Svc.DutyState.DutyCompleted += OnDutyComplete;
-        Svc.ClientState.TerritoryChanged += OnTerritoryChanged;
+        IDutyState.Get().DutyStarted += OnDutyStart;
+        IDutyState.Get().DutyCompleted += OnDutyComplete;
+        IClientState.Get().TerritoryChanged += OnTerritoryChanged;
     }
 
     public override void Disable() {
-        Svc.DutyState.DutyStarted -= OnDutyStart;
-        Svc.DutyState.DutyCompleted -= OnDutyComplete;
-        Svc.ClientState.TerritoryChanged -= OnTerritoryChanged;
+        IDutyState.Get().DutyStarted -= OnDutyStart;
+        IDutyState.Get().DutyCompleted -= OnDutyComplete;
+        IClientState.Get().TerritoryChanged -= OnTerritoryChanged;
     }
 
     private string _name = string.Empty;
@@ -80,13 +80,13 @@ public class EnhancedDutyStartEnd : Tweak<EnhancedDutyStartEndConfiguration> {
     private void OnDutyStart(IDutyStateEventArgs args) {
         if (!Config.StartMsg.IsEmpty) {
             if (Config.StartMsg.StartsWith('/'))
-                Svc.Chat.SendMessage(Config.StartMsg);
+                IChatGui.Get().SendMessage(Config.StartMsg);
             else
-                Svc.Chat.SendMessage($"/p {Config.StartMsg}");
+                IChatGui.Get().SendMessage($"/p {Config.StartMsg}");
         }
 
-        var allPlayersInParty = Config.Players.Count > 0 && Config.Players.IsSubsetOf(Svc.Party.Select(p => p.Name.TextValue));
-        var noPlayersInParty = Config.Players.Count > 0 && !Config.Players.Any(p => Svc.Party.Any(pm => pm.Name.TextValue == p));
+        var allPlayersInParty = Config.Players.Count > 0 && Config.Players.IsSubsetOf(IPartyList.Get().Select(p => p.Name.TextValue));
+        var noPlayersInParty = Config.Players.Count > 0 && !Config.Players.Any(p => IPartyList.Get().Any(pm => pm.Name.TextValue == p));
         if (Config.CheckForAll && !allPlayersInParty || Config.CheckForAny && noPlayersInParty)
             EventFramework.LeaveCurrentContent(true);
     }
@@ -96,9 +96,9 @@ public class EnhancedDutyStartEnd : Tweak<EnhancedDutyStartEndConfiguration> {
         _territoryID = IPlayerState.Get().Territory.RowId;
         if (!Config.EndMsg.IsEmpty) {
             if (Config.EndMsg.StartsWith('/'))
-                Svc.Chat.SendMessage(Config.EndMsg);
+                IChatGui.Get().SendMessage(Config.EndMsg);
             else
-                Svc.Chat.SendMessage($"/p {Config.EndMsg}");
+                IChatGui.Get().SendMessage($"/p {Config.EndMsg}");
         }
 
         if (Config.AutoLeaveOnEnd) {

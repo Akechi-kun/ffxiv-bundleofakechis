@@ -24,7 +24,7 @@ public sealed class ConfigService : IPluginService {
             File.WriteAllText(ConfigPath, yaml);
         }
         catch (Exception ex) {
-            Svc.Log.Error(ex, $"[{nameof(ConfigService)}] Failed to save config");
+            IPluginLog.Get().Error(ex, $"[{nameof(ConfigService)}] Failed to save config");
         }
     }
 
@@ -34,14 +34,10 @@ public sealed class ConfigService : IPluginService {
                 return new Config();
 
             var yaml = File.ReadAllText(ConfigPath);
-            return new DeserializerBuilder()
-                       .IgnoreUnmatchedProperties()
-                       .Build()
-                       .Deserialize<Config>(yaml)
-                   ?? new Config();
+            return new DeserializerBuilder().IgnoreUnmatchedProperties().Build().Deserialize<Config>(yaml) ?? new Config();
         }
         catch (Exception ex) {
-            Svc.Log.Error(ex, $"[{nameof(ConfigService)}] Failed to load config, using defaults");
+            IPluginLog.Get().Error(ex, $"[{nameof(ConfigService)}] Failed to load config, using defaults");
             return new Config();
         }
     }
@@ -53,7 +49,7 @@ public sealed class ConfigService : IPluginService {
             if (Config.Version >= migration.Version)
                 continue;
 
-            Svc.Log.Info($"Migrating from config version {Config.Version} to {migration.Version}");
+            IPluginLog.Get().Info($"Migrating from config version {Config.Version} to {migration.Version}");
             var c = Config;
             migration.Migrate(ref c);
             Config = c;

@@ -12,8 +12,8 @@ internal class AutoEquipXPBoosts : Tweak {
     public override string Name => "Auto Equip Exp Items";
     public override string Description => "Automatically equips any exp boosting item on level change.";
 
-    public override void Enable() => Svc.ClientState.LevelChanged += CheckForLevelSync;
-    public override void Disable() => Svc.ClientState.LevelChanged -= CheckForLevelSync;
+    public override void Enable() => IClientState.Get().LevelChanged += CheckForLevelSync;
+    public override void Disable() => IClientState.Get().LevelChanged -= CheckForLevelSync;
 
     private readonly List<ExpItem> _expItems =
     [
@@ -52,8 +52,8 @@ internal class AutoEquipXPBoosts : Tweak {
         protected override async Task Execute() {
             using var scope = BeginScope("EquipItems");
             await WaitWhileBusy();
-            if (Svc.PlayerState.TerritoryIntendedUse is not (TerritoryIntendedUse.Dungeon or TerritoryIntendedUse.Raid1 or TerritoryIntendedUse.Raid2 or TerritoryIntendedUse.AllianceRaid)) return;
-            if (Svc.PlayerState.ContentFinderCondition is { Value.ContentType.RowId: 28 }) return; // skip ults
+            if (IPlayerState.Get().TerritoryIntendedUse is not (TerritoryIntendedUse.Dungeon or TerritoryIntendedUse.Raid1 or TerritoryIntendedUse.Raid2 or TerritoryIntendedUse.AllianceRaid)) return;
+            if (IPlayerState.Get().ContentFinderCondition is { Value.ContentType.RowId: 28 }) return; // skip ults
 
             foreach (var expItem in expItems) {
                 if (!expItem.Handle.CanEquip(out var errorMsg)) {
@@ -61,7 +61,7 @@ internal class AutoEquipXPBoosts : Tweak {
                     continue;
                 }
                 await WaitWhileBusy();
-                await WaitUntil(() => Svc.Condition.HasPermission([109, 134]), "WaitForPermission");
+                await WaitUntil(() => ICondition.Get().HasPermission([109, 134]), "WaitForPermission");
                 expItem.Handle.Equip();
             }
         }

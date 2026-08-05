@@ -24,7 +24,7 @@ public static unsafe class PlayerExtensions {
         }
 
         private static void SetMoveControlData(float speed)
-            => Dalamud.SafeMemory.Write(((delegate* unmanaged[Stdcall]<byte, nint>)Svc.SigScanner.ScanText(ExdModule_GetMoveControlRow_1))(1) + 8, speed);
+            => Dalamud.SafeMemory.Write(((delegate* unmanaged[Stdcall]<byte, nint>)ISigScanner.Get().ScanText(ExdModule_GetMoveControlRow_1))(1) + 8, speed);
     }
 
     private const string ExdModule_GetMoveControlRow_1 = "E8 ?? ?? ?? ?? 48 85 C0 74 AE 83 FD 05";

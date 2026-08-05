@@ -27,7 +27,7 @@ public partial class AutoInvite : Tweak<AutoInviteConfiguration> {
     private bool On {
         get;
         set {
-            Svc.Toasts.ShowNormal($"Auto Inviter {(value ? "enabled" : "disabled")}");
+            IToastGui.Get().ShowNormal($"Auto Inviter {(value ? "enabled" : "disabled")}");
             _attempts = 0;
             field = value;
         }
@@ -66,7 +66,7 @@ public partial class AutoInvite : Tweak<AutoInviteConfiguration> {
             return;
         }
 
-        if (Svc.Party.Any(p => p.ContentId == contentId)) {
+        if (IPartyList.Get().Any(p => p.ContentId == contentId)) {
             Log("Skipping invite: already in party.");
             return;
         }
@@ -139,7 +139,7 @@ public partial class AutoInvite : Tweak<AutoInviteConfiguration> {
     }
 
     private bool InInvitableInstance()
-        => Svc.Condition[ConditionFlag.BoundByDuty56] && IPlayerState.Get().Territory.Value.TerritoryIntendedUse.RowId is 41 or 47 or 48 or 52 or 53 or 61;
+        => ICondition.Get()[ConditionFlag.BoundByDuty56] && IPlayerState.Get().Territory.Value.TerritoryIntendedUse.RowId is 41 or 47 or 48 or 52 or 53 or 61;
 
     private byte[] ToTerminatedBytes(string s) {
         var utf8 = Encoding.UTF8;

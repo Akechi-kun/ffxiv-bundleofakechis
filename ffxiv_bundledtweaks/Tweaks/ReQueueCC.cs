@@ -10,8 +10,8 @@ public class ReQueueCC : Tweak {
     public override string Name => "CC Error Requeue";
     public override string Description => "Requeues for Crystalline Conflict when your registration was cancelled due to a map change.";
 
-    public override void Enable() => Svc.Chat.LogMessage += CheckForMessage;
-    public override void Disable() => Svc.Chat.LogMessage -= CheckForMessage;
+    public override void Enable() => IChatGui.Get().LogMessage += CheckForMessage;
+    public override void Disable() => IChatGui.Get().LogMessage -= CheckForMessage;
 
     private unsafe void CheckForMessage(ILogMessage message) {
         if (message.LogMessageId is 7392) {

@@ -280,7 +280,7 @@ public sealed class YokaiGrindMode : IFateGrindMode {
 
         if (ICondition.Get()[ConditionFlag.Mounted])
             await dismount(); // such a hack lol
-        Svc.Chat.SendMessage($"/minion {entry.Minion.Value.Singular}");
+        IChatGui.Get().SendMessage($"/minion {entry.Minion.Value.Singular}");
         while (IPlayerState.Get().Minion.RowId != entry.Minion.RowId)
             await NextFrames(30, cancellationToken);
     }
@@ -290,7 +290,7 @@ public sealed class YokaiGrindMode : IFateGrindMode {
     private static bool NeedsFarm(YokaiEntry entry)
         => entry.Unlocked && GetItemCount(entry.Weapon.RowId) == 0 && GetItemCount(entry.Medal.RowId) < MedalsRequired;
 
-    private static Task NextFrames(int n, CancellationToken ct) => Svc.Framework.DelayTicks(n, ct);
+    private static Task NextFrames(int n, CancellationToken ct) => IFramework.Get().DelayTicks(n, ct);
 
     private static YokaiEntry? GetCurrentMinionEntry()
         => Yokai.Values.FirstOrDefault(e => e.Minion.RowId == IPlayerState.Get().Minion.RowId);

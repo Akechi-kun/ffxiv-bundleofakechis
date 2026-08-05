@@ -31,15 +31,15 @@ public partial class DebugTools : Tweak<DebugToolsConfiguration> {
 
     public override void Enable() {
         _keys = ConfigKey.Where(x => x.RowId is >= 12 and <= 18).ToDictionary(x => x.Label.ToString(), x => x);
-        Svc.AddonLifecycle.RegisterListener(AddonEvent.PostSetup, "MJICraftSchedule", OnSetup);
-        Svc.ClientState.EnterPvP += OnEnterPvP;
-        Svc.Framework.Update += OnUpdate;
+        IAddonLifecycle.Get().RegisterListener(AddonEvent.PostSetup, "MJICraftSchedule", OnSetup);
+        IClientState.Get().EnterPvP += OnEnterPvP;
+        IFramework.Get().Update += OnUpdate;
     }
 
     public override void Disable() {
-        Svc.AddonLifecycle.UnregisterListener(OnSetup);
-        Svc.ClientState.EnterPvP -= OnEnterPvP;
-        Svc.Framework.Update -= OnUpdate;
+        IAddonLifecycle.Get().UnregisterListener(OnSetup);
+        IClientState.Get().EnterPvP -= OnEnterPvP;
+        IFramework.Get().Update -= OnUpdate;
     }
 
     private unsafe void OnUpdate(IFramework framework) {
@@ -51,7 +51,7 @@ public partial class DebugTools : Tweak<DebugToolsConfiguration> {
             if (!Framework.Instance()->WindowInactive && SeVirtualKey.CONTROL.IsDown() && Utils.IsClickingInGameWorld()) {
                 ShowMouseOverlay = true;
                 var pos = ImGui.GetMousePos();
-                if (Svc.GameGui.ScreenToWorld(pos, out var res)) {
+                if (IGameGui.Get().ScreenToWorld(pos, out var res)) {
                     if (MouseButtonFlags.LBUTTON.IsPressed()) {
                         if (!IsLButtonPressed)
                             player.SetPosition(res);
@@ -95,7 +95,7 @@ public partial class DebugTools : Tweak<DebugToolsConfiguration> {
     private unsafe void OnSetup(AddonEvent type, AddonArgs args) {
         if (!Config.AutoVoidIslandRest) return;
         if (AgentMJICraftSchedule.Instance()->Data->RestCycles.Hex() != 8321u) {
-            Svc.Log.Debug($"Setting rest: {8321u:X}");
+            IPluginLog.Get().Debug($"Setting rest: {8321u:X}");
             AgentMJICraftSchedule.Instance()->Data->NewRestCycles = 8321u;
             var eventData = stackalloc int[] { 0, 0, 0 };
             var atkvalues = new Span<AtkValue>([new() { Type = AtkValueType.Int, Int = 0 }]);

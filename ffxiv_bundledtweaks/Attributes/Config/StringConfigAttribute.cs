@@ -15,7 +15,7 @@ public class StringConfigAttribute : BaseConfigAttribute {
         var value = (string)fieldInfo.GetValue(config)!;
         var attr = fieldInfo.GetCustomAttribute<BaseConfigAttribute>();
 
-        ImGui.TextUnformatted(fieldInfo.Name.SplitWords());
+        ImGui.Text(fieldInfo.Name.SplitWords());
 
         if (ImGui.InputText("##Input", ref value, 500)) {
             fieldInfo.SetValue(config, value);

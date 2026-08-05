@@ -13,9 +13,8 @@ public class LalaLookup : Tweak {
 
     private LodestoneClient _client = null!;
 
-    public override void Enable() => Svc.ContextMenu.OnMenuOpened += OnOpenContextMenu;
-
-    public override void Disable() => Svc.ContextMenu.OnMenuOpened -= OnOpenContextMenu;
+    public override void Enable() => IContextMenu.Get().OnMenuOpened += OnOpenContextMenu;
+    public override void Disable() => IContextMenu.Get().OnMenuOpened -= OnOpenContextMenu;
 
     private void OnOpenContextMenu(IMenuOpenedArgs menuOpenedArgs) {
         if (!IsMenuValid(menuOpenedArgs)) return;

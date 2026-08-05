@@ -30,14 +30,14 @@ public unsafe class AutoFollow : Tweak<AutoFollowConfiguration> {
     private OverrideMovement movement = null!;
     private MasterRef _master;
     private delegate void FlyDelegate(nint gameObject);
-    private readonly FlyDelegate Fly = Svc.Hook.GetDelegate<FlyDelegate>("E8 ?? ?? ?? ?? 40 84 F6 74 ?? 8D 43"); // 7.41hf1 incase I take three years to get back to this
+    private readonly FlyDelegate Fly = IGameInteropProvider.Get().GetDelegate<FlyDelegate>("E8 ?? ?? ?? ?? 40 84 F6 74 ?? 8D 43"); // 7.41hf1 incase I take three years to get back to this
 
     [CommandHandler("/autofollow", "Enable AutoFollow")]
     internal void OnCommand(string command, string arguments) {
         if (!arguments.IsEmpty) {
-            if (Svc.Objects.FirstOrDefault(o => o.Name.TextValue.ToLowerInvariant().Contains(arguments, StringComparison.InvariantCultureIgnoreCase)) is { } obj) {
+            if (IObjectTable.Get().FirstOrDefault(o => o.Name.TextValue.ToLowerInvariant().Contains(arguments, StringComparison.InvariantCultureIgnoreCase)) is { } obj) {
                 _master = MasterRef.FromObject(obj);
-                Svc.Toasts.ShowNormal($"Auto following {obj.Name}");
+                IToastGui.Get().ShowNormal($"Auto following {obj.Name}");
                 return;
             }
             else {
@@ -45,33 +45,33 @@ public unsafe class AutoFollow : Tweak<AutoFollowConfiguration> {
                 return;
             }
         }
-        if (Svc.Targets.Target != null)
+        if (ITargetManager.Get().Target != null)
             SetMaster();
         else
             ClearMaster();
     }
 
     public override void Enable() {
-        Svc.Framework.Update += Follow;
-        Svc.Chat.ChatMessage += OnChatMessage;
+        IFramework.Get().Update += Follow;
+        IChatGui.Get().ChatMessage += OnChatMessage;
         movement = new();
     }
 
     public override void Disable() {
-        Svc.Framework.Update -= Follow;
-        Svc.Chat.ChatMessage -= OnChatMessage;
+        IFramework.Get().Update -= Follow;
+        IChatGui.Get().ChatMessage -= OnChatMessage;
         movement.Dispose();
     }
 
     private void SetMaster() {
         try {
-            if (Svc.Targets.Target is { Name.TextValue: var name } target) {
+            if (ITargetManager.Get().Target is { Name.TextValue: var name } target) {
                 _master = MasterRef.FromObject(target);
-                Svc.Toasts.ShowNormal($"Auto following {name}");
+                IToastGui.Get().ShowNormal($"Auto following {name}");
             }
             else {
                 _master = default;
-                Svc.Toasts.ShowNormal("Auto following off");
+                IToastGui.Get().ShowNormal("Auto following off");
             }
         }
         catch { }
@@ -80,12 +80,12 @@ public unsafe class AutoFollow : Tweak<AutoFollowConfiguration> {
     private void ClearMaster() {
         _master = default;
         movement.Enabled = false;
-        Svc.Toasts.ShowNormal("Auto following off");
+        IToastGui.Get().ShowNormal("Auto following off");
     }
 
     private void Follow(IFramework framework) {
         if (IObjectTable.Get().LocalPlayer is not { } player) return;
-        if (!Svc.Condition[ConditionFlag.InFlight] && TaskManager.IsBusy) return; // want to abort, not return, if in flight
+        if (!ICondition.Get()[ConditionFlag.InFlight] && TaskManager.IsBusy) return; // want to abort, not return, if in flight
         if (_master.IsEmpty && Config.AutoFollowName.IsEmpty) return;
 
         if (!TryGetMaster(out var master)) {
@@ -98,11 +98,11 @@ public unsafe class AutoFollow : Tweak<AutoFollowConfiguration> {
             return;
         }
 
-        if (Svc.Condition[ConditionFlag.InFlight]) {
+        if (ICondition.Get()[ConditionFlag.InFlight]) {
             TaskManager.Abort();
         }
 
-        if (Svc.Condition[ConditionFlag.RidingPillion]) return;
+        if (ICondition.Get()[ConditionFlag.RidingPillion]) return;
 
         if (master.ObjectKind == ObjectKind.Pc) {
             if (TrySprint(master)) return;
@@ -122,7 +122,7 @@ public unsafe class AutoFollow : Tweak<AutoFollowConfiguration> {
     }
 
     private bool TryGetMaster([NotNullWhen(true)] out IGameObject? master) {
-        master = Svc.Objects.FirstOrDefault(x => !_master.IsEmpty && _master.Matches(x) || !Config.AutoFollowName.IsEmpty && x.Name.TextValue.EqualsIgnoreCase(Config.AutoFollowName));
+        master = IObjectTable.Get().FirstOrDefault(x => !_master.IsEmpty && _master.Matches(x) || !Config.AutoFollowName.IsEmpty && x.Name.TextValue.EqualsIgnoreCase(Config.AutoFollowName));
         return master != null;
     }
 
@@ -133,7 +133,7 @@ public unsafe class AutoFollow : Tweak<AutoFollowConfiguration> {
         if (Config.OnlyInDuty && !IPlayerState.Get().IsInDuty)
             return true;
 
-        if (Config.ExcludeCombat && Svc.Condition[ConditionFlag.InCombat])
+        if (Config.ExcludeCombat && ICondition.Get()[ConditionFlag.InCombat])
             return true;
 
         return false;
@@ -153,7 +153,7 @@ public unsafe class AutoFollow : Tweak<AutoFollowConfiguration> {
     }
 
     private bool TryPillion(IGameObject master) {
-        if (!Svc.Party.Any(p => p.EntityId == master.GameObjectId) || !master.CanRidePillion())
+        if (!IPartyList.Get().Any(p => p.EntityId == master.GameObjectId) || !master.CanRidePillion())
             return false;
 
         if (master.DistanceTo() > 3) {
@@ -163,16 +163,16 @@ public unsafe class AutoFollow : Tweak<AutoFollowConfiguration> {
         }
 
         movement.Enabled = false;
-        if (Svc.Condition[ConditionFlag.Mounted]) {
+        if (ICondition.Get()[ConditionFlag.Mounted]) {
             ActionManager.Instance()->UseAction(ActionType.GeneralAction, 23);
             return true;
         }
 
         TaskManager.Enqueue(() => {
-            Svc.Log.Debug("Detected mounted party member with extra seats, mounting...");
+            IPluginLog.Get().Debug("Detected mounted party member with extra seats, mounting...");
             GameMain.ExecuteCommand(CommandFlag.RidePillion.Value, (int)master.EntityId, 10);
         });
-        TaskManager.Enqueue(() => Svc.Condition[ConditionFlag.Mounted]);
+        TaskManager.Enqueue(() => ICondition.Get()[ConditionFlag.Mounted]);
         return true;
     }
 
@@ -200,7 +200,7 @@ public unsafe class AutoFollow : Tweak<AutoFollowConfiguration> {
     }
 
     private bool TryDismount(IGameObject master) {
-        if (master.Character->IsMounted() || !Svc.Condition[ConditionFlag.Mounted])
+        if (master.Character->IsMounted() || !ICondition.Get()[ConditionFlag.Mounted])
             return false;
 
         movement.Enabled = false;
@@ -208,8 +208,8 @@ public unsafe class AutoFollow : Tweak<AutoFollowConfiguration> {
         return true;
     }
 
-    private static bool CanMount() => !Svc.Condition[ConditionFlag.Mounted] && !Svc.Condition[ConditionFlag.Mounting] && !Svc.Condition[ConditionFlag.InCombat] && !Svc.Condition[ConditionFlag.Casting];
-    private static bool CanFly() => Control.CanFly && !Svc.Condition[ConditionFlag.InFlight];
+    private static bool CanMount() => !ICondition.Get()[ConditionFlag.Mounted] && !ICondition.Get()[ConditionFlag.Mounting] && !ICondition.Get()[ConditionFlag.InCombat] && !ICondition.Get()[ConditionFlag.Casting];
+    private static bool CanFly() => Control.CanFly && !ICondition.Get()[ConditionFlag.InFlight];
 
     private readonly record struct MasterRef(uint? Id, string? Name) {
         public bool IsEmpty => Id is null && string.IsNullOrEmpty(Name);
@@ -230,8 +230,8 @@ public unsafe class AutoFollow : Tweak<AutoFollowConfiguration> {
             else if (message.Message.TextValue.ContainsIgnoreCase("autofollow off"))
                 ClearMaster();
             else {
-                if (Svc.Objects.FirstOrDefault(o => o.Name.TextValue.Equals(player?.PlayerName)) is { } actor) {
-                    Svc.Targets.Target = actor;
+                if (IObjectTable.Get().FirstOrDefault(o => o.Name.TextValue.Equals(player?.PlayerName)) is { } actor) {
+                    ITargetManager.Get().Target = actor;
                     SetMaster();
                 }
             }

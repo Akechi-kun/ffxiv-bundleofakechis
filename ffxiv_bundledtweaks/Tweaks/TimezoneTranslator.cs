@@ -51,19 +51,19 @@ public class TimezoneTranslator : Tweak {
             "Europe/Paris") },
     };
 
-    public override void Enable() => Svc.Chat.ChatMessage += OnChatMessage;
-    public override void Disable() => Svc.Chat.ChatMessage -= OnChatMessage;
+    public override void Enable() => IChatGui.Get().ChatMessage += OnChatMessage;
+    public override void Disable() => IChatGui.Get().ChatMessage -= OnChatMessage;
 
     private void OnChatMessage(IHandleableChatMessage message) {
         if (message.LogKind is not XivChatType.Notice) return;
         if (message.Message.TextValue.IsEmpty) return;
 
-        if (_kvp.TryGetValue(Svc.ClientState.ClientLanguage, out var conf)) {
+        if (_kvp.TryGetValue(IClientState.Get().ClientLanguage, out var conf)) {
             var regex = conf.Culture.GetFullDateTimeRegexPattern();
             if (!regex.IsMatch(message.Message.TextValue))
                 return;
 
-            var serverTz = Svc.ClientState.ClientLanguage == ClientLanguage.French ? conf.LongName : conf.Abbreviation; // french has to be special as always
+            var serverTz = IClientState.Get().ClientLanguage == ClientLanguage.French ? conf.LongName : conf.Abbreviation; // french has to be special as always
             var sb = new SeStringBuilder();
             foreach (var item in message.Message.Payloads) {
                 if (item is TextPayload tp && !string.IsNullOrEmpty(tp.Text)) {

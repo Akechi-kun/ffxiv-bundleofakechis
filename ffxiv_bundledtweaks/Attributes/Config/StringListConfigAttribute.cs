@@ -13,7 +13,7 @@ public class StringListConfigAttribute : BaseConfigAttribute {
         var value = fieldInfo.GetValue(config)!;
         var attr = fieldInfo.GetCustomAttribute<BaseConfigAttribute>();
 
-        ImGui.TextUnformatted(fieldInfo.Name.SplitWords());
+        ImGui.Text(fieldInfo.Name.SplitWords());
 
         if (ImGui.InputText("##Input", ref _tempInput, 150, ImGuiInputTextFlags.EnterReturnsTrue)) {
             if (!string.IsNullOrWhiteSpace(_tempInput)) {

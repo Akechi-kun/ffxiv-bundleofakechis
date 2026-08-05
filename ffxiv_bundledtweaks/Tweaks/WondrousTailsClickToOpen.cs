@@ -20,14 +20,14 @@ internal class WondrousTailsClickToOpen : Tweak {
     private unsafe ContentsFinderQueueInfo* QueueInfo => ContentsFinder.Instance()->GetQueueInfo();
 
     public override void Enable() {
-        Svc.AddonLifecycle.RegisterListener(AddonEvent.PostSetup, "WeeklyBingo", OnAddonSetup);
-        Svc.AddonLifecycle.RegisterListener(AddonEvent.PreFinalize, "WeeklyBingo", OnAddonFinalize);
+        IAddonLifecycle.Get().RegisterListener(AddonEvent.PostSetup, "WeeklyBingo", OnAddonSetup);
+        IAddonLifecycle.Get().RegisterListener(AddonEvent.PreFinalize, "WeeklyBingo", OnAddonFinalize);
         _sheet = [.. ContentFinderCondition.Where(x => !x.MSQRoulette)];
     }
 
     public override void Disable() {
-        Svc.AddonLifecycle.UnregisterListener(OnAddonSetup);
-        Svc.AddonLifecycle.UnregisterListener(OnAddonFinalize);
+        IAddonLifecycle.Get().UnregisterListener(OnAddonSetup);
+        IAddonLifecycle.Get().UnregisterListener(OnAddonFinalize);
     }
 
     private unsafe void OnAddonSetup(AddonEvent type, AddonArgs args) {
@@ -35,7 +35,7 @@ internal class WondrousTailsClickToOpen : Tweak {
         ResetEventHandles();
         foreach (var index in Enumerable.Range(0, 16)) {
             var dutySlot = addonWeeklyBingo->DutySlotList[index];
-            eventHandles[index] = Svc.AddonEventManager.AddEvent((nint)addonWeeklyBingo, (nint)dutySlot.DutyButton->OwnerNode, AddonEventType.ButtonClick, OnDutySlotClick);
+            eventHandles[index] = IAddonEventManager.Get().AddEvent((nint)addonWeeklyBingo, (nint)dutySlot.DutyButton->OwnerNode, AddonEventType.ButtonClick, OnDutySlotClick);
         }
     }
 
@@ -99,7 +99,7 @@ internal class WondrousTailsClickToOpen : Tweak {
     private void ResetEventHandles() {
         foreach (var index in Enumerable.Range(0, 16)) {
             if (eventHandles[index] is { } handle) {
-                Svc.AddonEventManager.RemoveEvent(handle);
+                IAddonEventManager.Get().RemoveEvent(handle);
                 eventHandles[index] = null;
             }
         }

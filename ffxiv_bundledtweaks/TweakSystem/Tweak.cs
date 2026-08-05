@@ -27,7 +27,7 @@ public abstract partial class Tweak : ITweak {
         RequiredClientStructsVersion = (CachedType.GetCustomAttribute<RequiresClientStructsAttribute>()?.MinVersion ?? 0, CachedType.GetCustomAttribute<RequiresClientStructsAttribute>()?.MaxVersion ?? uint.MaxValue);
 
         try {
-            Svc.Hook.InitializeFromAttributes(this);
+            IGameInteropProvider.Get().InitializeFromAttributes(this);
         }
         catch (SignatureException ex) {
             Error(ex, $"{nameof(SignatureException)}, flagging as outdated");
@@ -393,7 +393,7 @@ public abstract partial class Tweak // Internal
 
             if (enabled) {
                 foreach (var c in attr.Commands) {
-                    if (onlyAbsent && Svc.Commands.Commands.ContainsKey(c))
+                    if (onlyAbsent && ICommandManager.Get().Commands.ContainsKey(c))
                         continue;
                     EnableCommand(c, attr.HelpMessage, methodInfo, attr);
                 }
@@ -438,13 +438,13 @@ public abstract partial class Tweak // Internal
             string.IsNullOrEmpty(attr.ConfigFieldName) ||
             // Or if the config field is enabled
             CachedConfigType != null && GetConfigObject() != null && (bool?)CachedConfigType.GetField(attr.ConfigFieldName)?.GetValue(GetConfigObject()) == true)
-        .Where(attr => attr.Commands.Any(cmd => Svc.Commands.Commands.ContainsKey(cmd)));
+        .Where(attr => attr.Commands.Any(cmd => ICommandManager.Get().Commands.ContainsKey(cmd)));
 
         if (commandHandlers.Any()) {
             ImGui.DrawSection("Available Commands");
             foreach (var attr in commandHandlers) {
-                foreach (var cmd in attr.Commands.Where(Svc.Commands.Commands.ContainsKey)) {
-                    var commandInfo = Svc.Commands.Commands[cmd];
+                foreach (var cmd in attr.Commands.Where(ICommandManager.Get().Commands.ContainsKey)) {
+                    var commandInfo = ICommandManager.Get().Commands[cmd];
                     ImGui.Text($"{cmd}");
                     if (!string.IsNullOrEmpty(commandInfo.HelpMessage)) {
                         ImGui.SameLine();
@@ -479,17 +479,17 @@ public abstract partial class Tweak // Internal
         }
 
         // replace if already registered
-        if (Svc.Commands.Commands.ContainsKey(command))
-            Svc.Commands.RemoveHandler(command);
+        if (ICommandManager.Get().Commands.ContainsKey(command))
+            ICommandManager.Get().RemoveHandler(command);
 
-        if (Svc.Commands.AddHandler(command, new CommandInfo(handler) { HelpMessage = helpMessage, DisplayOrder = 1 }))
+        if (ICommandManager.Get().AddHandler(command, new CommandInfo(handler) { HelpMessage = helpMessage, DisplayOrder = 1 }))
             Log($"Added CommandHandler for {command}");
         else
             Warning($"Could not add CommandHandler for {command}");
     }
 
     private void DisableCommand(string command) {
-        if (Svc.Commands.RemoveHandler(command))
+        if (ICommandManager.Get().RemoveHandler(command))
             Log($"Removed CommandHandler for {command}");
         else
             Warning($"Could not remove CommandHandler for {command}");
@@ -549,7 +549,7 @@ public abstract partial class Tweak // Logging
                 .Build()
         };
 
-        Svc.Chat.Print(message);
+        IChatGui.Get().Print(message);
     }
 }
 

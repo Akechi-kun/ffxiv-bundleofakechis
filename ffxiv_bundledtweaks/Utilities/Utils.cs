@@ -6,7 +6,7 @@ using FFXIVClientStructs.FFXIV.Component.GUI;
 namespace ComplexTweaks.Utilities;
 
 public static class Utils {
-    public static IDalamudTextureWrap? GetIcon(uint iconId) => iconId != 0 ? Svc.Texture?.GetFromGameIcon(iconId).GetWrapOrEmpty() : null;
+    public static IDalamudTextureWrap? GetIcon(uint iconId) => iconId != 0 ? ITextureProvider.Get()?.GetFromGameIcon(iconId).GetWrapOrEmpty() : null;
 
     public static unsafe bool IsClickingInGameWorld()
         => !ImGui.IsWindowHovered(ImGuiHoveredFlags.AnyWindow)
@@ -17,15 +17,15 @@ public static class Utils {
     //public static bool KeybindIsPressed(string name)
     //{
     //    var key = KeybindToKey(name);
-    //    if (!key.HasValue || !Svc.KeyState.IsVirtualKeyValid((int)key)) return false;
-    //    return Svc.KeyState.GetRawValue((int)key) != 0 || IsKeyPressed((int)key);
+    //    if (!key.HasValue || !IKeyState.Get().IsVirtualKeyValid((int)key)) return false;
+    //    return IKeyState.Get().GetRawValue((int)key) != 0 || IsKeyPressed((int)key);
     //}
 
     //public static void ResetKeybind(string name)
     //{
     //    var key = KeybindToKey(name);
-    //    if (!key.HasValue || !Svc.KeyState.IsVirtualKeyValid((int)key)) return;
-    //    Svc.KeyState.SetRawValue((int)key, 0);
+    //    if (!key.HasValue || !IKeyState.Get().IsVirtualKeyValid((int)key)) return;
+    //    IKeyState.Get().SetRawValue((int)key, 0);
     //}
 
     //public static unsafe VirtualKey? KeybindToKey(string name)

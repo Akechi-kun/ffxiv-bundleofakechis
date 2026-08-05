@@ -30,14 +30,14 @@ public unsafe class ClickToMove : Tweak<ClickToMoveConfiguration> {
 
     public override void Enable() {
         movement = new();
-        Svc.Framework.Update += MoveTo;
-        Svc.AddonLifecycle.RegisterListener(AddonEvent.PostReceiveEvent, "AreaMap", HandleMapClick);
+        IFramework.Get().Update += MoveTo;
+        IAddonLifecycle.Get().RegisterListener(AddonEvent.PostReceiveEvent, "AreaMap", HandleMapClick);
     }
 
     public override void Disable() {
         movement.Dispose();
-        Svc.Framework.Update -= MoveTo;
-        Svc.AddonLifecycle.UnregisterListener(HandleMapClick);
+        IFramework.Get().Update -= MoveTo;
+        IAddonLifecycle.Get().UnregisterListener(HandleMapClick);
     }
 
     public override void DrawConfig() {
@@ -128,7 +128,7 @@ public unsafe class ClickToMove : Tweak<ClickToMoveConfiguration> {
         else if (wasPressed && !isPressed) {
             wasPressed = false;
             if (!Framework.Instance()->WindowInactive) {
-                Svc.GameGui.ScreenToWorld(ImGui.GetIO().MousePos, out var pos, 100000f);
+                IGameGui.Get().ScreenToWorld(ImGui.GetIO().MousePos, out var pos, 100000f);
                 if (Config.WorldClick.MovementType == MovementType.Pathfind) {
                     if (Svc.Navmesh.IsRunning()) Svc.Navmesh.Stop();
                     Svc.Navmesh.PathfindAndMoveTo(pos, false);

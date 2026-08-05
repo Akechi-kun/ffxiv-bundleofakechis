@@ -86,14 +86,14 @@ public class HuntRelayHelper : Tweak<HuntRelayHelperConfiguration> {
     );
 
     public override void Enable() {
-        Svc.Chat.ChatMessage += OnChatMessage;
-        RelayLinkPayload = Svc.Chat.AddChatLinkHandler((uint)LinkHandlerId.RelayLinkPayload, HandleRelayLink);
+        IChatGui.Get().ChatMessage += OnChatMessage;
+        RelayLinkPayload = IChatGui.Get().AddChatLinkHandler((uint)LinkHandlerId.RelayLinkPayload, HandleRelayLink);
         Svc.Interface.GetIpcSubscriber<HuntAlertMessage, object>("HuntAlerts.OnHuntAlertMessageReceived").Subscribe(OnHuntAlert);
     }
 
     public override void Disable() {
-        Svc.Chat.ChatMessage -= OnChatMessage;
-        Svc.Chat.RemoveChatLinkHandler((uint)LinkHandlerId.RelayLinkPayload);
+        IChatGui.Get().ChatMessage -= OnChatMessage;
+        IChatGui.Get().RemoveChatLinkHandler((uint)LinkHandlerId.RelayLinkPayload);
         Svc.Interface.GetIpcSubscriber<HuntAlertMessage, object>("HuntAlerts.OnHuntAlertMessageReceived").Unsubscribe(OnHuntAlert);
         _huntAlertsRelays.Clear();
     }
@@ -198,8 +198,8 @@ public class HuntRelayHelper : Tweak<HuntRelayHelperConfiguration> {
     }
 
     private void OnChatMessage(IHandleableChatMessage message) {
-        if (!Svc.ClientState.IsLoggedIn) return; // messages sometimes trigger during login, but before fully logged in and thus stuff like checking player DC fails later
-        if (message.Sender.TextValue == Svc.PlayerState.CharacterName) return;
+        if (!IClientState.Get().IsLoggedIn) return; // messages sometimes trigger during login, but before fully logged in and thus stuff like checking player DC fails later
+        if (message.Sender.TextValue == IPlayerState.Get().CharacterName) return;
 
         if (message.Message.Payloads.FirstOrDefault(x => x is MapLinkPayload, null) is not MapLinkPayload mlp) {
             if (message.Message.Payloads.OfType<DalamudLinkPayload>().Any(p => p.Plugin == "HuntAlerts") && _huntAlertsRelays.Count > 0) {
@@ -222,15 +222,15 @@ public class HuntRelayHelper : Tweak<HuntRelayHelperConfiguration> {
                 return;
             }
             if (world is null && message.LogKind is XivChatType.NoviceNetwork)
-                world = Svc.PlayerState.CurrentWorld.Value;
+                world = IPlayerState.Get().CurrentWorld.Value;
             if (world is null && Config.AssumeBlankWorldsAreLocal) {
                 world = Config.AssumedLocality switch {
-                    Locality.PlayerHomeWorld => Svc.PlayerState.HomeWorld.Value,
-                    Locality.PlayerCurrentWorld => Svc.PlayerState.CurrentWorld.Value,
+                    Locality.PlayerHomeWorld => IPlayerState.Get().HomeWorld.Value,
+                    Locality.PlayerCurrentWorld => IPlayerState.Get().CurrentWorld.Value,
                     Locality.SenderHomeWorld => message.Sender.Payloads.OfType<TextPayload>().Select(p => p.Text!.Contains((char)SeIconChar.CrossWorld)
                         ? World.FirstOrNull(x => x!.IsPublic && p.Text.Split((char)SeIconChar.CrossWorld)[1].Contains(x.Name.ToString(), StringComparison.OrdinalIgnoreCase))
-                        : Svc.PlayerState.CurrentWorld.Value)
-                        .FirstOrDefault(Svc.PlayerState.CurrentWorld.Value),
+                        : IPlayerState.Get().CurrentWorld.Value)
+                        .FirstOrDefault(IPlayerState.Get().CurrentWorld.Value),
                     _ => null
                 };
             }
@@ -265,20 +265,20 @@ public class HuntRelayHelper : Tweak<HuntRelayHelperConfiguration> {
         foreach (var (channel, command, islocal, _) in Config.Channels.Where(c => c.Enabled)) {
             var channelName = channel.GetAttribute<XivChatTypeInfoAttribute>()?.FancyName ?? throw new Exception($"Channel has no {nameof(XivChatTypeInfoAttribute)}");
             if (Config.DontRepeatRelays && payload.OriginChannel == ((uint)channel)) continue; // don't send to the channel that relay was clicked from
-            if (channelName.StartsWith("Linkshell") && Svc.PlayerState.CurrentWorld.RowId != Svc.PlayerState.HomeWorld.RowId) continue; // don't send to linkshells when off homeworld
-            if (Config.OnlySendLocalHuntsToLocalChannels && islocal && !channelName.StartsWith("Novice") && Svc.PlayerState.HomeWorld.RowId != payload.World.RowId) continue; // don't send to non-novice local channels when off homeworld
-            if (channelName.StartsWith("Novice") && Svc.PlayerState.CurrentWorld.RowId != payload.World.RowId) continue; // don't send offworld relays to NN
+            if (channelName.StartsWith("Linkshell") && IPlayerState.Get().CurrentWorld.RowId != IPlayerState.Get().HomeWorld.RowId) continue; // don't send to linkshells when off homeworld
+            if (Config.OnlySendLocalHuntsToLocalChannels && islocal && !channelName.StartsWith("Novice") && IPlayerState.Get().HomeWorld.RowId != payload.World.RowId) continue; // don't send to non-novice local channels when off homeworld
+            if (channelName.StartsWith("Novice") && IPlayerState.Get().CurrentWorld.RowId != payload.World.RowId) continue; // don't send offworld relays to NN
             if (channelName.StartsWith("Novice") && !InfoProxyNoviceNetwork.IsInNoviceNetwork()) continue;
 
             if (Config.DryRun) {
-                Svc.Chat.Print(new() { Type = channel, MessageBytes = [.. Encoding.UTF8.GetBytes($"[DRYRUN] "), .. channelName.StartsWith("Novice") ? nnRelay.ToArray() : relay.ToArray()] });
+                IChatGui.Get().Print(new() { Type = channel, MessageBytes = [.. Encoding.UTF8.GetBytes($"[DRYRUN] "), .. channelName.StartsWith("Novice") ? nnRelay.ToArray() : relay.ToArray()] });
                 continue;
             }
 
             TaskManager.Enqueue(() => {
                 if (IObjectTable.Get().LocalPlayer.Available) // messages can't be sent when travelling between zones where your player goes null
                 {
-                    Svc.Chat.SendMessageUnsafe([.. Encoding.UTF8.GetBytes($"/{command} "), .. channelName.StartsWith("Novice") ? nnRelay.ToArray() : relay.ToArray()]);
+                    IChatGui.Get().SendMessageUnsafe([.. Encoding.UTF8.GetBytes($"/{command} "), .. channelName.StartsWith("Novice") ? nnRelay.ToArray() : relay.ToArray()]);
                     return true;
                 }
                 else return false;
@@ -371,7 +371,7 @@ public class HuntRelayHelper : Tweak<HuntRelayHelperConfiguration> {
         World? partial = null;
         if (Config.AllowPartialWorldMatches)
             foreach (var word in RemoveConflicts(text).Split(' ').Where(t => !ECommons.GenericHelpers.IsNullOrEmpty(t) && t.Length > 2))
-                partial ??= World.FirstOrNull(x => x.IsPublic && x.DataCenter.RowId == Svc.PlayerState.CurrentWorld.Value.DataCenter.RowId && x.Name.ExtractText().Contains(word.FilterNonAlphanumeric(), StringComparison.OrdinalIgnoreCase));
+                partial ??= World.FirstOrNull(x => x.IsPublic && x.DataCenter.RowId == IPlayerState.Get().CurrentWorld.Value.DataCenter.RowId && x.Name.ExtractText().Contains(word.FilterNonAlphanumeric(), StringComparison.OrdinalIgnoreCase));
 
         return (partial ?? World.FirstOrNull(x => x.IsPublic && RemoveConflicts(text).Contains(x.Name.ExtractText(), StringComparison.OrdinalIgnoreCase)) ?? null, heuristicInstance != 0 ? (uint)heuristicInstance : (uint)mapInstance, (uint)relayType);
     }

@@ -15,40 +15,40 @@ public class ARSwitcher : Tweak {
     private IDtrBarEntry? _dtrBarEntry;
 
     public override void Enable() {
-        _dtrBarEntry ??= Svc.DtrBar.Get("Character Index", "Unknown Character Index");
+        _dtrBarEntry ??= IDtrBar.Get().Get("Character Index", "Unknown Character Index");
         _dtrBarEntry.OnClick = @event => {
             unsafe {
-                var homeWorldId = Svc.PlayerState.HomeWorld.RowId;
-                var currentWorldId = Svc.PlayerState.CurrentWorld.RowId;
+                var homeWorldId = IPlayerState.Get().HomeWorld.RowId;
+                var currentWorldId = IPlayerState.Get().CurrentWorld.RowId;
                 if (homeWorldId == currentWorldId) {
                     var target = FindCharacter(@event.ClickType is MouseClickType.Left ? 1 : -1);
                     SwitchCharacter(target);
                 }
                 else
-                    Svc.Commands.ProcessCommand("/li");
+                    ICommandManager.Get().ProcessCommand("/li");
             }
         };
-        if (Svc.ClientState.IsLoggedIn)
+        if (IClientState.Get().IsLoggedIn)
             UpdateDtrBar();
-        Svc.ClientState.Login += UpdateDtrBar;
+        IClientState.Get().Login += UpdateDtrBar;
     }
 
     public override void Disable() {
         _dtrBarEntry?.Remove();
-        Svc.ClientState.Login -= UpdateDtrBar;
+        IClientState.Get().Login -= UpdateDtrBar;
     }
 
     private void UpdateDtrBar() {
-        if (_dtrBarEntry?.UserHidden ?? true || !Svc.PlayerState.CurrentWorld.IsValid || !Svc.PlayerState.HomeWorld.IsValid)
+        if (_dtrBarEntry?.UserHidden ?? true || !IPlayerState.Get().CurrentWorld.IsValid || !IPlayerState.Get().HomeWorld.IsValid)
             return;
 
         try {
-            var currentWorld = Svc.PlayerState.CurrentWorld.Value.Name.ToString();
-            var homeWorld = Svc.PlayerState.HomeWorld.Value.Name.ToString();
+            var currentWorld = IPlayerState.Get().CurrentWorld.Value.Name.ToString();
+            var homeWorld = IPlayerState.Get().HomeWorld.Value.Name.ToString();
             var characterIds = Service.AutoRetainerApi.GetRegisteredCharacters() ?? [];
             var characterIdsOnHomeWorld = characterIds.Where(x => Service.AutoRetainerApi.GetOfflineCharacterData(x)?.World == homeWorld).ToList();
 
-            var seIconChar = SeIconChar.Instance1 + characterIdsOnHomeWorld.IndexOf(Svc.PlayerState.ContentId);
+            var seIconChar = SeIconChar.Instance1 + characterIdsOnHomeWorld.IndexOf(IPlayerState.Get().ContentId);
             if (currentWorld == homeWorld) {
                 _dtrBarEntry.Text = seIconChar.ToIconString();
 
@@ -81,7 +81,7 @@ public class ARSwitcher : Tweak {
             Verbose($"Switching characters ({direction})");
 
             var characterIds = Service.AutoRetainerApi.GetRegisteredCharacters();
-            var index = characterIds.IndexOf(Svc.PlayerState.ContentId);
+            var index = characterIds.IndexOf(IPlayerState.Get().ContentId);
             if (index < 0) {
                 if (showError)
                     ModuleMessage("Current character not known.");
@@ -92,7 +92,7 @@ public class ARSwitcher : Tweak {
             do {
                 index = (index + direction + characterIds.Count) % characterIds.Count;
                 target = Service.AutoRetainerApi.GetOfflineCharacterData(characterIds[index]);
-                if (target?.CID == Svc.PlayerState.ContentId) {
+                if (target?.CID == IPlayerState.Get().ContentId) {
                     if (showError)
                         ModuleMessage("No character to switch to found.");
                     return null;
@@ -151,15 +151,15 @@ public class ARSwitcher : Tweak {
         if (target == null)
             return;
 
-        if (Svc.Condition[ConditionFlag.BoundByDuty] || Svc.Condition[ConditionFlag.BoundByDuty56] ||
-            Svc.Condition[ConditionFlag.BoundByDuty95] || Svc.Condition[ConditionFlag.InDutyQueue] ||
-            Svc.Condition[ConditionFlag.Occupied] || Svc.Condition[ConditionFlag.Occupied30] ||
-            Svc.Condition[ConditionFlag.Occupied33] || Svc.Condition[ConditionFlag.Occupied38] ||
-            Svc.Condition[ConditionFlag.Occupied39] || Svc.Condition[ConditionFlag.OccupiedInEvent] ||
-            Svc.Condition[ConditionFlag.OccupiedSummoningBell] || Svc.Condition[ConditionFlag.OccupiedInQuestEvent] ||
-            Svc.Condition[ConditionFlag.OccupiedInCutSceneEvent] || Svc.Condition[ConditionFlag.WatchingCutscene] ||
-            Svc.Condition[ConditionFlag.WatchingCutscene78] || Svc.Condition[ConditionFlag.InCombat]) {
-            Svc.NotificationManager.AddNotification(new Notification {
+        if (ICondition.Get()[ConditionFlag.BoundByDuty] || ICondition.Get()[ConditionFlag.BoundByDuty56] ||
+            ICondition.Get()[ConditionFlag.BoundByDuty95] || ICondition.Get()[ConditionFlag.InDutyQueue] ||
+            ICondition.Get()[ConditionFlag.Occupied] || ICondition.Get()[ConditionFlag.Occupied30] ||
+            ICondition.Get()[ConditionFlag.Occupied33] || ICondition.Get()[ConditionFlag.Occupied38] ||
+            ICondition.Get()[ConditionFlag.Occupied39] || ICondition.Get()[ConditionFlag.OccupiedInEvent] ||
+            ICondition.Get()[ConditionFlag.OccupiedSummoningBell] || ICondition.Get()[ConditionFlag.OccupiedInQuestEvent] ||
+            ICondition.Get()[ConditionFlag.OccupiedInCutSceneEvent] || ICondition.Get()[ConditionFlag.WatchingCutscene] ||
+            ICondition.Get()[ConditionFlag.WatchingCutscene78] || ICondition.Get()[ConditionFlag.InCombat]) {
+            INotificationManager.Get().AddNotification(new Notification {
                 Title = $"{Plugin.Name} - {Name}",
                 Content = "Can't switch characters (bound by duty or occupied)",
                 Type = NotificationType.Error
@@ -167,12 +167,12 @@ public class ARSwitcher : Tweak {
             return;
         }
 
-        Svc.NotificationManager.AddNotification(new Notification {
+        INotificationManager.Get().AddNotification(new Notification {
             Title = $"{Plugin.Name} - {Name}",
             Content = $"Switch to {target}.",
             Type = NotificationType.Success,
         });
-        Svc.Commands.ProcessCommand($"/ays relog {target}");
+        ICommandManager.Get().ProcessCommand($"/ays relog {target}");
     }
 
     private sealed record Target(string Name, string World) {

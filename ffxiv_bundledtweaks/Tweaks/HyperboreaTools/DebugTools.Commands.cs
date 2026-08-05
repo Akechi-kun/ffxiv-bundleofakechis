@@ -13,7 +13,7 @@ public partial class DebugTools : Tweak<DebugToolsConfiguration> {
             WindowsService.Get().AddWindow(new MousePositionOverlay());
         else
             WindowsService.Get().RemoveWindow<MousePositionOverlay>();
-        Svc.Toasts.ShowNormal($"TPClick {(tpActive ? "Enabled" : "Disabled")}", new ToastOptions() { Speed = ToastSpeed.Fast });
+        IToastGui.Get().ShowNormal($"TPClick {(tpActive ? "Enabled" : "Disabled")}", new ToastOptions() { Speed = ToastSpeed.Fast });
     }
 
     [CommandHandler("/noclip", "Enable NoClip", nameof(Config.EnableNoClip))]

@@ -58,7 +58,7 @@ public sealed partial class LoopMelding(GameInventoryItem item) : TaskBase {
     private async Task Retrieve() {
         using var scope = BeginScope(nameof(Retrieve));
         unsafe { EventFramework.Instance()->MaterializeItem((InventoryItem*)item.Address, MaterializeEntryId.Retrieve); }
-        await WaitUntilThenFalse(() => Svc.Condition[ConditionFlag.Occupied39], "Retrieving");
+        await WaitUntilThenFalse(() => ICondition.Get()[ConditionFlag.Occupied39], "Retrieving");
     }
 
     private async Task Open() {
@@ -117,10 +117,10 @@ public sealed partial class LoopMelding(GameInventoryItem item) : TaskBase {
 
     private async Task HandleMateriaAttachDialog() {
         using var scope = BeginScope(nameof(HandleMateriaAttachDialog));
-        await WaitUntil(() => Svc.Condition[ConditionFlag.MeldingMateria], "WaitForMeldState");
+        await WaitUntil(() => ICondition.Get()[ConditionFlag.MeldingMateria], "WaitForMeldState");
         await WaitUntil(() => AtkUnitBase.IsAddonReady("MateriaAttachDialog"), "WaitForDialog");
         AddonMateriaAttachDialog.Meld();
-        await WaitWhile(() => Svc.Condition[ConditionFlag.MeldingMateria], "WaitForMeldFinish");
+        await WaitWhile(() => ICondition.Get()[ConditionFlag.MeldingMateria], "WaitForMeldFinish");
     }
 
     private unsafe void ReceiveEvent(ulong eventKind, int[] values) {

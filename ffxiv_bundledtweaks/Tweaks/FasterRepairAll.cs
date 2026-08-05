@@ -13,13 +13,13 @@ public partial class FasterRepairAll : Tweak {
 
     private const uint eventParamId = 0x43425400;
     public override void Enable() {
-        Svc.AddonLifecycle.RegisterListener(AddonEvent.PostSetup, "Repair", AddEvent);
-        Svc.AddonLifecycle.RegisterListener(AddonEvent.PreReceiveEvent, "Repair", HandleEvent);
+        IAddonLifecycle.Get().RegisterListener(AddonEvent.PostSetup, "Repair", AddEvent);
+        IAddonLifecycle.Get().RegisterListener(AddonEvent.PreReceiveEvent, "Repair", HandleEvent);
     }
 
     public override void Disable() {
-        Svc.AddonLifecycle.UnregisterListener(AddEvent);
-        Svc.AddonLifecycle.UnregisterListener(HandleEvent);
+        IAddonLifecycle.Get().UnregisterListener(AddEvent);
+        IAddonLifecycle.Get().UnregisterListener(HandleEvent);
     }
 
     private unsafe void AddEvent(AddonEvent type, AddonArgs args) {
@@ -57,10 +57,10 @@ public partial class FasterRepairAll : Tweak {
     private class RepairAllTask : TaskBase {
         // all this avoids is the progress UI, but takes longer since it will "repair" empty inventories and waste time
         protected override async Task Execute() {
-            await WaitUntil(() => Svc.Condition.HasPermission(39), "WaitForCanRepair");
+            await WaitUntil(() => ICondition.Get().HasPermission(39), "WaitForCanRepair");
             RepairEquipped();
             foreach (var inv in RepairCategory.Values) {
-                await WaitUntil(() => Svc.Condition.HasPermission(39), "WaitForCanRepair");
+                await WaitUntil(() => ICondition.Get().HasPermission(39), "WaitForCanRepair");
                 inv.Repair();
             }
         }

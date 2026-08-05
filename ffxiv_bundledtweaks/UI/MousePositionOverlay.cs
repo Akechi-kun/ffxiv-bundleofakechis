@@ -21,7 +21,7 @@ public class MousePositionOverlay : Window {
 
     public override void Draw() {
         var pos = ImGui.GetMousePos();
-        if (Svc.GameGui.ScreenToWorld(pos, out var res)) {
+        if (IGameGui.Get().ScreenToWorld(pos, out var res)) {
             var col = GradientColor.Get(EzColor.RedBright, EzColor.YellowBright);
             DrawRingWorld(res, 0.5f, ImGui.ColorConvertFloat4ToU32(col), 2f);
             var l = MathF.Sqrt(2f) / 2f * 0.5f;
@@ -39,8 +39,8 @@ public class MousePositionOverlay : Window {
     }
 
     (Vector2? posA, Vector2? posB) GetAdjustedLine(Vector3 pointA, Vector3 pointB) {
-        _ = Svc.GameGui.WorldToScreen(pointA, out var posA);
-        _ = Svc.GameGui.WorldToScreen(pointB, out var posB);
+        _ = IGameGui.Get().WorldToScreen(pointA, out var posA);
+        _ = IGameGui.Get().WorldToScreen(pointB, out var posB);
         //if (!resultA || !resultB) return default;
         return (posA, posB);
     }
@@ -50,12 +50,7 @@ public class MousePositionOverlay : Window {
         var seg = segments / 2;
         var elements = new Vector2?[segments];
         for (var i = 0; i < segments; i++) {
-            Svc.GameGui.WorldToScreen(
-                new Vector3(position.X + radius * (float)Math.Sin(Math.PI / seg * i),
-                position.Y,
-                position.Z + radius * (float)Math.Cos(Math.PI / seg * i)
-                ),
-                out var pos);
+            IGameGui.Get().WorldToScreen(new Vector3(position.X + radius * (float)Math.Sin(Math.PI / seg * i), position.Y, position.Z + radius * (float)Math.Cos(Math.PI / seg * i)), out var pos);
             elements[i] = new Vector2(pos.X, pos.Y);
         }
         foreach (var pos in elements) {

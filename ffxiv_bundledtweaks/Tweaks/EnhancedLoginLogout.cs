@@ -73,7 +73,7 @@ public class EnhancedLoginLogout : Tweak<EnhancedLoginLogoutConfig> {
         foreach (var chr in Config.Chars.Where(x => x.CID == 0 || x.CID == IPlayerState.Get().ContentId).OrderByDescending(x => x.Name == "Global"))
             foreach (var cmd in chr.LoginCommands.Where(c => c.Length >= 3)) {
                 TaskManager.EnqueueDelay(250);
-                TaskManager.Enqueue(() => Svc.Chat.SendMessage(cmd));
+                TaskManager.Enqueue(() => IChatGui.Get().SendMessage(cmd));
             }
     }
 }

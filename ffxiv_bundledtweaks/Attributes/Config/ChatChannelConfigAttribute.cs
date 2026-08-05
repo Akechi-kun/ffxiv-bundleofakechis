@@ -49,7 +49,7 @@ public class ChatChannelConfigAttribute : BaseConfigAttribute {
         var value = (List<XivChatType>)fieldInfo.GetValue(config)!;
         var attr = fieldInfo.GetCustomAttribute<BaseConfigAttribute>();
 
-        ImGui.TextUnformatted(fieldInfo.Name.SplitWords());
+        ImGui.Text(fieldInfo.Name.SplitWords());
 
         using var indent = ImGui.ConfigIndent();
 

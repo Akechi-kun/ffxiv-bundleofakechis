@@ -70,7 +70,7 @@ public abstract partial class DebugTab : IDebugTab {
             return;
         }
 
-        if (Svc.Texture.TryGetFromGameIcon(new GameIconLookup(iconId, isHq), out var tex) && tex.TryGetWrap(out var texture, out _)) {
+        if (ITextureProvider.Get().TryGetFromGameIcon(new GameIconLookup(iconId, isHq), out var tex) && tex.TryGetWrap(out var texture, out _)) {
             ImGui.Image(texture.Handle, drawInfo.Value);
 
             if (ImGui.IsItemHovered()) {
@@ -80,8 +80,8 @@ public abstract partial class DebugTab : IDebugTab {
                 if (!noTooltip) {
                     ImGui.BeginTooltip();
                     if (canCopy)
-                        ImGui.TextUnformatted("Click to copy IconId");
-                    ImGui.TextUnformatted($"ID: {iconId} – Size: {texture.Width}x{texture.Height}");
+                        ImGui.Text("Click to copy IconId");
+                    ImGui.Text($"ID: {iconId} – Size: {texture.Width}x{texture.Height}");
                     ImGui.Image(texture.Handle, new(texture.Width, texture.Height));
                     ImGui.EndTooltip();
                 }

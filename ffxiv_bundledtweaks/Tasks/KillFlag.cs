@@ -22,7 +22,7 @@ public sealed class KillFlag(string world) : TaskBase {
 
     private async Task HandleWorldTravel() {
         if (C.EnabledTweaks.Contains(nameof(InstantReturn)) && IPlayerState.Get().Territory.RowId != IPlayerState.Get().HomeAetheryte.Value.Territory.RowId) {
-            Svc.Chat.SendMessage("/return");
+            IChatGui.Get().SendMessage("/return");
             await WaitUntilTerritory(IPlayerState.Get().HomeAetheryte.Value.Territory.RowId);
         }
         Service.Lifestream.ExecuteCommand(world);
@@ -36,7 +36,7 @@ public sealed class KillFlag(string world) : TaskBase {
         if (target is { }) {
             await MoveTo(target.Position, MovementConfig.Default.WithTolerance(TARGET_APPROACH_DISTANCE + 2f).WithOptions(MovementOptions.Dismount));
             await MoveIfNoLoS(target);
-            Svc.Targets.Target = target;
+            ITargetManager.Get().Target = target;
             Service.BossMod.SetActiveList(["VBM Default", "VBM AI"]);
             Status = $"Waiting for {target.Name} to die";
             await TargetDead(target);
@@ -49,7 +49,7 @@ public sealed class KillFlag(string world) : TaskBase {
 
     private IGameObject? FindHuntTarget()
         => Svc.Navmesh.FlagToPoint() is not { } fp ? null
-            : Svc.Objects.Where(o => o is IBattleNpc { NameId: > 0 } && Vector3.Distance(o.Position, fp) <= HUNT_DETECTION_RADIUS)
+            : IObjectTable.Get().Where(o => o is IBattleNpc { NameId: > 0 } && Vector3.Distance(o.Position, fp) <= HUNT_DETECTION_RADIUS)
             .Select(o => (Object: o, Distance: Vector3.Distance(o.Position, fp), Row: NotoriousMonster.FirstOrNull(r => o.BaseId == r.BNpcBase.RowId)))
             .Where(t => t.Row.HasValue)
             .OrderBy(t => (t.Distance, -t.Row!.Value.Rank))

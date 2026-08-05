@@ -45,7 +45,7 @@ internal unsafe class ExecuteCommandTab : DebugTab {
 
         ImGui.TableNextRow();
         ImGui.TableSetColumnIndex(0);
-        ImGui.TextUnformatted("ExecuteCommand");
+        ImGui.Text("ExecuteCommand");
         ImGui.TableSetColumnIndex(1);
 
         ImGui.SetNextItemWidth(250f);
@@ -62,7 +62,7 @@ internal unsafe class ExecuteCommandTab : DebugTab {
 
         ImGui.TableNextRow();
         ImGui.TableSetColumnIndex(0);
-        ImGui.TextUnformatted("Params");
+        ImGui.Text("Params");
         ImGui.TableSetColumnIndex(1);
 
         ImGui.SetNextItemWidth(80f);
@@ -79,7 +79,7 @@ internal unsafe class ExecuteCommandTab : DebugTab {
 
         ImGui.TableNextRow();
         ImGui.TableSetColumnIndex(0);
-        ImGui.TextUnformatted(string.Empty);
+        ImGui.Text(string.Empty);
         ImGui.TableSetColumnIndex(1);
 
         if (ImGui.Button("Execute")) {
@@ -98,7 +98,7 @@ internal unsafe class ExecuteCommandTab : DebugTab {
 
         ImGui.TableNextRow();
         ImGui.TableSetColumnIndex(0);
-        ImGui.TextUnformatted("ExecuteLocationCommand");
+        ImGui.Text("ExecuteLocationCommand");
         ImGui.TableSetColumnIndex(1);
 
         ImGui.SetNextItemWidth(250f);
@@ -115,7 +115,7 @@ internal unsafe class ExecuteCommandTab : DebugTab {
 
         ImGui.TableNextRow();
         ImGui.TableSetColumnIndex(0);
-        ImGui.TextUnformatted("Location source");
+        ImGui.Text("Location source");
         ImGui.TableSetColumnIndex(1);
 
         ImGui.SetNextItemWidth(180f);
@@ -133,7 +133,7 @@ internal unsafe class ExecuteCommandTab : DebugTab {
 
         if (locationSource == ExecuteLocationSource.Custom) {
             ImGui.SameLine();
-            ImGui.TextUnformatted("Custom XYZ");
+            ImGui.Text("Custom XYZ");
             ImGui.SameLine();
             ImGui.SetNextItemWidth(80f);
             ImGui.InputFloat("X##loc", ref customLocation.X);
@@ -147,7 +147,7 @@ internal unsafe class ExecuteCommandTab : DebugTab {
 
         ImGui.TableNextRow();
         ImGui.TableSetColumnIndex(0);
-        ImGui.TextUnformatted("Params");
+        ImGui.Text("Params");
         ImGui.TableSetColumnIndex(1);
 
         ImGui.SetNextItemWidth(80f);
@@ -164,7 +164,7 @@ internal unsafe class ExecuteCommandTab : DebugTab {
 
         ImGui.TableNextRow();
         ImGui.TableSetColumnIndex(0);
-        ImGui.TextUnformatted(string.Empty);
+        ImGui.Text(string.Empty);
         ImGui.TableSetColumnIndex(1);
 
         if (ImGui.Button("Execute")) {
@@ -177,8 +177,8 @@ internal unsafe class ExecuteCommandTab : DebugTab {
     private Vector3 GetExecuteLocation() {
         if (IObjectTable.Get().LocalPlayer is not { Position: var playerPos }) return Vector3.Zero;
         var pos = locationSource switch {
-            ExecuteLocationSource.MouseWorld => Svc.GameGui.ScreenToWorld(ImGui.GetMousePos(), out var world) ? world : playerPos,
-            ExecuteLocationSource.Target => Svc.Targets.Target?.Position ?? playerPos,
+            ExecuteLocationSource.MouseWorld => IGameGui.Get().ScreenToWorld(ImGui.GetMousePos(), out var world) ? world : playerPos,
+            ExecuteLocationSource.Target => ITargetManager.Get().Target?.Position ?? playerPos,
             ExecuteLocationSource.Custom => customLocation,
             _ => playerPos,
         };

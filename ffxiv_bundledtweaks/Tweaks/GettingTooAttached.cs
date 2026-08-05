@@ -8,8 +8,8 @@ public class GettingTooAttached : Tweak {
     public override string Name => "Getting Too Attached";
     public override string Description => "Adds a context menu to items to loop through attaching and removing materia for the Getting Too Attached achievement";
 
-    public override void Enable() => Svc.ContextMenu.OnMenuOpened += OnMenuOpened;
-    public override void Disable() => Svc.ContextMenu.OnMenuOpened -= OnMenuOpened;
+    public override void Enable() => IContextMenu.Get().OnMenuOpened += OnMenuOpened;
+    public override void Disable() => IContextMenu.Get().OnMenuOpened -= OnMenuOpened;
 
     private void OnMenuOpened(IMenuOpenedArgs args) {
         if (args is not { MenuType: ContextMenuType.Inventory }) return;

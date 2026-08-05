@@ -23,11 +23,11 @@ public class GMAlert : Tweak<GMAlertConfiguration> {
     public override string Description => "Various alerts for when a GM is nearby.";
 
     public override void Enable() {
-        Svc.Framework.Update += OnUpdate;
+        IFramework.Get().Update += OnUpdate;
     }
 
     public override void Disable() {
-        Svc.Framework.Update -= OnUpdate;
+        IFramework.Get().Update -= OnUpdate;
     }
 
     private string _cmd = string.Empty;
@@ -76,7 +76,7 @@ public class GMAlert : Tweak<GMAlertConfiguration> {
     private unsafe void OnUpdate(IFramework framework) {
         if (!IObjectTable.Get().LocalPlayer.Available) return;
 
-        var gms = Svc.Objects.OfType<IPlayerCharacter>().Where(pc => pc.EntityId != 0xE000000 && pc.Character->CharacterData.OnlineStatus is <= 3 and > 0);
+        var gms = IObjectTable.Get().OfType<IPlayerCharacter>().Where(pc => pc.EntityId != 0xE000000 && pc.Character->CharacterData.OnlineStatus is <= 3 and > 0);
 
         if (!gms.Any()) {
             sent = false;
@@ -87,7 +87,7 @@ public class GMAlert : Tweak<GMAlertConfiguration> {
 
         foreach (var player in gms) {
             if (Config.Toast)
-                Svc.Toasts.ShowNormal($"GM {player.Name} is nearby!");
+                IToastGui.Get().ShowNormal($"GM {player.Name} is nearby!");
             if (Config.ChatMessage)
                 ModuleMessage($"GM {player.Name} is nearby!");
             if (Config.Sound)
@@ -98,8 +98,8 @@ public class GMAlert : Tweak<GMAlertConfiguration> {
 
         if (Config.Commands.Count > 0)
             foreach (var cmd in Config.Commands)
-                Svc.Chat.ExecuteCommand(cmd);
+                IChatGui.Get().ExecuteCommand(cmd);
         if (Config.KillGame)
-            Svc.Chat.ExecuteCommand("/xlkill");
+            IChatGui.Get().ExecuteCommand("/xlkill");
     }
 }

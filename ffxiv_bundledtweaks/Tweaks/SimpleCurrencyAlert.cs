@@ -17,8 +17,8 @@ public class SimpleCurrencyAlert : Tweak<SimpleCurrencyAlertConfig> {
     public override string Name => "Simple Currency Alert";
     public override string Description => "Probably won't reset your config every update. Triggers on zone change.";
 
-    public override void Enable() => Svc.ClientState.TerritoryChanged += OnTerritoryChanged;
-    public override void Disable() => Svc.ClientState.TerritoryChanged -= OnTerritoryChanged;
+    public override void Enable() => IClientState.Get().TerritoryChanged += OnTerritoryChanged;
+    public override void Disable() => IClientState.Get().TerritoryChanged -= OnTerritoryChanged;
 
     private void OnTerritoryChanged(uint obj) {
         foreach (var currency in Config.Alerts) {
@@ -147,7 +147,7 @@ public class SimpleCurrencyAlert : Tweak<SimpleCurrencyAlertConfig> {
     private unsafe List<CurrencyEntry> GetCurrencyItems() {
         var items = new List<CurrencyEntry>();
 
-        foreach (var tomestoneItem in Svc.Data.GetExcelSheet<TomestonesItem>().Where(r => r.Tomestones.IsValid && r.Tomestones.RowId > 1 && r.Item.RowId != 0)) {
+        foreach (var tomestoneItem in TomestonesItem.Where(r => r.Tomestones.IsValid && r.Tomestones.RowId > 1 && r.Item.RowId != 0)) {
             items.Add(new CurrencyEntry(SpecialCurrencyType.Tomestone, tomestoneItem.Tomestones.RowId, tomestoneItem.Item.RowId, GetTomestoneDisplayName(tomestoneItem.Tomestones.RowId)));
         }
 
@@ -196,7 +196,7 @@ public class SimpleCurrencyAlert : Tweak<SimpleCurrencyAlertConfig> {
             using var id = ImRaii.PushId($"{alert.Type}_{alert.LogicalId}_{alert.ItemId}_{idx}");
 
             if (alert.Icon != 0) {
-                if (Svc.Texture.GetFromGameIcon(new GameIconLookup { IconId = alert.Icon }).GetWrapOrDefault() is { Handle: var handle }) {
+                if (ITextureProvider.Get().GetFromGameIcon(new GameIconLookup { IconId = alert.Icon }).GetWrapOrDefault() is { Handle: var handle }) {
                     ImGui.Image(handle, new Vector2(ImGui.IconUnitHeight()));
                     ImGui.SameLine();
                 }

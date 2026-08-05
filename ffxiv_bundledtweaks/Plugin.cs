@@ -29,7 +29,7 @@ public class Plugin : IDalamudPlugin {
 
         ICommandManager.Get().AddHandler(Command, new(OnCommand) { HelpMessage = $"Opens the {Name} menu" });
 
-        Svc.Framework.RunOnFrameworkThread(InitializeTweaks);
+        IFramework.Get().RunOnFrameworkThread(InitializeTweaks);
         C.EnabledTweaks.CollectionChanged += OnChange;
         Svc.Interface.ActivePluginsChanged += OnPluginsChanged;
     }
@@ -61,7 +61,7 @@ public class Plugin : IDalamudPlugin {
     public void Dispose() {
         ICommandManager.Get().RemoveHandler(Command);
         foreach (var tweak in Tweaks) {
-            Svc.Log.Debug($"Disposing {tweak.InternalName}");
+            IPluginLog.Get().Debug($"Disposing {tweak.InternalName}");
             tweak.DisposeInternal();
         }
         C.EnabledTweaks.CollectionChanged -= OnChange;
@@ -105,7 +105,7 @@ public class Plugin : IDalamudPlugin {
 
     private void InitializeTweaks() {
         foreach (var tweakType in GetType().Assembly.GetTypes().Where(type => type.GetCustomAttribute<TweakAttribute>() != null)) {
-            Svc.Log.Verbose($"Initializing {tweakType.Name}");
+            IPluginLog.Get().Verbose($"Initializing {tweakType.Name}");
             try {
                 Tweaks.Add((Tweak)Activator.CreateInstance(tweakType)!);
             }

@@ -87,9 +87,9 @@ public static class AsciiSplash {
             ImGui.PushCursorY(10);
             if (_buildTask is { IsCompleted: true } && _cachedLines is { Length: > 0 })
                 foreach (var line in _cachedLines)
-                    ImGui.TextUnformatted(line);
+                    ImGui.Text(line);
             else
-                ImGui.TextUnformatted("Loading icon…");
+                ImGui.Text("Loading icon…");
             return;
         }
 
@@ -145,12 +145,12 @@ public static class AsciiSplash {
             for (var attempt = 0; attempt < 30; attempt++) {
                 if (_iconId == 0) {
                     var candidate = rnd.Next(0, 100_000); // everything above 100k is way too complex
-                    if (!Svc.Texture.TryGetIconPath(new GameIconLookup((uint)candidate), out _))
+                    if (!ITextureProvider.Get().TryGetIconPath(new GameIconLookup((uint)candidate), out _))
                         continue;
                     _iconId = (uint)candidate;
                 }
 
-                var shared = Svc.Texture.GetFromGameIcon(new GameIconLookup(_iconId));
+                var shared = ITextureProvider.Get().GetFromGameIcon(new GameIconLookup(_iconId));
 
                 try {
                     using var rented = await shared.RentAsync().ConfigureAwait(false);
@@ -158,7 +158,7 @@ public static class AsciiSplash {
                     BuildColoredAscii(image, Math.Clamp(_cachedWidth, 32, 200), out var colored, out var lines);
                     _cachedColored = colored;
                     _cachedLines = lines; // fallback plain
-                    Svc.Log.Debug($"[{nameof(AsciiSplash)}] Chosen icon: #{_iconId}");
+                    IPluginLog.Get().Debug($"[{nameof(AsciiSplash)}] Chosen icon: #{_iconId}");
                     return lines;
                 }
                 catch {
@@ -178,15 +178,15 @@ public static class AsciiSplash {
     private static async Task<Image<Rgba32>> WrapToImageAsync(IDalamudTextureWrap wrap) {
         try {
             using var ms = new MemoryStream();
-            await Svc.TextureReadback.SaveToStreamAsync(wrap, GUID_ContainerFormatPng, ms, props: null, leaveWrapOpen: true, leaveStreamOpen: true).ConfigureAwait(false);
+            await ITextureReadbackProvider.Get().SaveToStreamAsync(wrap, GUID_ContainerFormatPng, ms, props: null, leaveWrapOpen: true, leaveStreamOpen: true).ConfigureAwait(false);
             ms.Position = 0;
             return Image.Load<Rgba32>(ms);
         }
         catch (Exception ex) {
-            Svc.Log.Warning($"AsciiSplash PNG save failed; falling back to raw. {ex.Message}");
+            IPluginLog.Get().Warning($"AsciiSplash PNG save failed; falling back to raw. {ex.Message}");
         }
 
-        var tuple = await Svc.TextureReadback.GetRawImageAsync(wrap, default, leaveWrapOpen: true).ConfigureAwait(false);
+        var tuple = await ITextureReadbackProvider.Get().GetRawImageAsync(wrap, default, leaveWrapOpen: true).ConfigureAwait(false);
         var specs = tuple.Specification;
         var bytes = tuple.RawData;
 

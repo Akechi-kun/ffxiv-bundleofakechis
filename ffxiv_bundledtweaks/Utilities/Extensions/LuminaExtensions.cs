@@ -10,8 +10,8 @@ public static class LuminaExtensions {
         if (!key.TryGetInputId(out var inputId)) return false;
         var keybind = UIInputData.Instance()->GetKeybind(inputId);
         foreach (var ks in keybind->KeySettings) {
-            if (!Svc.KeyState.IsVirtualKeyValid((VirtualKey)ks.Key)) continue;
-            if (Svc.KeyState.GetRawValue((VirtualKey)ks.Key) != 0) return true;
+            if (!IKeyState.Get().IsVirtualKeyValid((VirtualKey)ks.Key)) continue;
+            if (IKeyState.Get().GetRawValue((VirtualKey)ks.Key) != 0) return true;
         }
         return false;
     }
@@ -19,14 +19,14 @@ public static class LuminaExtensions {
         if (key.TryGetInputId(out var inputId)) {
             var keybind = UIInputData.Instance()->GetKeybind(inputId);
             foreach (var ks in keybind->KeySettings) {
-                if (!Svc.KeyState.IsVirtualKeyValid((VirtualKey)ks.Key)) continue;
-                Svc.KeyState.SetRawValue((VirtualKey)ks.Key, 0);
+                if (!IKeyState.Get().IsVirtualKeyValid((VirtualKey)ks.Key)) continue;
+                IKeyState.Get().SetRawValue((VirtualKey)ks.Key, 0);
                 if (ks.KeyModifier == KeyModifierFlag.Ctrl)
-                    Svc.KeyState.SetRawValue(VirtualKey.CONTROL, 0);
+                    IKeyState.Get().SetRawValue(VirtualKey.CONTROL, 0);
                 if (ks.KeyModifier == KeyModifierFlag.Shift)
-                    Svc.KeyState.SetRawValue(VirtualKey.LSHIFT, 0);
+                    IKeyState.Get().SetRawValue(VirtualKey.LSHIFT, 0);
                 if (ks.KeyModifier == KeyModifierFlag.Alt)
-                    Svc.KeyState.SetRawValue(VirtualKey.MENU, 0);
+                    IKeyState.Get().SetRawValue(VirtualKey.MENU, 0);
             }
         }
     }

@@ -264,13 +264,13 @@ public partial class HaselWindow : Window {
         ImGui.SetCursorPos(ImGui.GetCursorPos() + new Vector2(0, ImGui.GetContentRegionAvail().Y - ImGui.GetTextLineHeight()));
         ImGui.DrawLink("GitHub", "GitHub", "https://github.com/Jaksuhn/ffxiv-bundleoftweaks");
         ImGui.SameLine();
-        ImGui.TextUnformatted("•");
+        ImGui.Text("•");
         ImGui.SameLine();
         ImGui.DrawLink("Ko-fi", "Ko-fi", "https://ko-fi.com/croizat");
 
         if (P.VersionString.Length > 1) {
             ImGui.SetCursorPos(ImGui.GetCursorPos() + ImGui.GetContentRegionAvail() - ImGui.CalcTextSize($"v{P.VersionString}"));
-            ImGui.TextUnformatted($"v{P.VersionString}");
+            ImGui.Text($"v{P.VersionString}");
         }
     }
 }

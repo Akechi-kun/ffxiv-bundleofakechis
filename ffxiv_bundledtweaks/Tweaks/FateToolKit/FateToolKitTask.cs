@@ -32,7 +32,7 @@ internal sealed class FateGrind(FateToolKit tweak) : TaskBase {
         try {
             while (!CancelToken.IsCancellationRequested && tweak.Running) {
                 tweak.StopIfNoRemaining();
-                if (tweak.PendingStopWhenSafe && PublicEvent.CurrentFate is null && !Svc.Condition[ConditionFlag.InCombat]) {
+                if (tweak.PendingStopWhenSafe && PublicEvent.CurrentFate is null && !ICondition.Get()[ConditionFlag.InCombat]) {
                     tweak.PendingStopWhenSafe = false;
                     tweak.Running = false;
                 }
@@ -99,7 +99,7 @@ internal sealed class FateGrind(FateToolKit tweak) : TaskBase {
             if (WaitForExpiryFateId is { } waitId && PublicEvent.GetFateById(waitId) is null)
                 WaitForExpiryFateId = null;
 
-            if (Svc.Condition[ConditionFlag.Unconscious]) {
+            if (ICondition.Get()[ConditionFlag.Unconscious]) {
                 if (PublicEvent.CurrentFate is { Id: var id, Progress: < 100 })
                     ReturnToFateId = id;
                 FollowUpFateId = null;
@@ -124,7 +124,7 @@ internal sealed class FateGrind(FateToolKit tweak) : TaskBase {
             if (ShouldWaitForFollowUp())
                 return GrindState.WaitingForFollowUp;
 
-            if (!HasTwistOfFate && !Svc.Condition[ConditionFlag.InCombat] && tweak.IsZoneItemTargetComplete(IPlayerState.Get().Territory.RowId, out _))
+            if (!HasTwistOfFate && !ICondition.Get()[ConditionFlag.InCombat] && tweak.IsZoneItemTargetComplete(IPlayerState.Get().Territory.RowId, out _))
                 return GrindState.SwapZones;
 
             if (AvailableFates.FirstOrDefault() is { })
@@ -221,7 +221,7 @@ internal sealed class FateGrind(FateToolKit tweak) : TaskBase {
 
         await WaitUntil(() => Player.IsRevivable, "WaitForRevivable");
         (var lastZone, var lastPos) = (IPlayerState.Get().Territory, Player.Position);
-        if (Svc.Party.Length is 0) {
+        if (IPartyList.Get().Length is 0) {
             Status = "Reviving";
             GameMain.ExecuteCommand(CommandFlag.Revive.Value, AgentReviveOp.Return.Value);
         }
@@ -230,7 +230,7 @@ internal sealed class FateGrind(FateToolKit tweak) : TaskBase {
             await WaitUntil(() => Player.ReviveState is 2, "WaitingForRaise"); // 1 = return, 2 = raise
             GameMain.ExecuteCommand(CommandFlag.Revive.Value, AgentReviveOp.AcceptRevive.Value); // a1=5 for raises
         }
-        await WaitWhile(() => Svc.Condition[ConditionFlag.Unconscious], "WaitForAlive");
+        await WaitWhile(() => ICondition.Get()[ConditionFlag.Unconscious], "WaitForAlive");
 
         // if the zone we were in was an instanced zone, we might end up in a different one when tp'ing back
         // if the way back involves taking a city route, we don't be near an aetheryte to swap instances
@@ -580,7 +580,7 @@ internal sealed class FateGrind(FateToolKit tweak) : TaskBase {
             // when we leave collect fates early, it's still CurrentFate, so we need to ignore that and deactivate anyway
             if (fate is { Rule: PublicEvent.FateRule.Collect, Progress: >= 100 } && (NextFate is null || NextFate.Id != fate.Id)) {
                 // don't deactivate before we're out of combat
-                if (Svc.Condition[ConditionFlag.InCombat])
+                if (ICondition.Get()[ConditionFlag.InCombat])
                     return;
                 DeactivateIntegrations(clearNextFate: false);
                 return;
@@ -588,7 +588,7 @@ internal sealed class FateGrind(FateToolKit tweak) : TaskBase {
 
             // only activate for the fate we're pathfinding to (or any if NextFate is null)
             if (NextFate is { } next && fate.Id != next.Id
-                && !(fate is { Rule: PublicEvent.FateRule.Collect, Progress: >= 100 } && Svc.Condition[ConditionFlag.InCombat])) {
+                && !(fate is { Rule: PublicEvent.FateRule.Collect, Progress: >= 100 } && ICondition.Get()[ConditionFlag.InCombat])) {
                 DeactivateIntegrations(clearNextFate: false);
                 return;
             }
@@ -613,7 +613,7 @@ internal sealed class FateGrind(FateToolKit tweak) : TaskBase {
             // Fate ended; clear NextFate so routing is correct. Only turn off combat preset once out of combat,
             // so we don't get stuck if a non-fate mob is still aggroed when the fate completes.
             NextFate = null;
-            if (!Svc.Condition[ConditionFlag.InCombat])
+            if (!ICondition.Get()[ConditionFlag.InCombat])
                 DeactivateIntegrations(clearNextFate: false);
         }
     }
@@ -623,7 +623,7 @@ internal sealed class FateGrind(FateToolKit tweak) : TaskBase {
             NextFate = null;
 
         Service.BossMod.ClearActive();
-        Svc.Targets.Target = null; // avoid preset trying to go to the mob and interfering with casts
+        ITargetManager.Get().Target = null; // avoid preset trying to go to the mob and interfering with casts
         if (Service.TextAdvance.IsInExternalControl())
             Service.TextAdvance.DisableExternalControl(Name);
     }

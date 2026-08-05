@@ -15,7 +15,7 @@ public class EnumConfigAttribute : BaseConfigAttribute {
         string GetOptionLabel(int value) => $"{Enum.GetName(enumType, value)}";
 
         if (!NoLabel) {
-            ImGui.TextUnformatted(fieldInfo.Name.SplitWords());
+            ImGui.Text(fieldInfo.Name.SplitWords());
         }
 
         using var indent = ImGui.ConfigIndent(!NoLabel);

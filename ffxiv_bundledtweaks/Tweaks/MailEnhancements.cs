@@ -140,7 +140,7 @@
 
 //            if (useAfterRetrieval) {
 //                foreach (var attach in attachements) {
-//                    await WaitUntil(Svc.Condition.CanMoveItems, "WaitCanMoveItems"); // get another condition
+//                    await WaitUntil(ICondition.Get().CanMoveItems, "WaitCanMoveItems"); // get another condition
 //                    await WaitUntil(() => UseItem(attach.ItemId), "UseItem");
 //                }
 //            }
@@ -192,7 +192,7 @@
 //        private async Task OpenMailbox() {
 //            using var scope = BeginScope(nameof(OpenMailbox));
 //            if (AtkUnitBase.IsAddonReady("LetterList")) return;
-//            var obj = Svc.Objects.FirstOrDefault(o => o.ObjectKind is ObjectKind.EventNpc && o.Name.TextValue == "Delivery Moogle" || o.ObjectKind is ObjectKind.HousingEventObject && o.Name.TextValue == "Moogle Letter Box");
+//            var obj = IObjectTable.Get().FirstOrDefault(o => o.ObjectKind is ObjectKind.EventNpc && o.Name.TextValue == "Delivery Moogle" || o.ObjectKind is ObjectKind.HousingEventObject && o.Name.TextValue == "Moogle Letter Box");
 //            if (obj is null) return;
 //            await InteractWith(obj);
 //            await WaitUntil(() => AtkUnitBase.IsAddonReady("LetterList"), "WaitForMailbox");
@@ -207,7 +207,7 @@
 //        private async Task OpenSaddlebag() {
 //            using var scope = BeginScope(nameof(OpenSaddlebag));
 //            if (AtkUnitBase.IsAddonReady("InventoryBuddy")) return;
-//            await WaitUntil(() => Svc.Condition.HasPermission(134), "WaitCanOpenSaddleBag");
+//            await WaitUntil(() => ICondition.Get().HasPermission(134), "WaitCanOpenSaddleBag");
 //            ActionManager.ExecuteMainCommand(77); // chocobo saddlebag
 //            await WaitUntil(() => AtkUnitBase.IsAddonReady("InventoryBuddy"), "WaitForSaddlebag");
 //        }
@@ -240,7 +240,7 @@
 //        }
 
 //        private unsafe void DecipherCallback(int indexDecipher) {
-//            var ctx = (AtkUnitBase*)Svc.GameGui.GetAddonByName("ContextMenu", 1).Address;
+//            var ctx = (AtkUnitBase*)IGameGui.Get().GetAddonByName("ContextMenu", 1).Address;
 //            var values = stackalloc AtkValue[5];
 //            values[0].SetInt(0);
 //            values[1].SetInt(indexDecipher);

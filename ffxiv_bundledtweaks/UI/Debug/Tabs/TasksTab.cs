@@ -26,9 +26,9 @@ internal class TasksTab : DebugTab {
 
     private class VoidMatches(string name) : TaskBase {
         protected override async Task Execute() {
-            foreach (var obj in Svc.Objects.OfType<IBattleChara>().Where(o => o.Name.TextValue.Contains(name, StringComparison.InvariantCultureIgnoreCase))) {
-                Svc.Targets.Target = obj;
-                Svc.Chat.SendMessage("/voidtarget");
+            foreach (var obj in IObjectTable.Get().OfType<IBattleChara>().Where(o => o.Name.TextValue.Contains(name, StringComparison.InvariantCultureIgnoreCase))) {
+                ITargetManager.Get().Target = obj;
+                IChatGui.Get().SendMessage("/voidtarget");
                 await NextFrame();
             }
         }
@@ -39,7 +39,7 @@ internal class TasksTab : DebugTab {
             foreach (var cont in InventoryType.Armoury) {
                 foreach (var item in cont.Items) {
                     if (item is { ItemId: not 0, InGearset: false }) {
-                        await WaitUntil(Svc.Condition.CanMoveItems, "WaitForPermission");
+                        await WaitUntil(ICondition.Get().CanMoveItems, "WaitForPermission");
                         item.MoveTo(InventoryType.Bags);
                     }
                 }

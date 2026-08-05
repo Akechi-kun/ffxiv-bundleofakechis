@@ -155,7 +155,7 @@ internal sealed class HookGenerator : IIncrementalGenerator {
                     var attr = methodSymbol.GetAttributes()[0];
 
                     var signature = (string)attr.ConstructorArguments[0].Value!;
-                    var addressName = $"Svc.SigScanner.ScanText(\"{signature}\")";
+                    var addressName = $"ISigScanner.Get().ScanText(\"{signature}\")";
 
                     return new HookInfo(
                         new ClassInfo(
@@ -268,7 +268,7 @@ internal sealed class HookGenerator : IIncrementalGenerator {
         foreach (var hookInfo in items) {
             var addressName = hookInfo.AddressName ?? $"{hookInfo.MethodInfo.Name}Address";
             var delegateType = hookInfo.DelegateTypeName ?? $"{hookInfo.MethodInfo.Name}Delegate";
-            writer.WriteLine($"{hookInfo.MethodInfo.Name}Hook = Svc.Hook.HookFromAddress<{delegateType}>({addressName}, {hookInfo.MethodInfo.Name});");
+            writer.WriteLine($"{hookInfo.MethodInfo.Name}Hook = IGameInteropProvider.Get().HookFromAddress<{delegateType}>({addressName}, {hookInfo.MethodInfo.Name});");
         }
         writer.Indent--;
         writer.WriteLine("}");
