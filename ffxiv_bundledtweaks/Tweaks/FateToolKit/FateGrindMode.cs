@@ -280,7 +280,7 @@ public sealed class YokaiGrindMode : IFateGrindMode {
 
         if (ICondition.Get()[ConditionFlag.Mounted])
             await dismount(); // such a hack lol
-        ECommons.Automation.Chat.SendMessage($"/minion {entry.Minion.Value.Singular}");
+        Svc.Chat.SendMessage($"/minion {entry.Minion.Value.Singular}");
         while (IPlayerState.Get().Minion.RowId != entry.Minion.RowId)
             await NextFrames(30, cancellationToken);
     }

@@ -3,7 +3,6 @@ using Dalamud.Game.ClientState.Objects.Enums;
 using Dalamud.Game.ClientState.Objects.Types;
 using Dalamud.Game.Text;
 using Dalamud.Game.Text.SeStringHandling.Payloads;
-using ECommons.EzHookManager;
 using FFXIVClientStructs.FFXIV.Client.Game;
 using FFXIVClientStructs.FFXIV.Client.Game.Character;
 using FFXIVClientStructs.FFXIV.Client.Game.Control;
@@ -31,7 +30,7 @@ public unsafe class AutoFollow : Tweak<AutoFollowConfiguration> {
     private OverrideMovement movement = null!;
     private MasterRef _master;
     private delegate void FlyDelegate(nint gameObject);
-    private readonly FlyDelegate Fly = EzDelegate.Get<FlyDelegate>("E8 ?? ?? ?? ?? 40 84 F6 74 ?? 8D 43"); // 7.41hf1 incase I take three years to get back to this
+    private readonly FlyDelegate Fly = Svc.Hook.GetDelegate<FlyDelegate>("E8 ?? ?? ?? ?? 40 84 F6 74 ?? 8D 43"); // 7.41hf1 incase I take three years to get back to this
 
     [CommandHandler("/autofollow", "Enable AutoFollow")]
     internal void OnCommand(string command, string arguments) {

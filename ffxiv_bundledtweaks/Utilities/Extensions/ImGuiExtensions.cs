@@ -3,7 +3,6 @@ using Dalamud.Interface;
 using Dalamud.Interface.Components;
 using Dalamud.Interface.Textures.TextureWraps;
 using Dalamud.Interface.Utility.Raii;
-using ECommons.Configuration;
 using ECommons.ImGuiMethods;
 using System.ComponentModel;
 using System.Reflection;
@@ -72,7 +71,7 @@ public static class ImGuiExtensions {
 
         public static void Checkbox(string name, ref bool v) {
             if (ImGui.Checkbox(name, ref v))
-                EzConfig.Save();
+                ConfigService.Get().Save();
         }
 
         public static void Icon(FontAwesomeIcon icon, EzColor? col = null, string? tooltip = null) {

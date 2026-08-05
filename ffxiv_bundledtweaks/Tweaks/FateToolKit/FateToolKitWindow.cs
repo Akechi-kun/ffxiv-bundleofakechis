@@ -51,7 +51,7 @@ public class FateToolKitWindow : MinimisableWindow {
                     }
                     else {
                         _tweak.ToggleRunning();
-                        Service.Navmesh.Stop();
+                        Svc.Navmesh.Stop();
                     }
                 }
                 else {

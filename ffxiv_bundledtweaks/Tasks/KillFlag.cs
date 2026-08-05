@@ -59,7 +59,7 @@ public sealed class KillFlag(string world) : TaskBase {
     private async Task MoveIfNoLoS(DGameObject target) {
         if (!target.IsInLineOfSight()) {
             Log($"No line of sight to {target.Name}, moving...");
-            var validPosition = Service.Navmesh.PointOnFloor(target.Position, false, 5);
+            var validPosition = Svc.Navmesh.PointOnFloor(target.Position, false, 5);
             if (validPosition.HasValue) {
                 try {
                     await MoveTo(validPosition.Value, MovementConfig.Default);
@@ -79,7 +79,7 @@ public sealed class KillFlag(string world) : TaskBase {
                     target.Position.Z + LOS_SEARCH_RADIUS * (float)Math.Sin(angle)
                 );
 
-                if (Service.Navmesh.PointOnFloor(searchPos, false, 1) is { } point && target.IsInLineOfSight(point)) {
+                if (Svc.Navmesh.PointOnFloor(searchPos, false, 1) is { } point && target.IsInLineOfSight(point)) {
                     try {
                         await MoveTo(point, MovementConfig.Default);
                         return;

@@ -80,9 +80,9 @@ public class EnhancedDutyStartEnd : Tweak<EnhancedDutyStartEndConfiguration> {
     private void OnDutyStart(IDutyStateEventArgs args) {
         if (!Config.StartMsg.IsEmpty) {
             if (Config.StartMsg.StartsWith('/'))
-                ECommons.Automation.Chat.SendMessage(Config.StartMsg);
+                Svc.Chat.SendMessage(Config.StartMsg);
             else
-                ECommons.Automation.Chat.SendMessage($"/p {Config.StartMsg}");
+                Svc.Chat.SendMessage($"/p {Config.StartMsg}");
         }
 
         var allPlayersInParty = Config.Players.Count > 0 && Config.Players.IsSubsetOf(Svc.Party.Select(p => p.Name.TextValue));
@@ -96,9 +96,9 @@ public class EnhancedDutyStartEnd : Tweak<EnhancedDutyStartEndConfiguration> {
         _territoryID = IPlayerState.Get().Territory.RowId;
         if (!Config.EndMsg.IsEmpty) {
             if (Config.EndMsg.StartsWith('/'))
-                ECommons.Automation.Chat.SendMessage(Config.EndMsg);
+                Svc.Chat.SendMessage(Config.EndMsg);
             else
-                ECommons.Automation.Chat.SendMessage($"/p {Config.EndMsg}");
+                Svc.Chat.SendMessage($"/p {Config.EndMsg}");
         }
 
         if (Config.AutoLeaveOnEnd) {

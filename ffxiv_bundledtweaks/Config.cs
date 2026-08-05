@@ -1,8 +1,6 @@
 using ComplexTweaks.Tweaks;
-using ECommons.Configuration;
 using System.Collections.ObjectModel;
 using System.Text.Json.Serialization;
-using YamlDotNet.Serialization;
 
 namespace ComplexTweaks.Configuration;
 
@@ -31,12 +29,6 @@ public class TweakConfigs {
     public HuntRelayHelperConfiguration HuntRelayHelper { get; init; } = new();
     //public MailEnhanacementsConfig MailEnhanacements { get; init; } = new();
     public SimpleCurrencyAlertConfig SimpleCurrencyAlertConfig { get; init; } = new();
-}
-
-public class YamlFactory : DefaultSerializationFactory, ISerializationFactory {
-    public new string DefaultConfigFileName => $"ezAutomaton.yaml";
-    public new T Deserialize<T>(string inputData) => new DeserializerBuilder().IgnoreUnmatchedProperties().Build().Deserialize<T>(inputData);
-    public new string Serialize(object s, bool prettyPrint) => new SerializerBuilder().Build().Serialize(s);
 }
 
 public interface IMigration {

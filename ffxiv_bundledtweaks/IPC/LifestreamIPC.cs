@@ -1,19 +1,26 @@
-﻿using ECommons.EzIpcManager;
+﻿using Dalamud.Plugin.Ipc;
 
 namespace ComplexTweaks.IPC;
 
-#nullable disable
 [Ipc(Ipc.Lifestream)]
-public class LifestreamIPC : BaseIPC {
+public sealed class LifestreamIPC : BaseIPC, IPluginService {
+    public int InitOrder => 10;
+
     public override string Name => "Lifestream";
     public override string Repo => Nightmare;
-    public LifestreamIPC() => EzIPC.Init(this, Name);
 
-    [EzIPC] public Func<string, bool> AethernetTeleport;
-    [EzIPC] public Func<uint, byte, bool> Teleport;
-    [EzIPC] public Func<bool> TeleportToHome;
-    [EzIPC] public Func<bool> TeleportToFC;
-    [EzIPC] public Func<bool> TeleportToApartment;
-    [EzIPC] public Func<bool> IsBusy;
-    [EzIPC] public Action<string> ExecuteCommand;
+    private readonly ICallGateSubscriber<bool> _isBusy;
+    private readonly ICallGateSubscriber<string, object> _executeCommand;
+
+    public LifestreamIPC() {
+        _isBusy = Svc.Interface.GetIpcSubscriber<bool>("Lifestream.IsBusy");
+        _executeCommand = Svc.Interface.GetIpcSubscriber<string, object>("Lifestream.ExecuteCommand");
+    }
+
+    public bool IsBusy() => _isBusy.HasFunction && _isBusy.InvokeFunc();
+
+    public void ExecuteCommand(string command) {
+        if (_executeCommand.HasFunction)
+            _executeCommand.InvokeAction(command);
+    }
 }

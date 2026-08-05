@@ -1,60 +1,67 @@
-﻿using ECommons.Automation.NeoTaskManager;
+﻿using AutoRetainerAPI;
+using ECommons.Automation.NeoTaskManager;
 using System.Reflection;
 
 namespace ComplexTweaks.Services;
 
-public class Service {
-    public static Provider Provider { get; private set; } = null!;
-    public static AutoRetainerApi AutoRetainerApi { get; private set; } = null!;
-    public static AutoRetainerIPC AutoRetainerIPC { get; private set; } = null!;
-    public static BossModIPC BossMod { get; private set; } = null!;
-    public static GearsetterIPC Gearsetter { get; private set; } = null!;
-    public static ItemVendorLocation ItemVendorLocation { get; private set; } = null!;
-    public static LifestreamIPC Lifestream { get; private set; } = null!;
-    public static NavmeshIPC Navmesh { get; private set; } = null!;
-    public static QuestionableIPC Questionable { get; private set; } = null!;
-    public static TextAdvanceIpc TextAdvance { get; private set; } = null!;
-
-    public static IPCRegistry IPC { get; private set; } = null!;
-    public static TaskManager TaskManager { get; private set; } = null!;
+public static class Service {
+    public static Provider Provider => Svc.Get<Provider>();
+    public static AutoRetainerApi AutoRetainerApi => AutoRetainerApiService.Get().Api;
+    public static AutoRetainerIPC AutoRetainerIPC => Svc.Get<AutoRetainerIPC>();
+    public static BossModIPC BossMod => Svc.Get<BossModIPC>();
+    public static LifestreamIPC Lifestream => Svc.Get<LifestreamIPC>();
+    public static NavmeshIPC Navmesh => Svc.Get<NavmeshIPC>();
+    public static QuestionableIPC Questionable => Svc.Get<QuestionableIPC>();
+    public static TextAdvanceIpc TextAdvance => Svc.Get<TextAdvanceIpc>();
+    public static IPCRegistry IPC => Svc.Get<IPCRegistry>();
+    public static TaskManager TaskManager => TaskManagerService.Get().TaskManager;
 }
 
-public class IPCRegistry {
-    private readonly Dictionary<Ipc, BaseIPC>? _byId = [];
+public sealed class AutoRetainerApiService : IPluginService, IDisposable {
+    public int InitOrder => 10;
+    public AutoRetainerApi Api { get; } = new();
+    public void Dispose() => Api.Dispose();
+}
+
+public sealed class TaskManagerService : IPluginService {
+    public int InitOrder => 10;
+    public TaskManager TaskManager { get; } = new();
+}
+
+public sealed class IPCRegistry : IPluginService {
+    public int InitOrder => 50;
+
+    private readonly Dictionary<Ipc, BaseIPC> _byId = [];
 
     public IPCRegistry() {
-        foreach (var prop in typeof(Service).GetProperties().Where(prop => typeof(BaseIPC).IsAssignableFrom(prop.PropertyType))) {
-            try {
-                if (prop.GetValue(null) is BaseIPC ipc)
-                    MapByEnum(ipc);
-            }
-            catch {
-                Svc.Log.Warning($"[{nameof(IPCRegistry)}] Failed to register {prop.Name}");
-            }
-        }
+        BaseIPC[] ipcs = [
+            AutoRetainerIPC.Get(),
+            BossModIPC.Get(),
+            LifestreamIPC.Get(),
+            NavmeshIPC.Get(),
+            QuestionableIPC.Get(),
+            TextAdvanceIpc.Get(),
+        ];
+        foreach (var ipc in ipcs)
+            MapByEnum(ipc);
     }
 
     private void MapByEnum(BaseIPC ipc) {
-        if (_byId == null) return;
         if (ipc.GetType().GetCustomAttribute<IpcAttribute>(inherit: false) is { } attr)
             _byId[attr.Id] = ipc;
     }
 
-    public BaseIPC? Get(Ipc id) {
-        if (_byId == null)
-            return null;
-        return _byId.TryGetValue(id, out var ipc) ? ipc : null;
-    }
+    public BaseIPC? Get(Ipc id) => _byId.TryGetValue(id, out var ipc) ? ipc : null;
 
     public BaseIPC[] GetMany(params Ipc[] ids) {
-        if (_byId == null || ids.Length == 0)
+        if (ids.Length == 0)
             return [];
         return [.. ids.Select(Get).Where(ipc => ipc != null).Cast<BaseIPC>()];
     }
 
     public bool AreAllLoaded(params Ipc[] ids) {
-        if (_byId == null || ids.Length == 0)
-            return ids.Length == 0;
+        if (ids.Length == 0)
+            return true;
 
         if (ids.Any(id => !_byId.ContainsKey(id)))
             return false;
@@ -67,7 +74,7 @@ public class IPCRegistry {
         => method == null ? [] : GetMissing([.. method.GetCustomAttributes<RequiresAttribute>().SelectMany(r => r.Id.Flags).Where(id => id != Ipc.None).Distinct().ToArray()]);
 
     public BaseIPC[] GetMissing(params Ipc[] ids) {
-        if (_byId == null || ids.Length == 0)
+        if (ids.Length == 0)
             return [];
 
         var missing = new List<BaseIPC>();

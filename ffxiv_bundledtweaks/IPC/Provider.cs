@@ -1,18 +1,32 @@
-﻿using ECommons.EzIpcManager;
+﻿using Dalamud.Plugin.Ipc;
 
 namespace ComplexTweaks.IPC;
 
-public class Provider {
-    public Provider() => EzIPC.Init(this);
+public sealed class Provider : IPluginService, IDisposable {
+    public int InitOrder => 10;
 
-    [EzIPC]
+    private readonly ICallGateProvider<string, bool> _isTweakEnabled;
+    private readonly ICallGateProvider<string, bool, object> _setTweakState;
+
+    public Provider() {
+        _isTweakEnabled = Svc.Interface.GetIpcProvider<string, bool>("Automaton.IsTweakEnabled");
+        _isTweakEnabled.RegisterFunc(IsTweakEnabled);
+
+        _setTweakState = Svc.Interface.GetIpcProvider<string, bool, object>("Automaton.SetTweakState");
+        _setTweakState.RegisterAction(SetTweakState);
+    }
+
     public bool IsTweakEnabled(string className) => C.EnabledTweaks.Contains(className);
 
-    [EzIPC]
     public void SetTweakState(string className, bool state) {
         if (state)
             C.EnabledTweaks.Add(className);
         else
             C.EnabledTweaks.Remove(className);
+    }
+
+    public void Dispose() {
+        _isTweakEnabled.UnregisterFunc();
+        _setTweakState.UnregisterAction();
     }
 }

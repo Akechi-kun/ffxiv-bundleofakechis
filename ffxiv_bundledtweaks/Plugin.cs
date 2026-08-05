@@ -1,10 +1,6 @@
 using clib;
 using ComplexTweaks.Configuration;
-using ComplexTweaks.UI;
 using Dalamud.Plugin;
-using ECommons.Configuration;
-using ECommons.SimpleGui;
-using ECommons.Singletons;
 using System.Collections.Specialized;
 using System.Reflection;
 
@@ -26,27 +22,12 @@ public class Plugin : IDalamudPlugin {
         pluginInterface.InitCustomClientStructs();
         IsLocalCs = true;
 #endif
+        ECommons.ECommonsMain.Init(pluginInterface, this);
         CLibMain.Init(pluginInterface, P, CLibModule.Automation);
 
-        EzConfig.DefaultSerializationFactory = new YamlFactory();
-        C = EzConfig.Init<Config>();
-
-        IMigration[] migrations = [new V3(), new V4()];
-        foreach (var migration in migrations) {
-            if (C.Version < migration.Version) {
-                Svc.Log.Info($"Migrating from config version {C.Version} to {migration.Version}");
-                var c = C;
-                migration.Migrate(ref c);
-                C = c;
-                C.Version = migration.Version;
-            }
-        }
+        C = ConfigService.Get().Config;
 
         ICommandManager.Get().AddHandler(Command, new(OnCommand) { HelpMessage = $"Opens the {Name} menu" });
-        EzConfigGui.Init(new HaselWindow(), nameOverride: $"{Name} v{P.VersionString}");
-        EzConfigGui.WindowSystem.AddWindow(new DebugWindow());
-
-        SingletonServiceManager.Initialize(typeof(Service));
 
         Svc.Framework.RunOnFrameworkThread(InitializeTweaks);
         C.EnabledTweaks.CollectionChanged += OnChange;
@@ -59,7 +40,7 @@ public class Plugin : IDalamudPlugin {
                 t.EnableInternal();
             else if (!C.EnabledTweaks.Contains(t.InternalName) && t.Enabled || t.Enabled && t.IsDebug && !C.ShowDebug)
                 t.DisableInternal();
-            EzConfig.Save();
+            ConfigService.Get().Save();
         }
     }
 
@@ -90,14 +71,14 @@ public class Plugin : IDalamudPlugin {
 
     private void OnCommand(string command, string args) {
         if (args.Length == 0)
-            EzConfigGui.Window?.Toggle();
+            WindowsService.Get().ToggleMain();
         else {
             var arguments = args.Split(' ');
             var subcommand = arguments[0];
             var @params = arguments.Skip(1).ToArray();
             switch (subcommand) {
                 case string cmd when cmd.StartsWith('d') && !cmd.EqualsIgnoreCase("disable"):
-                    EzConfigGui.GetWindow<DebugWindow>()!.Toggle();
+                    WindowsService.Get().ToggleDebug();
                     break;
                 case "enable":
                     if (Tweaks.FirstOrDefault(t => t.InternalName == @params[0]) is { } tweak && !C.EnabledTweaks.Contains(tweak.InternalName) && (!tweak.IsDebug || C.ShowDebug))

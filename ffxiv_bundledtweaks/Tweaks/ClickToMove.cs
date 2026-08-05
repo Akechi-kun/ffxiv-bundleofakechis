@@ -130,8 +130,8 @@ public unsafe class ClickToMove : Tweak<ClickToMoveConfiguration> {
             if (!Framework.Instance()->WindowInactive) {
                 Svc.GameGui.ScreenToWorld(ImGui.GetIO().MousePos, out var pos, 100000f);
                 if (Config.WorldClick.MovementType == MovementType.Pathfind) {
-                    if (Service.Navmesh.IsRunning()) Service.Navmesh.Stop();
-                    Service.Navmesh.PathfindAndMoveTo(pos, false);
+                    if (Svc.Navmesh.IsRunning()) Svc.Navmesh.Stop();
+                    Svc.Navmesh.PathfindAndMoveTo(pos, false);
                 }
                 else {
                     movement.Enabled = true;

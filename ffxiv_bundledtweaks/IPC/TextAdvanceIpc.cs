@@ -1,17 +1,32 @@
-﻿using ECommons.EzIpcManager;
+﻿using Dalamud.Plugin.Ipc;
 
 namespace ComplexTweaks.IPC;
 
-#nullable disable
 [Ipc(Ipc.TextAdvance)]
-public class TextAdvanceIpc : BaseIPC {
+public sealed class TextAdvanceIpc : BaseIPC, IPluginService {
+    public int InitOrder => 10;
+
     public override string Name => "TextAdvance";
     public override string Repo => Nightmare;
-    public TextAdvanceIpc() => EzIPC.Init(this, Name);
 
-    [EzIPC] public readonly Func<string, ExternalTerritoryConfig, bool> EnableExternalControl;
-    [EzIPC] public readonly Func<string, bool> DisableExternalControl;
-    [EzIPC] public readonly Func<bool> IsInExternalControl;
+    private readonly ICallGateSubscriber<string, ExternalTerritoryConfig, bool> _enableExternalControl;
+    private readonly ICallGateSubscriber<string, bool> _disableExternalControl;
+    private readonly ICallGateSubscriber<bool> _isInExternalControl;
+
+    public TextAdvanceIpc() {
+        _enableExternalControl = Svc.Interface.GetIpcSubscriber<string, ExternalTerritoryConfig, bool>("TextAdvance.EnableExternalControl");
+        _disableExternalControl = Svc.Interface.GetIpcSubscriber<string, bool>("TextAdvance.DisableExternalControl");
+        _isInExternalControl = Svc.Interface.GetIpcSubscriber<bool>("TextAdvance.IsInExternalControl");
+    }
+
+    public bool EnableExternalControl(string pluginName, ExternalTerritoryConfig config)
+        => _enableExternalControl.HasFunction && _enableExternalControl.InvokeFunc(pluginName, config);
+
+    public bool DisableExternalControl(string pluginName)
+        => _disableExternalControl.HasFunction && _disableExternalControl.InvokeFunc(pluginName);
+
+    public bool IsInExternalControl()
+        => _isInExternalControl.HasFunction && _isInExternalControl.InvokeFunc();
 
     public sealed class ExternalTerritoryConfig {
         public bool? EnableQuestAccept;

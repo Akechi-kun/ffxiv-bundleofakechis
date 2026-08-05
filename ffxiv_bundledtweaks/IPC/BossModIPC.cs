@@ -1,58 +1,58 @@
-using ECommons.EzIpcManager;
+using Dalamud.Plugin.Ipc;
 using System.Threading.Tasks;
 
 namespace ComplexTweaks.IPC;
 
-#nullable disable
-#pragma warning disable CS8632
 [Ipc(Ipc.BossMod)]
-public class BossModIPC : BaseIPC {
+public sealed class BossModIPC : BaseIPC, IPluginService {
+    public int InitOrder => 10;
+
     public override string Name => "BossMod";
     public override string Repo => Veyn;
-    public BossModIPC() => EzIPC.Init(this, Name);
 
-    /// <remarks> string name </remarks>
-    [EzIPC("Presets.%m", true)] public readonly Func<string, string?> Get;
+    private readonly ICallGateSubscriber<string, string?> _get;
+    private readonly ICallGateSubscriber<string, bool, bool> _create;
+    private readonly ICallGateSubscriber<string> _getActive;
+    private readonly ICallGateSubscriber<string, bool> _setActive;
+    private readonly ICallGateSubscriber<bool> _clearActive;
+    private readonly ICallGateSubscriber<List<string>, bool> _setActiveList;
+    private readonly ICallGateSubscriber<string, string, string, string, bool> _addTransientStrategy;
+    private readonly ICallGateSubscriber<Vector3, float, bool, bool> _generate;
+    private readonly ICallGateSubscriber<TaskStatus> _getGenerationStatus;
+    private readonly ICallGateSubscriber<bool> _hasTempMap;
+    private readonly ICallGateSubscriber<bool> _clearTempMap;
+    private readonly ICallGateSubscriber<BitmapQuality?> _evaluateTempMapQuality;
 
-    /// <remarks> string presetSerialized, bool overwrite </remarks>
-    [EzIPC("Presets.%m", true)] public readonly Func<string, bool, bool> Create;
+    public BossModIPC() {
+        _get = Svc.Interface.GetIpcSubscriber<string, string?>("BossMod.Presets.Get");
+        _create = Svc.Interface.GetIpcSubscriber<string, bool, bool>("BossMod.Presets.Create");
+        _getActive = Svc.Interface.GetIpcSubscriber<string>("BossMod.Presets.GetActive");
+        _setActive = Svc.Interface.GetIpcSubscriber<string, bool>("BossMod.Presets.SetActive");
+        _clearActive = Svc.Interface.GetIpcSubscriber<bool>("BossMod.Presets.ClearActive");
+        _setActiveList = Svc.Interface.GetIpcSubscriber<List<string>, bool>("BossMod.Presets.SetActiveList");
+        _addTransientStrategy = Svc.Interface.GetIpcSubscriber<string, string, string, string, bool>("BossMod.Presets.AddTransientStrategy");
+        _generate = Svc.Interface.GetIpcSubscriber<Vector3, float, bool, bool>("BossMod.ObstacleMap.Generate");
+        _getGenerationStatus = Svc.Interface.GetIpcSubscriber<TaskStatus>("BossMod.ObstacleMap.GetGenerationStatus");
+        _hasTempMap = Svc.Interface.GetIpcSubscriber<bool>("BossMod.ObstacleMap.HasTempMap");
+        _clearTempMap = Svc.Interface.GetIpcSubscriber<bool>("BossMod.ObstacleMap.ClearTempMap");
+        _evaluateTempMapQuality = Svc.Interface.GetIpcSubscriber<BitmapQuality?>("BossMod.ObstacleMap.EvaluateTempMapQuality");
+    }
 
-    /// <remarks> string name </remarks>
-    [EzIPC("Presets.%m", true)] public readonly Func<string, bool> Delete;
+    public string? Get(string name) => _get.HasFunction ? _get.InvokeFunc(name) : null;
+    public bool Create(string presetSerialized, bool overwrite) => _create.HasFunction && _create.InvokeFunc(presetSerialized, overwrite);
+    public string GetActive() => _getActive.HasFunction ? _getActive.InvokeFunc() : string.Empty;
+    public bool SetActive(string name) => _setActive.HasFunction && _setActive.InvokeFunc(name);
+    public bool ClearActive() => _clearActive.HasFunction && _clearActive.InvokeFunc();
+    public bool SetActiveList(List<string> names) => _setActiveList.HasFunction && _setActiveList.InvokeFunc(names);
+    public bool AddTransientStrategy(string presetName, string moduleTypeName, string trackName, string value)
+        => _addTransientStrategy.HasFunction && _addTransientStrategy.InvokeFunc(presetName, moduleTypeName, trackName, value);
 
-    [EzIPC("Presets.%m", true)] public readonly Func<string> GetActive;
-
-    /// <remarks> string name </remarks>
-    [EzIPC("Presets.%m", true)] public readonly Func<string, bool> SetActive;
-    [EzIPC("Presets.%m", true)] public readonly Func<bool> ClearActive;
-    [EzIPC("Presets.%m", true)] public readonly Func<bool> GetForceDisabled;
-    [EzIPC("Presets.%m", true)] public readonly Func<bool> SetForceDisabled;
-    [EzIPC("Presets.%m", true)] public readonly Func<bool> Activate;
-    [EzIPC("Presets.%m", true)] public readonly Func<bool> Deactivate;
-    [EzIPC("Presets.%m", true)] public readonly Func<List<string>> GetActiveList;
-    [EzIPC("Presets.%m", true)] public readonly Func<List<string>, bool> SetActiveList;
-
-    /// <remarks> string presetName, string moduleTypeName, string trackName, string value </remarks>
-    [EzIPC("Presets.%m", true)] public readonly Func<string, string, string, string, bool> AddTransientStrategy;
-
-    /// <remarks> string presetName, string moduleTypeName, string trackName, string value, int oid </remarks>
-    [EzIPC("Presets.%m", true)] public readonly Func<string, string, string, string, int, bool> AddTransientStrategyTargetEnemyOID;
-
-    /// <remarks> string presetName, string moduleTypeName, string trackName </remarks>
-    [EzIPC("Presets.%m", true)] public readonly Func<string, string, string, bool> ClearTransientStrategy;
-
-    /// <remarks> string presetName, string moduleTypeName </remarks>
-    [EzIPC("Presets.%m", true)] public readonly Func<string, string, bool> ClearTransientModuleStrategies;
-
-    /// <remarks> string presetName </remarks>
-    [EzIPC("Presets.%m", true)] public readonly Func<string, bool> ClearTransientPresetStrategies;
-
-    /// <remarks> centerWorld, radius, writeToFile </remarks>
-    [EzIPC("ObstacleMap.%m", true)] public readonly Func<Vector3, float, bool, bool> Generate;
-    [EzIPC("ObstacleMap.%m", true)] public readonly Func<TaskStatus> GetGenerationStatus;
-    [EzIPC("ObstacleMap.%m", true)] public readonly Func<bool> HasTempMap;
-    [EzIPC("ObstacleMap.%m", true)] public readonly Func<bool> ClearTempMap;
-    [EzIPC("ObstacleMap.%m", true)] public readonly Func<BitmapQuality?> EvaluateTempMapQuality;
+    public bool Generate(Vector3 centerWorld, float radius, bool writeToFile)
+        => _generate.HasFunction && _generate.InvokeFunc(centerWorld, radius, writeToFile);
+    public TaskStatus GetGenerationStatus() => _getGenerationStatus.HasFunction ? _getGenerationStatus.InvokeFunc() : TaskStatus.Canceled;
+    public bool HasTempMap() => _hasTempMap.HasFunction && _hasTempMap.InvokeFunc();
+    public bool ClearTempMap() => _clearTempMap.HasFunction && _clearTempMap.InvokeFunc();
+    public BitmapQuality? EvaluateTempMapQuality() => _evaluateTempMapQuality.HasFunction ? _evaluateTempMapQuality.InvokeFunc() : null;
 
     public readonly record struct BitmapQuality(
         float BlockedFraction, // amount of cells blocked (higher = less navigable)

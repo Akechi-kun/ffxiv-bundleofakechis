@@ -1,64 +1,58 @@
-using ECommons.EzIpcManager;
-using System.Threading;
+using Dalamud.Plugin.Ipc;
 
 namespace ComplexTweaks.IPC;
 
-#nullable disable
 [Ipc(Ipc.Navmesh)]
-public class NavmeshIPC : BaseIPC {
+public sealed class NavmeshIPC : BaseIPC, IPluginService {
+    public int InitOrder => 10;
+
     public override string Name => "vnavmesh";
     public override string Repo => Veyn;
-    public NavmeshIPC() => EzIPC.Init(this, Name);
 
-    [EzIPC("Nav.%m")] public readonly Func<bool> IsReady;
-    [EzIPC("Nav.%m")] public readonly Func<float> BuildProgress;
-    [EzIPC("Nav.%m")] public readonly Func<bool> Reload;
-    [EzIPC("Nav.%m")] public readonly Func<bool> Rebuild;
-    /// <summary> Vector3 from, Vector3 to, bool fly </summary>
-    [EzIPC("Nav.%m")] public readonly Func<Vector3, Vector3, bool, List<Vector3>> Pathfind;
-    /// <summary> Vector3 from, Vector3 to, bool fly, float range </summary>
-    [EzIPC("Nav.%m")] public readonly Func<Vector3, Vector3, bool, float, List<Vector3>> PathfindWithTolerance;
-    /// <summary> Vector3 from, Vector3 to, bool fly, CancellationToken cancel </summary>
-    [EzIPC("Nav.%m")] public readonly Func<Vector3, Vector3, bool, CancellationToken, List<Vector3>> PathfindCancelable;
-    [EzIPC("Nav.%m")] public readonly Action PathfindCancelAll;
-    [EzIPC("Nav.%m")] public readonly Func<bool> NavPathfindInProgress;
-    [EzIPC("Nav.%m")] public readonly Func<int> PathfindNumQueued;
-    [EzIPC("Nav.%m")] public readonly Func<bool> IsAutoLoad;
-    [EzIPC("Nav.%m")] public readonly Action<bool> SetAutoLoad;
-    /// <summary> Vector3 startingPos, string filename, float pixelSize </summary>
-    [EzIPC("Nav.%m")] public readonly Func<Vector3, string, float, bool> BuildBitmap;
-    /// <summary> Vector3 startingPos, string filename, float pixelSize, Vector3 minBounds, Vector3 maxBounds </summary>
-    [EzIPC("Nav.%m")] public readonly Func<Vector3, string, float, Vector3, Vector3, bool> BuildBitmapBounded;
+    private readonly ICallGateSubscriber<bool> _navIsReady;
+    private readonly ICallGateSubscriber<float> _navBuildProgress;
+    private readonly ICallGateSubscriber<object> _pathStop;
+    private readonly ICallGateSubscriber<bool> _pathIsRunning;
+    private readonly ICallGateSubscriber<Vector3, bool, bool> _pathfindAndMoveTo;
+    private readonly ICallGateSubscriber<bool> _pathfindInProgress;
+    private readonly ICallGateSubscriber<Vector3, bool, float, Vector3?> _pointOnFloor;
+    private readonly ICallGateSubscriber<Vector3, float, float, Vector3?> _nearestPointReachable;
+    private readonly ICallGateSubscriber<Vector3?> _flagToPoint;
 
-    /// <summary> Vector3 p, float halfExtentXZ, float halfExtentY </summary>
-    [EzIPC("Query.Mesh.%m")] public readonly Func<Vector3, float, float, Vector3?> NearestPoint;
-    [EzIPC("Query.Mesh.%m")] public readonly Func<Vector3, float, float, Vector3?> NearestPointReachable;
-    /// <summary> Vector3 p, bool allowUnlandable, float halfExtentXZ (default 5) </summary>
-    [EzIPC("Query.Mesh.%m")] public readonly Func<Vector3, bool, float, Vector3?> PointOnFloor;
-    [EzIPC("Query.Mesh.%m")] public readonly Func<Vector3?> FlagToPoint;
+    public NavmeshIPC() {
+        _navIsReady = Svc.Interface.GetIpcSubscriber<bool>("vnavmesh.Nav.IsReady");
+        _navBuildProgress = Svc.Interface.GetIpcSubscriber<float>("vnavmesh.Nav.BuildProgress");
+        _pathStop = Svc.Interface.GetIpcSubscriber<object>("vnavmesh.Path.Stop");
+        _pathIsRunning = Svc.Interface.GetIpcSubscriber<bool>("vnavmesh.Path.IsRunning");
+        _pathfindAndMoveTo = Svc.Interface.GetIpcSubscriber<Vector3, bool, bool>("vnavmesh.SimpleMove.PathfindAndMoveTo");
+        _pathfindInProgress = Svc.Interface.GetIpcSubscriber<bool>("vnavmesh.SimpleMove.PathfindInProgress");
+        _pointOnFloor = Svc.Interface.GetIpcSubscriber<Vector3, bool, float, Vector3?>("vnavmesh.Query.Mesh.PointOnFloor");
+        _nearestPointReachable = Svc.Interface.GetIpcSubscriber<Vector3, float, float, Vector3?>("vnavmesh.Query.Mesh.NearestPointReachable");
+        _flagToPoint = Svc.Interface.GetIpcSubscriber<Vector3?>("vnavmesh.Query.Mesh.FlagToPoint");
+    }
 
-    /// <summary> List<Vector3> waypoints, bool fly </summary>
-    [EzIPC("Path.%m")] public readonly Action<List<Vector3>, bool> MoveTo;
-    [EzIPC("Path.%m")] public readonly Action Stop;
-    [EzIPC("Path.%m")] public readonly Func<bool> IsRunning;
-    [EzIPC("Path.%m")] public readonly Func<int> NumWaypoints;
-    [EzIPC("Path.%m")] public readonly Func<List<Vector3>> ListWaypoints;
-    [EzIPC("Path.%m")] public readonly Func<bool> GetMovementAllowed;
-    [EzIPC("Path.%m")] public readonly Action<bool> SetMovementAllowed;
-    [EzIPC("Path.%m")] public readonly Func<bool> GetAlignCamera;
-    [EzIPC("Path.%m")] public readonly Action<bool> SetAlignCamera;
-    [EzIPC("Path.%m")] public readonly Func<float> GetTolerance;
-    [EzIPC("Path.%m")] public readonly Action<float> SetTolerance;
+    public bool IsReady() => _navIsReady.HasFunction && _navIsReady.InvokeFunc();
+    public float BuildProgress() => _navBuildProgress.HasFunction ? _navBuildProgress.InvokeFunc() : -1f;
 
-    /// <summary> Vector3 dest, bool fly </summary>
-    [EzIPC("SimpleMove.%m")] public readonly Func<Vector3, bool, bool> PathfindAndMoveTo;
-    /// <summary> Vector3 dest, bool fly, float range </summary>
-    [EzIPC("SimpleMove.%m")] public readonly Func<Vector3, bool, float, bool> PathfindAndMoveCloseTo;
-    [EzIPC("SimpleMove.%m")] public readonly Func<bool> PathfindInProgress;
+    public void Stop() {
+        if (_pathStop.HasFunction)
+            _pathStop.InvokeAction();
+    }
 
-    [EzIPC("Window.%m")] public readonly Func<bool> IsOpen;
-    [EzIPC("Window.%m")] public readonly Action<bool> SetOpen;
+    public bool IsRunning() => _pathIsRunning.HasFunction && _pathIsRunning.InvokeFunc();
 
-    [EzIPC("DTR.%m")] public readonly Func<bool> IsShown;
-    [EzIPC("DTR.%m")] public readonly Action<bool> SetShown;
+    public bool PathfindAndMoveTo(Vector3 dest, bool fly)
+        => _pathfindAndMoveTo.HasFunction && _pathfindAndMoveTo.InvokeFunc(dest, fly);
+
+    public bool PathfindInProgress()
+        => _pathfindInProgress.HasFunction && _pathfindInProgress.InvokeFunc();
+
+    public Vector3? PointOnFloor(Vector3 p, bool allowUnlandable, float halfExtentXZ)
+        => _pointOnFloor.HasFunction ? _pointOnFloor.InvokeFunc(p, allowUnlandable, halfExtentXZ) : null;
+
+    public Vector3? NearestPointReachable(Vector3 p, float halfExtentXZ, float halfExtentY)
+        => _nearestPointReachable.HasFunction ? _nearestPointReachable.InvokeFunc(p, halfExtentXZ, halfExtentY) : null;
+
+    public Vector3? FlagToPoint()
+        => _flagToPoint.HasFunction ? _flagToPoint.InvokeFunc() : null;
 }

@@ -1,6 +1,5 @@
 using ComplexTweaks.UI;
 using Dalamud.Game.Gui.Toast;
-using ECommons.SimpleGui;
 using FFXIVClientStructs.FFXIV.Client.Game;
 using FFXIVClientStructs.FFXIV.Client.Game.UI;
 
@@ -11,9 +10,9 @@ public partial class DebugTools : Tweak<DebugToolsConfiguration> {
     private void OnTeleportClick(string command, string arguments) {
         tpActive ^= true;
         if (tpActive)
-            EzConfigGui.WindowSystem.AddWindow(new MousePositionOverlay());
+            WindowsService.Get().AddWindow(new MousePositionOverlay());
         else
-            EzConfigGui.RemoveWindow<MousePositionOverlay>();
+            WindowsService.Get().RemoveWindow<MousePositionOverlay>();
         Svc.Toasts.ShowNormal($"TPClick {(tpActive ? "Enabled" : "Disabled")}", new ToastOptions() { Speed = ToastSpeed.Fast });
     }
 

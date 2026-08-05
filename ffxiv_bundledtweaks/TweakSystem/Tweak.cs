@@ -8,9 +8,6 @@ using Dalamud.Interface.Utility.Raii;
 using Dalamud.Interface.Windowing;
 using Dalamud.Utility.Signatures;
 using ECommons.Automation.NeoTaskManager;
-using ECommons.EzHookManager;
-using ECommons.Reflection;
-using ECommons.SimpleGui;
 using System.Reflection;
 
 namespace ComplexTweaks.TweakSystem;
@@ -30,7 +27,6 @@ public abstract partial class Tweak : ITweak {
         RequiredClientStructsVersion = (CachedType.GetCustomAttribute<RequiresClientStructsAttribute>()?.MinVersion ?? 0, CachedType.GetCustomAttribute<RequiresClientStructsAttribute>()?.MaxVersion ?? uint.MaxValue);
 
         try {
-            EzSignatureHelper.Initialize(this);
             Svc.Hook.InitializeFromAttributes(this);
         }
         catch (SignatureException ex) {
@@ -80,7 +76,7 @@ public abstract partial class Tweak : ITweak {
 
     protected Type? CachedConfigType { get; set; }
     protected Type? CachedWindowType { get; set; }
-    protected IWindow? _window;
+    protected Window? _window;
 
     protected virtual object? GetConfigObject() => null;
 
@@ -93,7 +89,7 @@ public abstract partial class Tweak : ITweak {
         return null;
     }
 
-    protected TWindow? Window<TWindow>() where TWindow : Window => _window is TWindow window ? window : EzConfigGui.GetWindow<TWindow>();
+    protected TWindow? Window<TWindow>() where TWindow : Window => _window as TWindow ?? WindowsService.Get().GetWindow<TWindow>();
 
     protected IEnumerable<MethodInfo> CommandHandlers
         => CachedType
@@ -150,10 +146,6 @@ public abstract partial class Tweak // Internal
             prop.PropertyType.GetGenericTypeDefinition() == typeof(Hook<>)
         );
 
-    protected IEnumerable<FieldInfo> EzHooks => CachedType
-        .GetFields(ReflectionHelper.AllFlags)
-        .Where(f => f.FieldType.IsGenericType && f.FieldType?.GetGenericTypeDefinition() == typeof(EzHook<>));
-
     protected void CallHooks(string methodName) {
         foreach (var property in Hooks) {
             var hook = property.GetValue(this);
@@ -164,14 +156,6 @@ public abstract partial class Tweak // Internal
                 .MakeGenericType(property.PropertyType.GetGenericArguments().First())
                 .GetMethod(methodName)?
                 .Invoke(hook, null);
-        }
-
-        if (methodName is "Enable" or "Disable") // EzHook doesn't have Dispose
-        {
-            foreach (var field in EzHooks) {
-                if (field.GetValue(this) is { } hook)
-                    hook?.GetType()?.GetMethod(methodName)?.Invoke(hook, null);
-            }
         }
     }
 
@@ -276,14 +260,15 @@ public abstract partial class Tweak // Internal
         if (CachedWindowType == null)
             return;
 
-        var existing = EzConfigGui.WindowSystem.Windows.FirstOrDefault(w => w.GetType() == CachedWindowType);
+        var windows = WindowsService.Get();
+        var existing = windows.WindowSystem.Windows.FirstOrDefault(w => w.GetType() == CachedWindowType);
         if (existing != null) {
-            _window = existing;
+            _window = (Window)existing;
             return;
         }
 
         // window was stale somehow
-        if (_window != null && !EzConfigGui.WindowSystem.Windows.Contains(_window))
+        if (_window != null && !windows.WindowSystem.Windows.Contains(_window))
             _window = null;
 
         if (_window == null) {
@@ -298,7 +283,7 @@ public abstract partial class Tweak // Internal
             }
         }
 
-        EzConfigGui.WindowSystem.AddWindow(_window!);
+        windows.AddWindow(_window!);
     }
 
     private void RemoveOwnedWindow() {
@@ -306,8 +291,7 @@ public abstract partial class Tweak // Internal
             return;
 
         try {
-            if (EzConfigGui.WindowSystem?.Windows.Contains(_window) == true)
-                EzConfigGui.WindowSystem.RemoveWindow(_window);
+            WindowsService.Get().RemoveWindow(_window);
         }
         catch (Exception ex) {
             Error(ex, $"Failed to remove window {CachedWindowType?.Name}");

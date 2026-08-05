@@ -26,7 +26,7 @@ internal sealed class FateGrind(FateToolKit tweak) : TaskBase {
     private static IPlayerCharacter? Player => IObjectTable.Get().LocalPlayer;
 
     protected override async Task Execute() {
-        using var stop = new OnDispose(() => Svc.TextAdvance.DisableExternalControl(Name));
+        using var stop = new OnDispose(() => Service.TextAdvance.DisableExternalControl(Name));
         if (Service.BossMod.Get(_presetName) is not null) // one time overwrite in case I update the preset
             Service.BossMod.Create(_preset, true);
         try {
@@ -50,7 +50,7 @@ internal sealed class FateGrind(FateToolKit tweak) : TaskBase {
                         break;
                     case GrindState.Engaging:
                         // this should only ever happen during hot reloading vbm during a fate
-                        if (PublicEvent.CurrentFate is { IsOnMap: true } current && !Svc.BossMod.HasTempMap())
+                        if (PublicEvent.CurrentFate is { IsOnMap: true } current && !Service.BossMod.HasTempMap())
                             await GenerateObstacleMap(current);
                         await NextFrame();
                         break;
@@ -450,7 +450,7 @@ internal sealed class FateGrind(FateToolKit tweak) : TaskBase {
         var safe = Svc.Navmesh.NearestPointReachable(evt.Position, 5, 5);
         float? margin = safe is { } ? Vector3.Distance(evt.Position, safe.Value) : null;
         try {
-            if (!Svc.BossMod.Generate(safe ?? evt.Position, evt.Radius + margin ?? 10, false)) {
+            if (!Service.BossMod.Generate(safe ?? evt.Position, evt.Radius + margin ?? 10, false)) {
                 Warning($"Obstacle map generation failed to start for fate {evt.Id}");
                 _obstacleMapBlacklist.Add(evt.Id);
                 return;
@@ -465,7 +465,7 @@ internal sealed class FateGrind(FateToolKit tweak) : TaskBase {
 
         var generationFailed = false;
         await WaitUntil(() => {
-            var status = Svc.BossMod.GetGenerationStatus();
+            var status = Service.BossMod.GetGenerationStatus();
             if (status is TaskStatus.RanToCompletion) {
                 Log($"Obstacle map generated for fate {evt.Id}");
                 return true;
@@ -483,12 +483,12 @@ internal sealed class FateGrind(FateToolKit tweak) : TaskBase {
             return;
         }
 
-        if (Svc.BossMod.EvaluateTempMapQuality() is { } quality) {
+        if (Service.BossMod.EvaluateTempMapQuality() is { } quality) {
             Log($"Generated obstacle map quality for fate {evt.Id}: {quality}");
             if (quality.IsBad) {
                 Log($"Obstacle map quality too poor. Clearing obstacle map. BossMod won't navigate in case of obstacles. Consider blacklisting this fate if it's problematic.");
                 _obstacleMapBlacklist.Add(evt.Id);
-                Svc.BossMod.ClearTempMap();
+                Service.BossMod.ClearTempMap();
             }
         }
     }
@@ -604,10 +604,10 @@ internal sealed class FateGrind(FateToolKit tweak) : TaskBase {
                 else
                     Service.BossMod.SetActive(_presetName);
             }
-            Svc.BossMod.AddTransientStrategy(_presetName, "BossMod.Autorotation.MiscAI.AutoTarget", "MaxTargets", PullSize.ToString());
+            Service.BossMod.AddTransientStrategy(_presetName, "BossMod.Autorotation.MiscAI.AutoTarget", "MaxTargets", PullSize.ToString());
 
-            if (PublicEvent.CurrentFate is { Rule: PublicEvent.FateRule.Collect } && !Svc.TextAdvance.IsInExternalControl())
-                Svc.TextAdvance.EnableExternalControl(Name, new() { EnableTalkSkip = true, EnableRequestFill = true, EnableRequestHandin = true });
+            if (PublicEvent.CurrentFate is { Rule: PublicEvent.FateRule.Collect } && !Service.TextAdvance.IsInExternalControl())
+                Service.TextAdvance.EnableExternalControl(Name, new() { EnableTalkSkip = true, EnableRequestFill = true, EnableRequestHandin = true });
         }
         else {
             // Fate ended; clear NextFate so routing is correct. Only turn off combat preset once out of combat,
@@ -624,8 +624,8 @@ internal sealed class FateGrind(FateToolKit tweak) : TaskBase {
 
         Service.BossMod.ClearActive();
         Svc.Targets.Target = null; // avoid preset trying to go to the mob and interfering with casts
-        if (Svc.TextAdvance.IsInExternalControl())
-            Svc.TextAdvance.DisableExternalControl(Name);
+        if (Service.TextAdvance.IsInExternalControl())
+            Service.TextAdvance.DisableExternalControl(Name);
     }
 
     private bool TryGetValidMotivationNpc(PublicEvent fate, [NotNullWhen(true)] out IGameObject? npc) {
