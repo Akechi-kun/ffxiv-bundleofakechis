@@ -1,11 +1,10 @@
 ﻿using Dalamud.Game.ClientState.Objects.Enums;
-using ECommons.GameFunctions;
 using System.Threading.Tasks;
 
 namespace ComplexTweaks.Tasks;
 
 public sealed class GatherLeve : TaskBase {
-    private unsafe DGameObject? LeveNode => Svc.Objects.FirstOrDefault(o => o.IsTargetable && o.ObjectKind == ObjectKind.GatheringPoint && o.Struct()->NamePlateIconId == 71244);
+    private DGameObject? LeveNode => Svc.Objects.FirstOrDefault(o => o is { IsTargetable: true, ObjectKind: ObjectKind.GatheringPoint, NameplateIconId: 71244 });
     protected override async Task Execute() {
         // travel to quest location
         // start leve

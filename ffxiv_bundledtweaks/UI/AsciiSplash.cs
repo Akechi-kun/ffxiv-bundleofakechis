@@ -1,7 +1,6 @@
 using Dalamud.Bindings.ImGui;
 using Dalamud.Interface.Textures;
 using Dalamud.Interface.Textures.TextureWraps;
-using ECommons.ImGuiMethods;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
 using SixLabors.ImageSharp.Processing;
@@ -85,7 +84,7 @@ public static class AsciiSplash {
         var colored = _cachedColored;
         if (colored is null) {
             EnsureStarted();
-            ImGuiEx.PushCursorY(10);
+            ImGui.PushCursorY(10);
             if (_buildTask is { IsCompleted: true } && _cachedLines is { Length: > 0 })
                 foreach (var line in _cachedLines)
                     ImGui.TextUnformatted(line);
