@@ -1,7 +1,6 @@
 using Dalamud.Bindings.ImGui;
 using Dalamud.Interface.Utility.Raii;
 using Dalamud.Interface.Windowing;
-using ECommons.ImGuiMethods;
 using FFXIVClientStructs.FFXIV.Client.Game.UI;
 
 namespace ComplexTweaks.Tweaks;
@@ -78,7 +77,7 @@ public class AchievementTrackerWindow(AchievementTracker tweak) : Window($"Achie
             _lastCall = DateTime.Now;
         }
 
-        ImGuiEx.SetNextItemFullWidth();
+        ImGui.SetNextItemFullWidth();
         var preview = selectedAchievement is null ? "Add an achievement" : $"{selectedAchievement?.Name}";
         using var combo = ImRaii.Combo("###AchievementSelect", preview);
         if (!combo) return;
@@ -162,7 +161,7 @@ public class AchievementTrackerWindow(AchievementTracker tweak) : Window($"Achie
             using var id = ImRaii.PushId($"achv_{achv.ID}_{originalIndex}");
 
             var availableWidth = ImGui.GetContentRegionAvail().X;
-            var nameWidth = Math.Min(200f.Scale(), availableWidth * 0.4f);
+            var nameWidth = Math.Min(200f.Scaled(), availableWidth * 0.4f);
             var progressWidth = availableWidth - nameWidth - ImGui.GetStyle().ItemSpacing.X;
 
             using (var buttonStyle = ImRaii.PushStyle(ImGuiStyleVar.ButtonTextAlign, new Vector2(0, 0.5f)))
@@ -226,7 +225,7 @@ public class AchievementTrackerWindow(AchievementTracker tweak) : Window($"Achie
         ImGui.Separator();
         ImGui.TextV("Category");
         ImGui.SameLine();
-        ImGui.SetNextItemWidth(150f.Scale());
+        ImGui.SetNextItemWidth(150f.Scaled());
 
         var category = achv.Category;
         if (ImGui.InputText("##CategoryInput", ref category, 64, ImGuiInputTextFlags.EnterReturnsTrue)) {

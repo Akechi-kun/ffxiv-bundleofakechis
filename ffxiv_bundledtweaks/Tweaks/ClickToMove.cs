@@ -2,7 +2,6 @@
 using Dalamud.Game.Addon.Events;
 using Dalamud.Game.Gui.Dtr;
 using Dalamud.Interface.Utility.Raii;
-using ECommons;
 using FFXIVClientStructs.FFXIV.Client.Game.Control;
 using FFXIVClientStructs.FFXIV.Client.System.Framework;
 using FFXIVClientStructs.FFXIV.Client.System.Input;
@@ -88,13 +87,13 @@ public unsafe partial class ClickToMove : Tweak<ClickToMoveConfiguration> {
     private void HandleMapClick(AddonEvent type, AddonArgs args) {
         if (!Config.MapClick.Enabled || IObjectTable.Get().LocalPlayer is not { } player) return;
         if (args is AddonReceiveEventArgs { AtkEventType: AddonEventType.MouseDown } receiveArgs) {
-            if (receiveArgs.AtkEventData.As<AtkEventData.AtkMouseData>()->ButtonId != 0) return; // left click only
+            if (receiveArgs.AtkEventData.Cast<AtkEventData.AtkMouseData>()->ButtonId != 0) return; // left click only
             if (AgentMap.Instance()->CurrentMapId != AgentMap.Instance()->SelectedMapId) return;
             var success = Config.ClickModifier switch {
                 ClickModifierKeys.None => true,
-                ClickModifierKeys.Shift => receiveArgs.AtkEventData.As<AtkEventData>()->MouseData.Modifier.HasFlag(ModifierFlag.Shift),
-                ClickModifierKeys.Ctrl => receiveArgs.AtkEventData.As<AtkEventData>()->MouseData.Modifier.HasFlag(ModifierFlag.Ctrl),
-                ClickModifierKeys.Alt => receiveArgs.AtkEventData.As<AtkEventData>()->MouseData.Modifier.HasFlag(ModifierFlag.Alt),
+                ClickModifierKeys.Shift => receiveArgs.AtkEventData.Cast<AtkEventData>()->MouseData.Modifier.HasFlag(ModifierFlag.Shift),
+                ClickModifierKeys.Ctrl => receiveArgs.AtkEventData.Cast<AtkEventData>()->MouseData.Modifier.HasFlag(ModifierFlag.Ctrl),
+                ClickModifierKeys.Alt => receiveArgs.AtkEventData.Cast<AtkEventData>()->MouseData.Modifier.HasFlag(ModifierFlag.Alt),
                 _ => false
             };
             if (!success) return;
