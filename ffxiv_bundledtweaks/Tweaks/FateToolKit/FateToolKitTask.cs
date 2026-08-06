@@ -550,7 +550,7 @@ internal sealed class FateGrind(FateToolKit tweak) : TaskBase {
             var fromTerritoryId = Player.Territory.RowId;
             await Mount();
             await TeleportTo(destination, Vector3.Zero);
-            await tweak.GetCurrentMode().OnSwapZone(fromTerritoryId, destination, Dismount, CancelToken);
+            await ApplySwapZoneActions(fromTerritoryId, destination);
         }
         else {
             using var scope = BeginScope("WaitForFates");
@@ -572,7 +572,31 @@ internal sealed class FateGrind(FateToolKit tweak) : TaskBase {
         }
         else
             Status = "ZoneItemTarget complete. Switching target.";
-        await tweak.GetCurrentMode().OnSwapZone(fromTerritoryId, destination, Dismount, CancelToken);
+        await ApplySwapZoneActions(fromTerritoryId, destination);
+    }
+
+    private async Task ApplySwapZoneActions(uint fromTerritoryId, uint toTerritoryId) {
+        if (tweak.GetCurrentMode().GetSwapZoneActions(fromTerritoryId, toTerritoryId) is not { } actions)
+            return;
+
+        using var scope = BeginScope("OnSwapZone");
+
+        if (actions.EquipItemId is { } itemId) {
+            var item = new ItemHandle(itemId);
+            await WaitWhileBusy();
+            Log("Equipping the watch");
+            await TryUntil(item.Equip, () => item.IsEquipped, "EquipItem", timeoutSeconds: 5);
+        }
+
+        if (actions.TargetCompanion is not { IsValid: true, RowId: var id })
+            return;
+
+        if (ICondition.Get()[ConditionFlag.Mounted])
+            await Dismount();
+
+        await WaitWhileBusy();
+        Log($"Summoning {actions.TargetCompanion.Value.Singular}");
+        await TryUntil(() => { unsafe { ActionManager.Instance()->UseAction(ActionType.Companion, id); } }, () => IPlayerState.Get().Minion.RowId == id, "SummonMinion", timeoutSeconds: 5);
     }
 
     private void HandleIntegrations() {

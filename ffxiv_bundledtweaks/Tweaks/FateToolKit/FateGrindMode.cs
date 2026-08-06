@@ -2,8 +2,6 @@ using FFXIVClientStructs.FFXIV.Client.Game;
 using FFXIVClientStructs.FFXIV.Client.Game.UI;
 using Lumina.Excel;
 using Lumina.Excel.Sheets;
-using System.Threading;
-using System.Threading.Tasks;
 using TerritoryIntendedUse = FFXIVClientStructs.FFXIV.Client.Enums.TerritoryIntendedUse;
 
 namespace ComplexTweaks.Tweaks;
@@ -18,6 +16,8 @@ public interface IFateGrindRunState {
     int? RemainingUntilCompleted { get; }
 }
 
+internal readonly record struct FateSwapZoneActions(uint? EquipItemId, RowRef<Companion> TargetCompanion);
+
 internal interface IFateGrindMode {
     string DisplayName { get; }
     int UiPriority => 0;
@@ -27,7 +27,7 @@ internal interface IFateGrindMode {
     string? GetRemainingDisplay(IFateGrindRunState state);
 
     IEnumerable<ZoneItemTarget>? GetZoneItemTargets(IFateGrindRunState? state = null);
-    Task OnSwapZone(uint fromTerritoryId, uint toTerritoryId, Func<Task> dismount, CancellationToken cancellationToken = default) => Task.CompletedTask;
+    FateSwapZoneActions? GetSwapZoneActions(uint fromTerritoryId, uint toTerritoryId) => null;
 }
 
 public static class FateGrindModes {
@@ -264,35 +264,26 @@ public sealed class YokaiGrindMode : IFateGrindMode {
         return Yokai.Values.Any(e => NeedsFarm(e) && e.Zones.Any(z => z.RowId == territoryId));
     }
 
-    public async Task OnSwapZone(uint fromTerritoryId, uint toTerritoryId, Func<Task> dismount, CancellationToken cancellationToken) {
+    FateSwapZoneActions? IFateGrindMode.GetSwapZoneActions(uint fromTerritoryId, uint toTerritoryId) {
         if (Yokai.Values.FirstOrDefault(e => e.Zones.Any(z => z.RowId == toTerritoryId) && NeedsFarm(e)) is not { } entry)
-            return;
+            return null;
 
+        uint? equipItemId = null;
         var watch = new ItemHandle(15222);
-        if (!IsWatchEquipped() && watch.GetCount() > 0) {
-            watch.Equip();
-            while (!IsWatchEquipped())
-                await NextFrames(30, cancellationToken);
-        }
+        if (!IsWatchEquipped() && watch.GetCount() > 0)
+            equipItemId = watch.ItemId;
 
-        if (IPlayerState.Get().Minion.RowId == entry.Minion.RowId)
-            return;
+        uint? summonCompanionId = IPlayerState.Get().Minion.RowId == entry.Minion.RowId ? null : entry.Minion.RowId;
+        if (equipItemId is null && summonCompanionId is null)
+            return null;
 
-        if (ICondition.Get()[ConditionFlag.Mounted])
-            await dismount(); // such a hack lol
-        unsafe {
-            ActionManager.Instance()->UseAction(ActionType.Companion, entry.Minion.RowId);
-        }
-        while (IPlayerState.Get().Minion.RowId != entry.Minion.RowId)
-            await NextFrames(30, cancellationToken);
+        return new FateSwapZoneActions(equipItemId, summonCompanionId is not null and uint id ? Companion.GetRowRef(id) : default);
     }
 
     private static IEnumerable<YokaiEntry> EntriesNeedingFarm() => Yokai.Values.Where(NeedsFarm);
 
     private static bool NeedsFarm(YokaiEntry entry)
         => entry.Unlocked && GetItemCount(entry.Weapon.RowId) == 0 && GetItemCount(entry.Medal.RowId) < MedalsRequired;
-
-    private static Task NextFrames(int n, CancellationToken ct) => IFramework.Get().DelayTicks(n, ct);
 
     private static YokaiEntry? GetCurrentMinionEntry()
         => Yokai.Values.FirstOrDefault(e => e.Minion.RowId == IPlayerState.Get().Minion.RowId);
