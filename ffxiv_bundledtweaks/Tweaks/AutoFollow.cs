@@ -20,7 +20,7 @@ public class AutoFollowConfiguration {
 }
 
 [Tweak]
-public unsafe class AutoFollow : Tweak<AutoFollowConfiguration> {
+public class AutoFollow : Tweak<AutoFollowConfiguration> {
     public override string Name => "Auto Follow";
     public override string Description
         => "True Auto Follow. Trigger with command while targeting someone. Use it with no target to wipe the current master.\n" +
@@ -85,7 +85,7 @@ public unsafe class AutoFollow : Tweak<AutoFollowConfiguration> {
 
     private void Follow(IFramework framework) {
         if (IObjectTable.Get().LocalPlayer is not { } player) return;
-        if (!ICondition.Get()[ConditionFlag.InFlight] && TaskManager.IsBusy) return; // want to abort, not return, if in flight
+        if (!ICondition.Get()[ConditionFlag.InFlight] && Automation.Running) return; // want to abort, not return, if in flight
         if (_master.IsEmpty && Config.AutoFollowName.IsEmpty) return;
 
         if (!TryGetMaster(out var master)) {
@@ -99,7 +99,7 @@ public unsafe class AutoFollow : Tweak<AutoFollowConfiguration> {
         }
 
         if (ICondition.Get()[ConditionFlag.InFlight]) {
-            TaskManager.Abort();
+            Automation.Stop();
         }
 
         if (ICondition.Get()[ConditionFlag.RidingPillion]) return;
@@ -139,7 +139,7 @@ public unsafe class AutoFollow : Tweak<AutoFollowConfiguration> {
         return false;
     }
 
-    private bool TrySprint(DGameObject master) {
+    private unsafe bool TrySprint(DGameObject master) {
         if (master is IBattleChara { StatusList: var status } && status.Any(s => s.StatusId is 50)) {
             if (MJIManager.Instance()->IsPlayerInSanctuary && (IObjectTable.Get().LocalPlayer?.StatusList.None(s => s.StatusId is 50) ?? false)) {
                 return ActionManager.Instance()->UseAction(ActionType.Action, 31314);
@@ -163,20 +163,21 @@ public unsafe class AutoFollow : Tweak<AutoFollowConfiguration> {
         }
 
         movement.Enabled = false;
-        if (ICondition.Get()[ConditionFlag.Mounted]) {
-            ActionManager.Instance()->UseAction(ActionType.GeneralAction, 23);
+        if (DismountIfMounted())
             return true;
-        }
 
-        TaskManager.Enqueue(() => {
-            IPluginLog.Get().Debug("Detected mounted party member with extra seats, mounting...");
-            GameMain.ExecuteCommand(CommandFlag.RidePillion.Value, (int)master.EntityId, 10);
-        });
-        TaskManager.Enqueue(() => ICondition.Get()[ConditionFlag.Mounted]);
+        if (Automation.Running)
+            return true;
+
+        Automation.Start(AutoTask.From(async t => {
+            t.Log("Detected mounted party member with extra seats, mounting...");
+            GameMain.ExecuteCommand(CommandFlag.RidePillion, (int)master.EntityId, 10);
+            await t.WaitUntil(() => ICondition.Get()[ConditionFlag.Mounted], "Mounted", timeout: TimeSpan.FromSeconds(5));
+        }, name: "Pillion"));
         return true;
     }
 
-    private bool TryMount(IGameObject master) {
+    private unsafe bool TryMount(IGameObject master) {
         if (!master.Character->IsMounted() || !CanMount())
             return false;
 
@@ -186,20 +187,34 @@ public unsafe class AutoFollow : Tweak<AutoFollowConfiguration> {
     }
 
     private bool TryFly(IGameObject master) {
-        if (master.Character->MoveController.MovementState is not MovementStateOptions.Flying || !CanFly())
+        if (!master.IsFlying || !CanFly())
             return false;
 
         movement.Enabled = false;
-        TaskManager.Enqueue(() => ActionManager.Instance()->UseAction(ActionType.GeneralAction, 2));
-        TaskManager.EnqueueDelay(50);
-        TaskManager.Enqueue(() => ActionManager.Instance()->UseAction(ActionType.GeneralAction, 2));
+        if (Automation.Running)
+            return true;
+
+        Automation.Start(AutoTask.From(async t => {
+            UseJump();
+            await t.DelayMs(50);
+            UseJump();
+        }, name: "Fly"));
 
         // TODO: find a way to incorporate this. Need to jump and trigger at the apex or something
         //Fly((nint)Player.GameObject);
         return true;
     }
 
-    private bool TryDismount(IGameObject master) {
+    private static unsafe bool DismountIfMounted() {
+        if (!ICondition.Get()[ConditionFlag.Mounted])
+            return false;
+        ActionManager.Instance()->UseAction(ActionType.GeneralAction, 23);
+        return true;
+    }
+
+    private static unsafe void UseJump() => ActionManager.Instance()->UseAction(ActionType.GeneralAction, 2);
+
+    private unsafe bool TryDismount(IGameObject master) {
         if (master.Character->IsMounted() || !ICondition.Get()[ConditionFlag.Mounted])
             return false;
 

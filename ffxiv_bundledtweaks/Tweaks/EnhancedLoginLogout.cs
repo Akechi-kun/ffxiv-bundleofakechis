@@ -70,10 +70,19 @@ public class EnhancedLoginLogout : Tweak<EnhancedLoginLogoutConfig> {
     private string ConvertToCommand(string cmd) => cmd.StartsWith('/') ? cmd : $"/{cmd}";
     private void RunCommands() {
         if (Service.AutoRetainerIPC.IsLoaded && !Config.RunCommandsWhenARIsActive && (Service.AutoRetainerIPC.IsBusy() || Service.AutoRetainerIPC.GetMultiModeEnabled())) return;
-        foreach (var chr in Config.Chars.Where(x => x.CID == 0 || x.CID == IPlayerState.Get().ContentId).OrderByDescending(x => x.Name == "Global"))
-            foreach (var cmd in chr.LoginCommands.Where(c => c.Length >= 3)) {
-                TaskManager.EnqueueDelay(250);
-                TaskManager.Enqueue(() => IChatGui.Get().SendMessage(cmd));
+        var commands = Config.Chars
+            .Where(x => x.CID == 0 || x.CID == IPlayerState.Get().ContentId)
+            .OrderByDescending(x => x.Name == "Global")
+            .SelectMany(chr => chr.LoginCommands.Where(c => c.Length >= 3))
+            .ToList();
+        if (commands.Count == 0)
+            return;
+
+        Automation.Start(AutoTask.From(async t => {
+            foreach (var cmd in commands) {
+                await t.DelayMs(250);
+                IChatGui.Get().SendMessage(cmd);
             }
+        }, name: "LoginCommands"));
     }
 }

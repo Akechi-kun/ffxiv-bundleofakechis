@@ -1,5 +1,4 @@
 using FFXIVClientStructs.FFXIV.Client.Game.UI;
-using FFXIVClientStructs.FFXIV.Client.System.Framework;
 using FFXIVClientStructs.FFXIV.Client.UI.Agent;
 using Lumina.Extensions;
 
@@ -16,17 +15,18 @@ internal class AutoQueue : Tweak {
 
     private void OnTerritoryChanged(uint obj) {
         if (IPlayerState.Get() is { IsInDuty: true } or { IsPenalised: true }) return;
-        TaskManager.Enqueue(() => !IObjectTable.Get().LocalPlayer.IsBusy);
-        TaskManager.Enqueue(() => IPartyList.Get().All(p => !p.Territory.Value.IsDuty), "WaitForPartyNotInDuty");
-        TaskManager.Enqueue(ICondition.Get().CanQueue, "WaitForQueueCondition");
-        TaskManager.Enqueue(QueueSelectedDuty);
+        Automation.Start(AutoTask.From(async t => {
+            await t.WaitUntil(() => !IObjectTable.Get().LocalPlayer.IsBusy, "NotBusy");
+            await t.WaitUntil(() => IPartyList.Get().All(p => !p.Territory.Value.IsDuty), "WaitForPartyNotInDuty");
+            await t.WaitUntil(ICondition.Get().CanQueue, "WaitForQueueCondition", timeout: TimeSpan.FromSeconds(30));
+            QueueSelectedDuty();
+        }, name: "AutoQueue"));
     }
 
-    private unsafe bool QueueSelectedDuty() {
+    private static unsafe void QueueSelectedDuty() {
         var content = AgentContentsFinder.Instance()->SelectedContent;
         if (content.FirstOrNull(x => x.ContentType is ContentsType.Roulette) is { Id: var id }) {
             ContentsFinder.Instance()->QueueInfo.QueueRoulette((byte)id);
-            return true;
         }
         else {
             var ids = content.Select(x => x.Id).ToList();
@@ -34,7 +34,6 @@ internal class AutoQueue : Tweak {
             for (var i = 0; i < ids.Count; i++)
                 array[i] = ids[i];
             ContentsFinder.Instance()->QueueInfo.QueueDuties(array, ids.Count);
-            return true;
         }
     }
 }

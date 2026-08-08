@@ -1,4 +1,6 @@
-﻿namespace ComplexTweaks.Tweaks;
+﻿using FFXIVClientStructs.FFXIV.Client.Game;
+
+namespace ComplexTweaks.Tweaks;
 
 [Tweak]
 public class AutoPillion : Tweak {
@@ -8,17 +10,22 @@ public class AutoPillion : Tweak {
     public override void Enable() => IFramework.Get().Update += OnUpdate;
     public override void Disable() => IFramework.Get().Update -= OnUpdate;
 
-    private unsafe void OnUpdate(IFramework framework) {
+    private void OnUpdate(IFramework framework) {
         if (IObjectTable.Get().LocalPlayer is not { Available: true, IsBusy: false, GameObjectId: var playerId } || ICondition.Get()[ConditionFlag.Mounted]) {
-            if (TaskManager.Tasks.Count > 0)
-                TaskManager.Abort();
+            if (Automation.Running)
+                Automation.Stop();
             return;
         }
 
-        if (IPartyList.Get().FirstOrDefault(o => o?.EntityId != playerId && o?.GameObject?.CurrentDistance < 3 && o.GameObject.CanRidePillion(), null) is { GameObject: { } target }) {
-            TaskManager.Enqueue(() => Debug("Detected mounted party member with extra seats, mounting..."));
-            TaskManager.Enqueue(() => target.BattleChara->RidePillion(10));
-            TaskManager.Enqueue(() => ICondition.Get()[ConditionFlag.Mounted]);
+        if (Automation.Running)
+            return;
+
+        if (IPartyList.Get().FirstOrDefault(o => o?.EntityId != playerId && o?.GameObject?.CurrentDistance < 3 && o.GameObject.CanRidePillion(), null) is { GameObject.EntityId: var entityId }) {
+            Automation.Start(AutoTask.From(async t => {
+                t.Log("Detected mounted party member with extra seats, mounting...");
+                GameMain.ExecuteCommand(CommandFlag.RidePillion, (int)entityId, 10);
+                await t.WaitUntil(() => ICondition.Get()[ConditionFlag.Mounted], "Mounted", timeout: TimeSpan.FromSeconds(5));
+            }, name: "AutoPillion"));
         }
     }
 }

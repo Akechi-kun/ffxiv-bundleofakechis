@@ -262,6 +262,7 @@ public class HuntRelayHelper : Tweak<HuntRelayHelperConfiguration> {
 
         var relay = BuildRelayMessage(payload.MapLink, payload.World, payload.Instance, payload.RelayType);
         var nnRelay = BuildRelayMessage(payload.MapLink, payload.World, payload.Instance, payload.RelayType, true);
+        var pendingMessages = new List<byte[]>();
         foreach (var (channel, command, islocal, _) in Config.Channels.Where(c => c.Enabled)) {
             var channelName = channel.GetAttribute<XivChatTypeInfoAttribute>()?.FancyName ?? throw new Exception($"Channel has no {nameof(XivChatTypeInfoAttribute)}");
             if (Config.DontRepeatRelays && payload.OriginChannel == ((uint)channel)) continue; // don't send to the channel that relay was clicked from
@@ -275,14 +276,16 @@ public class HuntRelayHelper : Tweak<HuntRelayHelperConfiguration> {
                 continue;
             }
 
-            TaskManager.Enqueue(() => {
-                if (IObjectTable.Get().LocalPlayer.Available) // messages can't be sent when travelling between zones where your player goes null
-                {
-                    IChatGui.Get().SendMessageUnsafe([.. Encoding.UTF8.GetBytes($"/{command} "), .. channelName.StartsWith("Novice") ? nnRelay.ToArray() : relay.ToArray()]);
-                    return true;
+            pendingMessages.Add([.. Encoding.UTF8.GetBytes($"/{command} "), .. channelName.StartsWith("Novice") ? nnRelay.ToArray() : relay.ToArray()]);
+        }
+
+        if (pendingMessages.Count > 0) {
+            Automation.Start(AutoTask.From(async t => {
+                foreach (var messageBytes in pendingMessages) {
+                    await t.WaitUntil(() => IObjectTable.Get().LocalPlayer.Available, "PlayerAvailable");
+                    IChatGui.Get().SendMessageUnsafe(messageBytes);
                 }
-                else return false;
-            });
+            }, name: "HuntRelay"));
         }
 
         LastRelay = payload;

@@ -1,6 +1,7 @@
 using clib;
 using ComplexTweaks.Configuration;
 using Dalamud.Plugin;
+using FFXIVClientStructs.FFXIV.Client.Game.Event;
 using System.Collections.Specialized;
 using System.Reflection;
 
@@ -96,9 +97,14 @@ public class Plugin : IDalamudPlugin {
                     break;
                 case "stop":
                     Svc.Automation.Stop();
-                    Service.TaskManager.Abort();
+                    Service.Automation.Stop();
+                    foreach (var t in Tweaks)
+                        t.StopAutomation();
                     foreach (var t in Tweaks.OfType<ARTweak>())
                         t.AutoRetainer.FinishCharacterPostProcess();
+                    break;
+                case "leave":
+                    EventFramework.LeaveCurrentContent(true);
                     break;
             }
         }

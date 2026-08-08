@@ -102,14 +102,16 @@ public class EnhancedDutyStartEnd : Tweak<EnhancedDutyStartEndConfiguration> {
         }
 
         if (Config.AutoLeaveOnEnd) {
-            TaskManager.EnqueueDelay(Config.TimeToWait * 1000);
-            TaskManager.Enqueue(() => EventFramework.LeaveCurrentContent(true));
+            Automation.Start(AutoTask.From(async t => {
+                await t.DelayMs(Config.TimeToWait * 1000);
+                EventFramework.LeaveCurrentContent(true);
+            }, name: "AutoLeaveDuty"));
         }
     }
 
     private void OnTerritoryChanged(uint id) {
         // cancel queue if we changed zones via other means to prevent autoleave from triggering in the next duty
-        if (id != _territoryID && TaskManager.Tasks.Count > 0)
-            TaskManager.Abort();
+        if (id != _territoryID && Automation.Running)
+            Automation.Stop();
     }
 }

@@ -148,6 +148,7 @@ public sealed partial class LoopMelding(GameInventoryItem item) : TaskBase {
         }
     }
 
+    // TODO: check min ilvl to attach to item
     private unsafe uint? GetUsableMateria() {
         var agent = AgentMateriaAttach.Instance();
         if (agent is null) throw new Exception($"Agent is null somehow");

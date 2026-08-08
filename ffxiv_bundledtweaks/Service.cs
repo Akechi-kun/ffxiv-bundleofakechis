@@ -1,5 +1,4 @@
 ﻿using AutoRetainerAPI;
-using ECommons.Automation.NeoTaskManager;
 using System.Reflection;
 
 namespace ComplexTweaks.Services;
@@ -14,7 +13,7 @@ public static class Service {
     public static QuestionableIPC Questionable => Svc.Get<QuestionableIPC>();
     public static TextAdvanceIpc TextAdvance => Svc.Get<TextAdvanceIpc>();
     public static IPCRegistry IPC => Svc.Get<IPCRegistry>();
-    public static TaskManager TaskManager => TaskManagerService.Get().TaskManager;
+    public static Automation Automation => AutomationService.Get().Automation;
 }
 
 public sealed class AutoRetainerApiService : IPluginService, IDisposable {
@@ -23,9 +22,10 @@ public sealed class AutoRetainerApiService : IPluginService, IDisposable {
     public void Dispose() => Api.Dispose();
 }
 
-public sealed class TaskManagerService : IPluginService {
+public sealed class AutomationService : IPluginService, IDisposable {
     public int InitOrder => 10;
-    public TaskManager TaskManager { get; } = new();
+    public Automation Automation { get; } = new();
+    public void Dispose() => Automation.Dispose();
 }
 
 public sealed class IPCRegistry : IPluginService {

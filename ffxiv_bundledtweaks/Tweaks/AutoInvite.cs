@@ -50,24 +50,14 @@ public partial class AutoInvite : Tweak<AutoInviteConfiguration> {
             return;
         }
 
-        if (GroupManager.Instance()->GetGroup()->MemberCount >= 8) {
-            Log("Skipping invite: party full.");
-            if (Config.TurnOffOnceFull) On = false;
-            return;
-        }
-
-        if (IPlayerState.Get() is { InParty: true, IsPartyLeader: false }) {
-            Log("Skipping invite: not party leader.");
-            return;
-        }
-
         if (!RaptureLogModule.Instance()->GetLogMessageDetail(messageIndex, out var sender, out var rawMessage, out _, out _, out _, out _)) {
             Log("Skipping invite: unable to get message detail.");
             return;
         }
 
-        if (IPartyList.Get().Any(p => p.ContentId == contentId)) {
-            Log("Skipping invite: already in party.");
+        if (!InfoProxyPartyInvite.CanInviteToParty(contentId, out var reason)) {
+            Log($"Unable to invite to party. {reason}");
+            if (reason is InfoProxyPartyInviteExtensions.FailedInviteReason.GroupFull && Config.TurnOffOnceFull) On = false;
             return;
         }
 
@@ -89,20 +79,7 @@ public partial class AutoInvite : Tweak<AutoInviteConfiguration> {
         if (matches) {
             if (SeString.Parse(sender.AsSpan()).Payloads.FirstOrDefault(p => p is PlayerPayload) is PlayerPayload playerPayload) {
                 Log($"Attempting to invite {playerPayload.PlayerName}");
-                if (InInvitableInstance()) {
-                    Log($"Inviting {playerPayload.PlayerName} to instanced party.");
-                    TaskManager.EnqueueDelay(Config.DelayMs);
-                    TaskManager.Enqueue(() => InfoProxyPartyInvite.Instance()->InviteToPartyInInstanceByContentId(contentId));
-                }
-                else {
-                    Log($"Inviting {playerPayload.PlayerName} to non-instanced party.");
-                    TaskManager.EnqueueDelay(Config.DelayMs);
-                    TaskManager.Enqueue(() => {
-                        fixed (byte* namePtr = ToTerminatedBytes(playerPayload.PlayerName))
-                            InfoProxyPartyInvite.Instance()->InviteToParty(contentId, namePtr, (ushort)playerPayload.World.RowId);
-                    });
-                }
-
+                StartInvite(contentId, playerPayload.PlayerName, (ushort)playerPayload.World.RowId);
                 if (_attempts > 0) {
                     _attempts--;
                     Log($"Invites remaining: {_attempts}");
@@ -111,6 +88,13 @@ public partial class AutoInvite : Tweak<AutoInviteConfiguration> {
                 }
             }
         }
+    }
+
+    private void StartInvite(ulong contentId, string playerName, ushort worldId) {
+        Automation.Start(AutoTask.From(async t => {
+            await t.DelayMs(Config.DelayMs);
+            InfoProxyPartyInvite.Invite(contentId, playerName, worldId);
+        }, name: "AutoInvite"));
     }
 
     [CommandHandler("/cinvite", "Toggle Auto Inviter", subCommandStrings: ["[0-9]s|Enable for specified seconds", "[0-9]a|Enable for specified number of invites"])]
@@ -136,16 +120,5 @@ public partial class AutoInvite : Tweak<AutoInviteConfiguration> {
             });
             return;
         }
-    }
-
-    private bool InInvitableInstance()
-        => ICondition.Get()[ConditionFlag.BoundByDuty56] && IPlayerState.Get().Territory.Value.TerritoryIntendedUse.RowId is 41 or 47 or 48 or 52 or 53 or 61;
-
-    private byte[] ToTerminatedBytes(string s) {
-        var utf8 = Encoding.UTF8;
-        var bytes = new byte[utf8.GetByteCount(s) + 1];
-        utf8.GetBytes(s, 0, s.Length, bytes, 0);
-        bytes[^1] = 0;
-        return bytes;
     }
 }

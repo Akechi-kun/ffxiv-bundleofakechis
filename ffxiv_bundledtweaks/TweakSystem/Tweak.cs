@@ -7,7 +7,6 @@ using Dalamud.Hooking.Internal.Verification;
 using Dalamud.Interface.Utility.Raii;
 using Dalamud.Interface.Windowing;
 using Dalamud.Utility.Signatures;
-using ECommons.Automation.NeoTaskManager;
 using System.Reflection;
 
 namespace ComplexTweaks.TweakSystem;
@@ -51,7 +50,7 @@ public abstract partial class Tweak : ITweak {
             return;
         }
 
-        TaskManager = new();
+        Automation = new();
         Ready = true;
     }
 
@@ -72,7 +71,9 @@ public abstract partial class Tweak : ITweak {
     public string? DisabledReason { get; protected set; }
     public (uint Min, uint Max) RequiredClientStructsVersion { get; protected set; }
 
-    protected TaskManager TaskManager = null!;
+    protected Automation Automation { get; private set; } = null!;
+
+    internal void StopAutomation() => Automation.Stop();
 
     protected Type? CachedConfigType { get; set; }
     protected Type? CachedWindowType { get; set; }
@@ -252,6 +253,7 @@ public abstract partial class Tweak // Internal
             LastInternalException = ex;
         }
 
+        Automation.Stop();
         RemoveOwnedWindow();
         Enabled = false;
     }
@@ -323,6 +325,7 @@ public abstract partial class Tweak // Internal
             LastInternalException = ex;
         }
 
+        Automation.Dispose();
         Ready = false;
         Disposed = true;
     }
