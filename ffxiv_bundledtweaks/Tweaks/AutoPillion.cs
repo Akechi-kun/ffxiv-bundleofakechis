@@ -1,8 +1,7 @@
-﻿using FFXIVClientStructs.FFXIV.Client.Game;
+using FFXIVClientStructs.FFXIV.Client.Game;
 
 namespace ComplexTweaks.Tweaks;
 
-[Tweak]
 public class AutoPillion : Tweak {
     public override string Name => "Auto Pillion";
     public override string Description => "Automatically hop in to other peoples' mounts when you are near them.";

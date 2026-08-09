@@ -1,4 +1,4 @@
-﻿using Dalamud.Bindings.ImGui;
+using Dalamud.Bindings.ImGui;
 using Dalamud.Interface;
 using Dalamud.Interface.Components;
 using ECommons.Events;
@@ -10,7 +10,6 @@ public class EnhancedLoginLogoutConfig {
     public bool RunCommandsWhenARIsActive = false;
 }
 
-[Tweak]
 public class EnhancedLoginLogout : Tweak<EnhancedLoginLogoutConfig> {
     // TODO: hook logout and run commands then too
     public override string Name => "Enhanced Login";

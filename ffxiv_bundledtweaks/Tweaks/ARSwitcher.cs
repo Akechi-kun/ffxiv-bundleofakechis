@@ -1,4 +1,4 @@
-﻿using AutoRetainerAPI.Configuration;
+using AutoRetainerAPI.Configuration;
 using Dalamud.Game.Gui.Dtr;
 using Dalamud.Game.Text;
 using Dalamud.Interface.ImGuiNotification;
@@ -7,7 +7,7 @@ using System.Globalization;
 
 namespace ComplexTweaks.Tweaks;
 
-[Tweak]
+[Requires(Ipc.AutoRetainer)]
 public class ARSwitcher : Tweak {
     public override string Name => "AutoRetainer Character Switcher";
     public override string Description => "Adds a DTR element and commands to switch to the prev/next character in AutoRetainer.";

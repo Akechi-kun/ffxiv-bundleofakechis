@@ -1,6 +1,6 @@
-﻿namespace ComplexTweaks.Tweaks;
+namespace ComplexTweaks.Tweaks;
 
-[Tweak(debug: true)]
+[Debug]
 public partial class NoFailFollowQuests : Tweak {
     public override string Name => "Easier Follow Quests";
     public override string Description => "Prevents being seen during follow quests (you can still be too far away).";

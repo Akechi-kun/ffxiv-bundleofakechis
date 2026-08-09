@@ -1,11 +1,11 @@
-﻿using Dalamud.Plugin.Ipc;
+using Dalamud.Plugin.Ipc;
 
 namespace ComplexTweaks.IPC;
 
-[Ipc(Ipc.TextAdvance)]
 public sealed class TextAdvanceIpc : BaseIPC, IPluginService {
     public int InitOrder => 10;
 
+    public override Ipc Id => Ipc.TextAdvance;
     public override string Name => "TextAdvance";
     public override string Repo => Nightmare;
 

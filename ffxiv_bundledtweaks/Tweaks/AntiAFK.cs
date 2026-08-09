@@ -1,8 +1,7 @@
-﻿using FFXIVClientStructs.FFXIV.Client.UI.Misc;
+using FFXIVClientStructs.FFXIV.Client.UI.Misc;
 
 namespace ComplexTweaks.Tweaks;
 
-[Tweak]
 public partial class AntiAFK : Tweak {
     public override string Name => "Anti-AFK";
     public override string Description => "Prevents being kicked for being AFK.";

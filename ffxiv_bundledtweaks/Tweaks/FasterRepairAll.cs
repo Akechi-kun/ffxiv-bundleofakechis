@@ -1,4 +1,4 @@
-﻿using Dalamud.Game.Addon.Events;
+using Dalamud.Game.Addon.Events;
 using FFXIVClientStructs.FFXIV.Client.Game;
 using FFXIVClientStructs.FFXIV.Client.UI.Agent;
 using FFXIVClientStructs.FFXIV.Component.GUI;
@@ -6,7 +6,6 @@ using System.Threading.Tasks;
 
 namespace ComplexTweaks.Tweaks;
 
-[Tweak]
 public partial class FasterRepairAll : Tweak {
     public override string Name => "Faster Npc Repair All";
     public override string Description => "Instantly repair all inventories when repairing at an npc.";

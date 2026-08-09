@@ -1,11 +1,10 @@
-﻿using FFXIVClientStructs.FFXIV.Client.Game;
+using FFXIVClientStructs.FFXIV.Client.Game;
 using FFXIVClientStructs.FFXIV.Client.Game.Object;
 using FFXIVClientStructs.FFXIV.Client.Network;
 using FFXIVClientStructs.FFXIV.Client.UI.Info;
 
 namespace ComplexTweaks.Tweaks;
 
-[Tweak]
 public unsafe partial class AutoBusy : Tweak {
     public override string Name => "Auto Busy";
     public override string Description => "Toggles busy while you're teleporting.";

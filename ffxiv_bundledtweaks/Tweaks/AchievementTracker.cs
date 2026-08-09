@@ -12,7 +12,6 @@ public class AchievementTrackerConfiguration {
     [BoolConfig] public bool AutoRemoveCompleted = false;
 }
 
-[Tweak]
 public unsafe partial class AchievementTracker : Tweak<AchievementTrackerConfiguration, AchievementTrackerWindow> {
     public override string Name => "Achievement Tracker";
     public override string Description => $"Adds an achievement tracker";

@@ -1,4 +1,4 @@
-﻿using Dalamud.Interface;
+using Dalamud.Interface;
 using Dalamud.Interface.Components;
 using Dalamud.Bindings.ImGui;
 using FFXIVClientStructs.FFXIV.Client.Game.Event;
@@ -22,7 +22,6 @@ public class EnhancedDutyStartEndConfiguration {
     [IntConfig] public int TimeToWait;
 }
 
-[Tweak]
 public class EnhancedDutyStartEnd : Tweak<EnhancedDutyStartEndConfiguration> {
     public override string Name => "Enhanced Duty Start/End";
     public override string Description => "Automatically execute certain actions when the duty starts or ends.";

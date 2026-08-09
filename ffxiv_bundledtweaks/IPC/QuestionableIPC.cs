@@ -1,11 +1,11 @@
-﻿using Dalamud.Plugin.Ipc;
+using Dalamud.Plugin.Ipc;
 
 namespace ComplexTweaks.IPC;
 
-[Ipc(Ipc.Questionable)]
 public sealed class QuestionableIPC : BaseIPC, IPluginService {
     public int InitOrder => 10;
 
+    public override Ipc Id => Ipc.Questionable;
     public override string Name => "Questionable";
     public override string Repo => Punish;
 

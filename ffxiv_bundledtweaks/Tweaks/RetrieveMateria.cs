@@ -1,4 +1,4 @@
-﻿using Dalamud.Game.Gui.ContextMenu;
+using Dalamud.Game.Gui.ContextMenu;
 using Dalamud.Game.Inventory;
 using FFXIVClientStructs.FFXIV.Client.Game;
 using FFXIVClientStructs.FFXIV.Client.Game.Event;
@@ -6,7 +6,6 @@ using System.Threading.Tasks;
 
 namespace ComplexTweaks.Tweaks;
 
-[Tweak]
 internal class RetrieveMateria : Tweak {
     public override string Name => "Retrieve All Materia";
     public override string Description => "Adds a context menu item that will retrieve all materia from an item.";

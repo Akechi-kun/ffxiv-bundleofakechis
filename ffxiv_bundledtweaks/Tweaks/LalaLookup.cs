@@ -6,7 +6,6 @@ using System.Threading.Tasks;
 
 namespace ComplexTweaks.Tweaks;
 
-[Tweak]
 public class LalaLookup : Tweak {
     public override string Name => "Lalachievements Lookup";
     public override string Description => "Adds a context menu entry to lookup a character on lalachievements";

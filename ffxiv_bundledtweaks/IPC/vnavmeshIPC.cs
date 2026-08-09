@@ -2,10 +2,10 @@ using Dalamud.Plugin.Ipc;
 
 namespace ComplexTweaks.IPC;
 
-[Ipc(Ipc.Navmesh)]
 public sealed class NavmeshIPC : BaseIPC, IPluginService {
     public int InitOrder => 10;
 
+    public override Ipc Id => Ipc.Navmesh;
     public override string Name => "vnavmesh";
     public override string Repo => Veyn;
 
@@ -31,26 +31,24 @@ public sealed class NavmeshIPC : BaseIPC, IPluginService {
         _flagToPoint = Svc.Interface.GetIpcSubscriber<Vector3?>("vnavmesh.Query.Mesh.FlagToPoint");
     }
 
-    public bool IsReady() => _navIsReady.HasFunction && _navIsReady.InvokeFunc();
-    public float BuildProgress() => _navBuildProgress.HasFunction ? _navBuildProgress.InvokeFunc() : -1f;
+    public bool IsReady => _navIsReady.HasFunction && _navIsReady.InvokeFunc();
+    public float BuildProgress => _navBuildProgress.HasFunction ? _navBuildProgress.InvokeFunc() : -1f;
+    public bool PathfindInProgress => _pathfindInProgress.HasFunction && _pathfindInProgress.InvokeFunc();
 
     public void Stop() {
-        if (_pathStop.HasFunction)
+        if (_pathStop.HasAction)
             _pathStop.InvokeAction();
     }
 
     public bool IsRunning() => _pathIsRunning.HasFunction && _pathIsRunning.InvokeFunc();
 
-    public bool PathfindAndMoveTo(Vector3 dest, bool fly)
+    public bool PathfindAndMoveTo(Vector3 dest, bool fly = false)
         => _pathfindAndMoveTo.HasFunction && _pathfindAndMoveTo.InvokeFunc(dest, fly);
 
-    public bool PathfindInProgress()
-        => _pathfindInProgress.HasFunction && _pathfindInProgress.InvokeFunc();
-
-    public Vector3? PointOnFloor(Vector3 p, bool allowUnlandable, float halfExtentXZ)
+    public Vector3? PointOnFloor(Vector3 p, bool allowUnlandable = false, float halfExtentXZ = 5)
         => _pointOnFloor.HasFunction ? _pointOnFloor.InvokeFunc(p, allowUnlandable, halfExtentXZ) : null;
 
-    public Vector3? NearestPointReachable(Vector3 p, float halfExtentXZ, float halfExtentY)
+    public Vector3? NearestPointReachable(Vector3 p, float halfExtentXZ = 5, float halfExtentY = 5)
         => _nearestPointReachable.HasFunction ? _nearestPointReachable.InvokeFunc(p, halfExtentXZ, halfExtentY) : null;
 
     public Vector3? FlagToPoint()

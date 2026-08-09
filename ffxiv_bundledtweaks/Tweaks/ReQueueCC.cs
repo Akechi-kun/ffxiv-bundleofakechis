@@ -1,11 +1,10 @@
-﻿using Dalamud.Game.Chat;
+using Dalamud.Game.Chat;
 using FFXIVClientStructs.FFXIV.Client.Game.UI;
 using FFXIVClientStructs.FFXIV.Client.UI.Agent;
 using Lumina.Extensions;
 
 namespace ComplexTweaks.Tweaks;
 
-[Tweak]
 public class ReQueueCC : Tweak {
     public override string Name => "CC Error Requeue";
     public override string Description => "Requeues for Crystalline Conflict when your registration was cancelled due to a map change.";

@@ -19,7 +19,6 @@ public class AutoFollowConfiguration {
     [StringConfig] public string AutoFollowName = string.Empty;
 }
 
-[Tweak]
 public class AutoFollow : Tweak<AutoFollowConfiguration> {
     public override string Name => "Auto Follow";
     public override string Description

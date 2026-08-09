@@ -3,10 +3,10 @@ using System.Threading.Tasks;
 
 namespace ComplexTweaks.IPC;
 
-[Ipc(Ipc.BossMod)]
 public sealed class BossModIPC : BaseIPC, IPluginService {
     public int InitOrder => 10;
 
+    public override Ipc Id => Ipc.BossMod;
     public override string Name => "BossMod";
     public override string Repo => Veyn;
 

@@ -2,7 +2,6 @@ using FFXIVClientStructs.FFXIV.Client.Game;
 
 namespace ComplexTweaks.Tweaks;
 
-[Tweak]
 public class AutoMerge : Tweak {
     public override string Name => "Auto Merge";
     public override string Description => "Merge incomplete stacks upon opening your inventory.";

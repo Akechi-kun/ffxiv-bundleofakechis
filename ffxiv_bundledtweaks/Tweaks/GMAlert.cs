@@ -19,7 +19,6 @@ public class GMAlertConfiguration {
     public HashSet<string> Commands = [];
 }
 
-[Tweak]
 public partial class GMAlert : Tweak<GMAlertConfiguration> {
     public override string Name => "GM Alert";
     public override string Description => "Various alerts for when a GM is nearby.";

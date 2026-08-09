@@ -35,4 +35,20 @@ public abstract class BaseConfigAttribute : Attribute {
         ImGui.SameLine();
         return ImGui.IconButton(FontAwesomeIcon.Undo, "##Reset");
     }
+
+    protected static void DrawMissingIpcs(BaseIPC[] missingIpcs) {
+        if (missingIpcs.Length == 0)
+            return;
+
+        ImGui.SameLine();
+        ImGui.Icon(60074, 24);
+
+        using var warningIndent = ImGui.ConfigIndent();
+        ImGui.TextV(Colors.Grey2, $"Missing {missingIpcs.Length} of the required plugins for this option to work:");
+        foreach (var entry in missingIpcs) {
+            ImGui.TextColoredWrapped(Colors.Grey2, $"{entry.Name}:");
+            ImGui.SameLine();
+            ImGui.CopyableText(entry.Repo);
+        }
+    }
 }

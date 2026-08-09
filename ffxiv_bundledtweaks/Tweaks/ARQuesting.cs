@@ -1,4 +1,4 @@
-﻿using FFXIVClientStructs.FFXIV.Client.Game;
+using FFXIVClientStructs.FFXIV.Client.Game;
 using FFXIVClientStructs.FFXIV.Client.Game.UI;
 using System.Threading.Tasks;
 
@@ -8,7 +8,6 @@ public class ARQuestingConfiguration {
     [BoolConfig] public bool ReturnHome = true;
 }
 
-[Tweak]
 [Requires(Ipc.AutoRetainer | Ipc.Lifestream | Ipc.Questionable)]
 public class ARQuesting : ARTweak<ARQuestingConfiguration> {
     public override string Name => "AutoRetainer x Questionable";

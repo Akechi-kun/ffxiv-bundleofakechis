@@ -1,4 +1,4 @@
-﻿using FFXIVClientStructs.FFXIV.Client.UI.Agent;
+using FFXIVClientStructs.FFXIV.Client.UI.Agent;
 using Dalamud.Bindings.ImGui;
 using Lumina.Excel.Sheets;
 
@@ -16,7 +16,7 @@ internal unsafe class FlagTab : DebugTab {
 
         ImGui.Text($"Map Position: {IPlayerState.Get().MapFlag.Position}");
 
-        if (Svc.Navmesh.FlagToPoint() is not { } pos) return;
+        if (Service.Navmesh.FlagToPoint() is not { } pos) return;
         ImGui.Text($"World Position: {pos}");
 
         var territory = IPlayerState.Get().MapFlag.TerritoryId;

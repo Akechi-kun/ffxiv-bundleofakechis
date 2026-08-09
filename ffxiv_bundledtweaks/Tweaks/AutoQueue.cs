@@ -4,7 +4,6 @@ using Lumina.Extensions;
 
 namespace ComplexTweaks.Tweaks;
 
-[Tweak]
 internal class AutoQueue : Tweak {
     public override string Name => "Auto Queue";
     public override string Description => "Auto queue into a pre-checked duty (on zone change).\n" +

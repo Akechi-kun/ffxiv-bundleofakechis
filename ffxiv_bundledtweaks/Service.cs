@@ -1,4 +1,4 @@
-﻿using AutoRetainerAPI;
+using AutoRetainerAPI;
 using System.Reflection;
 
 namespace ComplexTweaks.Services;
@@ -34,21 +34,8 @@ public sealed class IPCRegistry : IPluginService {
     private readonly Dictionary<Ipc, BaseIPC> _byId = [];
 
     public IPCRegistry() {
-        BaseIPC[] ipcs = [
-            AutoRetainerIPC.Get(),
-            BossModIPC.Get(),
-            LifestreamIPC.Get(),
-            NavmeshIPC.Get(),
-            QuestionableIPC.Get(),
-            TextAdvanceIpc.Get(),
-        ];
-        foreach (var ipc in ipcs)
-            MapByEnum(ipc);
-    }
-
-    private void MapByEnum(BaseIPC ipc) {
-        if (ipc.GetType().GetCustomAttribute<IpcAttribute>(inherit: false) is { } attr)
-            _byId[attr.Id] = ipc;
+        foreach (var ipc in Svc.GetServices<BaseIPC>())
+            _byId[ipc.Id] = ipc;
     }
 
     public BaseIPC? Get(Ipc id) => _byId.TryGetValue(id, out var ipc) ? ipc : null;
@@ -70,8 +57,16 @@ public sealed class IPCRegistry : IPluginService {
         return ipcs.Length == ids.Length && ipcs.All(ipc => ipc.IsLoaded);
     }
 
-    public BaseIPC[] GetMissing(MethodInfo? method)
-        => method == null ? [] : GetMissing([.. method.GetCustomAttributes<RequiresAttribute>().SelectMany(r => r.Id.Flags).Where(id => id != Ipc.None).Distinct().ToArray()]);
+    public BaseIPC[] GetMissing(ICustomAttributeProvider? provider)
+        => provider == null ? [] : GetMissing([.. provider.GetCustomAttributes(typeof(RequiresAttribute), inherit: false).Cast<RequiresAttribute>().SelectMany(r => r.Id.Flags).Where(id => id != Ipc.None).Distinct().ToArray()]);
+
+    public BaseIPC[] GetMissing(MethodInfo? method) => GetMissing((ICustomAttributeProvider?)method);
+
+    public BaseIPC[] GetMissing(Enum? value) {
+        if (value == null) return [];
+        var field = value.GetType().GetField(value.ToString()!);
+        return GetMissing(field);
+    }
 
     public BaseIPC[] GetMissing(params Ipc[] ids) {
         if (ids.Length == 0)

@@ -12,7 +12,6 @@ public class SimpleCurrencyAlertConfig {
     public List<SimpleCurrencyAlert.Alert> Alerts = [];
 }
 
-[Tweak]
 public class SimpleCurrencyAlert : Tweak<SimpleCurrencyAlertConfig> {
     public override string Name => "Simple Currency Alert";
     public override string Description => "Probably won't reset your config every update. Triggers on zone change.";

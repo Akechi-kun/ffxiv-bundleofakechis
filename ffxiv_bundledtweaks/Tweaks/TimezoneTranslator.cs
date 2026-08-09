@@ -9,7 +9,6 @@ using TimeZoneNames;
 
 namespace ComplexTweaks.Tweaks;
 
-[Tweak]
 public class TimezoneTranslator : Tweak {
     private static readonly Regex MonthPeriodRegex = new(@"^(\p{L}+)\s", RegexOptions.Compiled);
 

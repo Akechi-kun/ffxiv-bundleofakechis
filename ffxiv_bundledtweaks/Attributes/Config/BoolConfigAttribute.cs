@@ -12,7 +12,10 @@ public class BoolConfigAttribute : BaseConfigAttribute {
         var cmdMethod = tweak.CachedType.GetMethods(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance)
             .FirstOrDefault(mi => mi.GetCustomAttribute<CommandHandlerAttribute>()?.ConfigFieldName == fieldInfo.Name);
         var cmdAttr = cmdMethod?.GetCustomAttribute<CommandHandlerAttribute>();
-        var missingIpcs = Service.IPC.GetMissing(cmdMethod);
+        var missingIpcs = Service.IPC.GetMissing(fieldInfo)
+            .Concat(Service.IPC.GetMissing(cmdMethod))
+            .Distinct()
+            .ToArray();
         var label = cmdAttr?.Commands.FirstOrDefault() ?? (!attr?.Label.IsEmpty ?? false ? attr!.Label : fieldInfo.Name.SplitWords());
 
         if (missingIpcs.Length > 0 && !value) {
@@ -25,11 +28,6 @@ public class BoolConfigAttribute : BaseConfigAttribute {
             OnChangeInternal(tweak, fieldInfo);
         }
 
-        if (missingIpcs.Length > 0) {
-            ImGui.SameLine();
-            ImGui.Icon(60074, 24);
-        }
-
         DrawConfigInfos(fieldInfo);
 
         var desc = !cmdAttr?.HelpMessage.IsEmpty ?? false ? cmdAttr!.HelpMessage : !attr?.Description.IsEmpty ?? false ? attr!.Description : null;
@@ -40,14 +38,6 @@ public class BoolConfigAttribute : BaseConfigAttribute {
             ImGui.PushCursorY(3);
         }
 
-        if (missingIpcs.Length > 0) {
-            using var warningIndent = ImGui.ConfigIndent();
-            ImGui.TextV(Colors.Grey2, $"Missing {missingIpcs.Length} of the required plugins for this command to work:");
-            foreach (var entry in missingIpcs) {
-                ImGui.TextColoredWrapped(Colors.Grey2, $"{entry.Name}:");
-                ImGui.SameLine();
-                ImGui.CopyableText(entry.Repo);
-            }
-        }
+        DrawMissingIpcs(missingIpcs);
     }
 }

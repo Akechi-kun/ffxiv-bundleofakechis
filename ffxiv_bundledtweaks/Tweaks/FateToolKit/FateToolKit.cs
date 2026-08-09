@@ -55,7 +55,6 @@ public class FateToolKitConfig {
  * calculate enemies to kill/things to turn in by the fate progress step size
  */
 
-[Tweak]
 [Requires(Ipc.Navmesh | Ipc.BossMod | Ipc.TextAdvance)]
 public class FateToolKit : Tweak<FateToolKitConfig, FateToolKitWindow>, IFateGrindRunState {
     public override string Name => "Fate Tool Kit (Date With Destiny)";

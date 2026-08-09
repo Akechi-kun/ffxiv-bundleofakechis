@@ -1,4 +1,4 @@
-﻿using Dalamud.Game.Text;
+using Dalamud.Game.Text;
 using Dalamud.Game.Text.SeStringHandling;
 using Dalamud.Game.Text.SeStringHandling.Payloads;
 using FFXIVClientStructs.FFXIV.Client.Game.Group;
@@ -18,7 +18,6 @@ public class AutoInviteConfiguration {
     [ChatChannelConfig(Mode = ChatChannelConfigAttribute.ChatChannelMode.PlayerChat)] public List<XivChatType> Channels = [];
 }
 
-[Tweak]
 public partial class AutoInvite : Tweak<AutoInviteConfiguration> {
     // Based on https://github.com/Bluefissure/Inviter but without all the hooks
     public override string Name => "Auto Inviter";

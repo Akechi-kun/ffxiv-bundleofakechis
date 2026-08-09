@@ -64,6 +64,6 @@ public sealed class ConfigService : IPluginService {
     }
 
     // because I need to use fields and not just props
-    private static readonly ISerializer Serializer = new SerializerBuilder().WithTypeInspector(inner => new CompositeTypeInspector(new ReadableFieldsTypeInspector(new StaticTypeResolver()),inner)).Build();
+    private static readonly ISerializer Serializer = new SerializerBuilder().WithTypeInspector(inner => new CompositeTypeInspector(new ReadableFieldsTypeInspector(new StaticTypeResolver()), inner)).Build();
     private static readonly IDeserializer Deserializer = new DeserializerBuilder().IgnoreUnmatchedProperties().Build();
 }

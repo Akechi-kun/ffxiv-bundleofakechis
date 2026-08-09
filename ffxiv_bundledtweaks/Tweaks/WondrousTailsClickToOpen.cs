@@ -1,4 +1,4 @@
-﻿using Dalamud.Game.Addon.Events;
+using Dalamud.Game.Addon.Events;
 using Dalamud.Game.Addon.Events.EventDataTypes;
 using ECommons.ImGuiMethods;
 using FFXIVClientStructs.FFXIV.Client.Enums;
@@ -11,7 +11,6 @@ using System.Text.RegularExpressions;
 
 namespace ComplexTweaks.Tweaks;
 
-[Tweak]
 internal class WondrousTailsClickToOpen : Tweak {
     public override string Name => "Wondrous Tails Click To Open";
     public override string Description => "Click on a WT duty to open the duty finder to it. Ctrl+click to queue into the duty semi-smartly.";

@@ -1,9 +1,8 @@
-﻿using FFXIVClientStructs.FFXIV.Client.UI;
+using FFXIVClientStructs.FFXIV.Client.UI;
 using FFXIVClientStructs.FFXIV.Component.GUI;
 
 namespace ComplexTweaks.Tweaks;
 
-[Tweak]
 public partial class PreventConfirmTargetingChat : Tweak {
     public override string Name => "Prevent Confirm Targeting Chat";
     public override string Description => "If the confirm keybind would target the chat window, prevent it.";

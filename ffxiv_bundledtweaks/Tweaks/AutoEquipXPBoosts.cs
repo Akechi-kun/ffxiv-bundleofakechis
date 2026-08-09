@@ -1,4 +1,4 @@
-﻿using FFXIVClientStructs.FFXIV.Client.System.Framework;
+using FFXIVClientStructs.FFXIV.Client.System.Framework;
 using FFXIVClientStructs.FFXIV.Component.Excel;
 using Lumina.Excel;
 using Lumina.Excel.Sheets;
@@ -7,7 +7,6 @@ using TerritoryIntendedUse = FFXIVClientStructs.FFXIV.Client.Enums.TerritoryInte
 
 namespace ComplexTweaks.Tweaks;
 
-[Tweak]
 internal class AutoEquipXPBoosts : Tweak {
     public override string Name => "Auto Equip Exp Items";
     public override string Description => "Automatically equips any exp boosting item on level change.";

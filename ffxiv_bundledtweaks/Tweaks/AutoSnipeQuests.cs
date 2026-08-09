@@ -1,9 +1,8 @@
-﻿using FFXIVClientStructs.FFXIV.Client.Game.Event;
+using FFXIVClientStructs.FFXIV.Client.Game.Event;
 using FFXIVClientStructs.FFXIV.Common.Lua;
 
 namespace ComplexTweaks.Tweaks;
 
-[Tweak]
 public unsafe partial class AutoSnipeQuests : Tweak {
     public override string Name => "Sniper no sniping";
     public override string Description => "Automatically completes snipe quests.";

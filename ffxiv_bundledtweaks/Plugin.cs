@@ -3,7 +3,6 @@ using ComplexTweaks.Configuration;
 using Dalamud.Plugin;
 using FFXIVClientStructs.FFXIV.Client.Game.Event;
 using System.Collections.Specialized;
-using System.Reflection;
 
 namespace ComplexTweaks;
 
@@ -111,7 +110,8 @@ public class Plugin : IDalamudPlugin {
     }
 
     private void InitializeTweaks() {
-        foreach (var tweakType in GetType().Assembly.GetTypes().Where(type => type.GetCustomAttribute<TweakAttribute>() != null)) {
+        foreach (var tweakType in GetType().Assembly.GetTypes()
+                     .Where(type => type is { IsClass: true, IsAbstract: false } && typeof(Tweak).IsAssignableFrom(type))) {
             IPluginLog.Get().Verbose($"Initializing {tweakType.Name}");
             try {
                 Tweaks.Add((Tweak)Activator.CreateInstance(tweakType)!);

@@ -166,8 +166,8 @@ internal sealed class FateGrind(FateToolKit tweak) : TaskBase {
 
         public MoveStopReason CheckStuck(Vector3 currentPosition) {
             var now = Environment.TickCount64;
-            var isRunning = Svc.Navmesh.IsRunning();
-            var isPathfinding = Svc.Navmesh.PathfindInProgress();
+            var isRunning = Service.Navmesh.IsRunning();
+            var isPathfinding = Service.Navmesh.PathfindInProgress;
 
             if (isRunning || isPathfinding)
                 LastPathActivityAt = now;
@@ -435,19 +435,19 @@ internal sealed class FateGrind(FateToolKit tweak) : TaskBase {
         using var scope = BeginScope(nameof(GenerateObstacleMap));
 
         // bitmap is built via vnav and doesn't await the mesh still being built
-        if (!Svc.Navmesh.IsReady()) {
+        if (!Service.Navmesh.IsReady) {
             Status = "Waiting for Navmesh";
-            await WaitUntil(() => Svc.Navmesh.IsReady() || Svc.Navmesh.BuildProgress() >= 0, "WaitForBuildStart");
-            if (Svc.Navmesh.BuildProgress() >= 0)
-                await WaitWhile(() => Svc.Navmesh.BuildProgress() >= 0, "BuildMesh");
-            if (!Svc.Navmesh.IsReady()) {
+            await WaitUntil(() => Service.Navmesh.IsReady || Service.Navmesh.BuildProgress >= 0, "WaitForBuildStart");
+            if (Service.Navmesh.BuildProgress >= 0)
+                await WaitWhile(() => Service.Navmesh.BuildProgress >= 0, "BuildMesh");
+            if (!Service.Navmesh.IsReady) {
                 Warning($"Navmesh not ready; skipping obstacle map for fate {evt.Id}");
                 return;
             }
         }
 
         // sometimes the center of a fate is unreachable (tower fate in amh araeng), so generate from a reachable point then compensate for being off center
-        var safe = Svc.Navmesh.NearestPointReachable(evt.Position, 5, 5);
+        var safe = Service.Navmesh.NearestPointReachable(evt.Position, 5, 5);
         float? margin = safe is { } ? Vector3.Distance(evt.Position, safe.Value) : null;
         try {
             if (!Service.BossMod.Generate(safe ?? evt.Position, evt.Radius + margin ?? 10, false)) {

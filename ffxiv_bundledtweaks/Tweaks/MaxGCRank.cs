@@ -1,8 +1,8 @@
-﻿using FFXIVClientStructs.FFXIV.Client.Game.UI;
+using FFXIVClientStructs.FFXIV.Client.Game.UI;
 
 namespace ComplexTweaks.Tweaks;
 
-[Tweak(debug: true)]
+[Debug]
 public partial class MaxGCRank : Tweak {
     public override string Name => "Enforce Expert Delivery";
     public override string Description => "Forces the expert delivery window to show regardless of rank. Only in effect if you do not have expert delivery unlocked.";

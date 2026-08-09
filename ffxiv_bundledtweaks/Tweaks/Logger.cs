@@ -8,7 +8,7 @@ using System.Reflection;
 namespace ComplexTweaks.Tweaks;
 
 #if DEBUG
-[Tweak(debug: true)]
+[Debug]
 public unsafe partial class DebugLogging : Tweak {
     public override string Name => "Logger";
     public override string Description => "It just logs random hooks.";
@@ -76,7 +76,7 @@ public unsafe partial class DebugLogging : Tweak {
 
     [AddressHook<EventFramework>(nameof(EventFramework.MemberFunctionPointers.ProcessEventPlay))]
     internal void ProcessEventPlay(EventFramework* thisPtr, GameObject* gameObject, EventId eventId, short scene, ulong sceneFlags, uint* sceneData, byte sceneDataCount) {
-        MethodBase.GetCurrentMethod()?.Log([(nint)thisPtr, (nint)gameObject, eventId, scene, sceneFlags, (nint) sceneData, sceneDataCount]);
+        MethodBase.GetCurrentMethod()?.Log([(nint)thisPtr, (nint)gameObject, eventId, scene, sceneFlags, (nint)sceneData, sceneDataCount]);
         ProcessEventPlayHook.Original(thisPtr, gameObject, eventId, scene, sceneFlags, sceneData, sceneDataCount);
     }
 

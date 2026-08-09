@@ -1,4 +1,4 @@
-﻿using FFXIVClientStructs.FFXIV.Client.Game.UI;
+using FFXIVClientStructs.FFXIV.Client.Game.UI;
 using FFXIVClientStructs.FFXIV.Client.System.String;
 using FFXIVClientStructs.FFXIV.Client.UI;
 using FFXIVClientStructs.FFXIV.Client.UI.Agent;
@@ -7,7 +7,6 @@ using Lumina.Excel.Sheets;
 
 namespace ComplexTweaks.Tweaks;
 
-[Tweak]
 public unsafe partial class InstantLogout : Tweak {
     public override string Name => "Instant Logout";
     public override string Description => "Skips the 20 second countdown when logging out outside of a sanctuary. Skips inside duties.";

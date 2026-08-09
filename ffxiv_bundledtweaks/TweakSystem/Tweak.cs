@@ -17,13 +17,12 @@ public abstract partial class Tweak : ITweak {
         InternalName = CachedType.Name;
         IncompatibilityWarnings = [.. CachedType.GetCustomAttributes<IncompatibilityWarningAttribute>()];
 
-        var tweakAttr = CachedType.GetCustomAttribute<TweakAttribute>();
-        Outdated = tweakAttr?.Outdated ?? false;
-        Disabled = tweakAttr?.Disabled ?? false;
-        DisabledReason = tweakAttr?.DisabledReason;
-        IsDebug = tweakAttr?.Debug ?? false;
         Requirements = Service.IPC.GetMany([.. CachedType.GetCustomAttributes<RequiresAttribute>().SelectMany(r => r.Id.Flags).Where(id => id != Ipc.None).Distinct()]);
         RequiredClientStructsVersion = (CachedType.GetCustomAttribute<RequiresClientStructsAttribute>()?.MinVersion ?? 0, CachedType.GetCustomAttribute<RequiresClientStructsAttribute>()?.MaxVersion ?? uint.MaxValue);
+        IsDebug = CachedType.GetCustomAttribute<DebugAttribute>() != null;
+        var disabledAttr = CachedType.GetCustomAttribute<DisabledAttribute>();
+        Disabled = disabledAttr != null;
+        DisabledReason = disabledAttr?.Reason;
 
         try {
             IGameInteropProvider.Get().InitializeFromAttributes(this);
@@ -63,12 +62,12 @@ public abstract partial class Tweak : ITweak {
     public abstract string Name { get; }
     public abstract string Description { get; }
     public bool IsDebug { get; }
+    public bool Disabled { get; }
+    public string? DisabledReason { get; }
 
     public bool Outdated { get; protected set; }
     public bool Ready { get; protected set; }
     public bool Enabled { get; protected set; }
-    public bool Disabled { get; protected set; }
-    public string? DisabledReason { get; protected set; }
     public (uint Min, uint Max) RequiredClientStructsVersion { get; protected set; }
 
     protected Automation Automation { get; private set; } = null!;

@@ -1,8 +1,8 @@
-﻿using FFXIVClientStructs.FFXIV.Common.Lua;
+using FFXIVClientStructs.FFXIV.Common.Lua;
 
 namespace ComplexTweaks.Tweaks;
 
-[Tweak(debug: true)]
+[Debug]
 public unsafe partial class SkipCutscenes : Tweak {
     public override string Name => "Skip Cutscenes";
     public override string Description => "Skips all cutscenes.";

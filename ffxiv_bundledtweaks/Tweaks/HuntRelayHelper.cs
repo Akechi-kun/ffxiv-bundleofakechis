@@ -58,7 +58,6 @@ public class HuntRelayHelperConfiguration {
     ];
 }
 
-[Tweak]
 public class HuntRelayHelper : Tweak<HuntRelayHelperConfiguration> {
     public override string Name => "Hunt Relay Helper";
     public override string Description => "Appends a clickable icon to messages with a MapLinkPayload to relay them to other channels.";

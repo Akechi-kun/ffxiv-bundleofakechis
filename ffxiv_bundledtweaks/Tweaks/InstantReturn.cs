@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace ComplexTweaks.Tweaks;
 
-[Tweak(debug: true)]
+[Debug]
 public partial class InstantReturn : Tweak {
     public override string Name => "Quick Return";
     public override string Description => "Calls the return function directly";

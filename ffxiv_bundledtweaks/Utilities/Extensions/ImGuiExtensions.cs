@@ -1,4 +1,4 @@
-﻿using Dalamud.Bindings.ImGui;
+using Dalamud.Bindings.ImGui;
 using Dalamud.Interface;
 using Dalamud.Interface.Components;
 using Dalamud.Interface.Textures.TextureWraps;
@@ -191,12 +191,12 @@ public static class ImGuiExtensions {
             catch (Exception e) { e.Log(); }
         }
 
-        public static void PathfindButton(NavmeshIPC nav, Vector3 pos) {
+        public static void PathfindButton(Vector3 pos) {
             if (ImGuiComponents.IconButton($"###Pathfind{pos}", FontAwesomeIcon.Map)) {
-                if (!nav.IsRunning())
-                    nav.PathfindAndMoveTo(pos, ICondition.Get()[ConditionFlag.InFlight]);
+                if (!Service.Navmesh.IsRunning())
+                    Service.Navmesh.PathfindAndMoveTo(pos, ICondition.Get()[ConditionFlag.InFlight]);
                 else
-                    nav.Stop();
+                    Service.Navmesh.Stop();
             }
             if (ImGui.IsItemHovered()) ImGui.SetTooltip("Pathfind");
         }

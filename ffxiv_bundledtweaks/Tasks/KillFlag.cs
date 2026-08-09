@@ -26,7 +26,7 @@ public sealed class KillFlag(string world) : TaskBase {
             await WaitUntilTerritory(IPlayerState.Get().HomeAetheryte.Value.Territory.RowId);
         }
         Service.Lifestream.ExecuteCommand(world);
-        await WaitUntilThenFalse(() => Service.Lifestream.IsBusy(), "LifestreamWaitForFinish");
+        await WaitUntilThenFalse(Service.Lifestream.IsBusy, "LifestreamWaitForFinish");
         await WaitWhileBusy();
     }
 
@@ -48,7 +48,7 @@ public sealed class KillFlag(string world) : TaskBase {
     }
 
     private IGameObject? FindHuntTarget()
-        => Svc.Navmesh.FlagToPoint() is not { } fp ? null
+        => Service.Navmesh.FlagToPoint() is not { } fp ? null
             : IObjectTable.Get().Where(o => o is IBattleNpc { NameId: > 0 } && Vector3.Distance(o.Position, fp) <= HUNT_DETECTION_RADIUS)
             .Select(o => (Object: o, Distance: Vector3.Distance(o.Position, fp), Row: NotoriousMonster.FirstOrNull(r => o.BaseId == r.BNpcBase.RowId)))
             .Where(t => t.Row.HasValue)
@@ -59,7 +59,7 @@ public sealed class KillFlag(string world) : TaskBase {
     private async Task MoveIfNoLoS(DGameObject target) {
         if (!target.IsInLineOfSight()) {
             Log($"No line of sight to {target.Name}, moving...");
-            var validPosition = Svc.Navmesh.PointOnFloor(target.Position, false, 5);
+            var validPosition = Service.Navmesh.PointOnFloor(target.Position, false, 5);
             if (validPosition.HasValue) {
                 try {
                     await MoveTo(validPosition.Value, MovementConfig.Default);
@@ -79,7 +79,7 @@ public sealed class KillFlag(string world) : TaskBase {
                     target.Position.Z + LOS_SEARCH_RADIUS * (float)Math.Sin(angle)
                 );
 
-                if (Svc.Navmesh.PointOnFloor(searchPos, false, 1) is { } point && target.IsInLineOfSight(point)) {
+                if (Service.Navmesh.PointOnFloor(searchPos, false, 1) is { } point && target.IsInLineOfSight(point)) {
                     try {
                         await MoveTo(point, MovementConfig.Default);
                         return;
