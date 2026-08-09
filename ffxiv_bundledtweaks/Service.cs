@@ -3,19 +3,6 @@ using System.Reflection;
 
 namespace ComplexTweaks.Services;
 
-public static class Service {
-    public static Provider Provider => Svc.Get<Provider>();
-    public static AutoRetainerApi AutoRetainerApi => AutoRetainerApiService.Get().Api;
-    public static AutoRetainerIPC AutoRetainerIPC => Svc.Get<AutoRetainerIPC>();
-    public static BossModIPC BossMod => Svc.Get<BossModIPC>();
-    public static LifestreamIPC Lifestream => Svc.Get<LifestreamIPC>();
-    public static NavmeshIPC Navmesh => Svc.Get<NavmeshIPC>();
-    public static QuestionableIPC Questionable => Svc.Get<QuestionableIPC>();
-    public static TextAdvanceIpc TextAdvance => Svc.Get<TextAdvanceIpc>();
-    public static IPCRegistry IPC => Svc.Get<IPCRegistry>();
-    public static Automation Automation => AutomationService.Get().Automation;
-}
-
 public sealed class AutoRetainerApiService : IPluginService, IDisposable {
     public int InitOrder => 10;
     public AutoRetainerApi Api { get; } = new();

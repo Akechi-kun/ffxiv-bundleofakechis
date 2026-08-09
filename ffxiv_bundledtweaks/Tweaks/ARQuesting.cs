@@ -16,7 +16,7 @@ public class ARQuesting : ARTweak<ARQuestingConfiguration> {
     private List<string> _quests = [];
 
     public override void OnCharacterPostProcessStep() {
-        if (Service.Questionable.GetCurrentlyActiveEventQuests() is { Count: > 0 } quests) {
+        if (QuestionableIPC.Get().GetCurrentlyActiveEventQuests() is { Count: > 0 } quests) {
             _quests = quests;
             AutoRetainer.RequestCharacterPostprocess();
         }
@@ -30,15 +30,15 @@ public class ARQuesting : ARTweak<ARQuestingConfiguration> {
         protected override async Task Execute() {
             foreach (var quest in questIds) {
                 Status = $"Doing quest #{quest}";
-                if (Service.Questionable.StartSingleQuest(quest))
+                if (QuestionableIPC.Get().StartSingleQuest(quest))
                     await WaitWhile(() => !IsQuestComplete(quest), $"QuestionableWaitForFinish{quest}", 120);
                 else
                     Error($"Failed to start quest #{quest}");
             }
             if (returnHome) {
                 Status = "Going home";
-                Service.Lifestream.ExecuteCommand("auto");
-                await WaitUntilThenFalse(() => Service.Lifestream.IsBusy(), "LifestreamWaitForFinish");
+                LifestreamIPC.Get().ExecuteCommand("auto");
+                await WaitUntilThenFalse(() => LifestreamIPC.Get().IsBusy(), "LifestreamWaitForFinish");
             }
         }
 

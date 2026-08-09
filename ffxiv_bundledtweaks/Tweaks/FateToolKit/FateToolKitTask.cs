@@ -26,9 +26,9 @@ internal sealed class FateGrind(FateToolKit tweak) : TaskBase {
     private static IPlayerCharacter? Player => IObjectTable.Get().LocalPlayer;
 
     protected override async Task Execute() {
-        using var stop = new OnDispose(() => Service.TextAdvance.DisableExternalControl(Name));
-        if (Service.BossMod.Get(_presetName) is not null) // one time overwrite in case I update the preset
-            Service.BossMod.Create(_preset, true);
+        using var stop = new OnDispose(() => TextAdvanceIpc.Get().DisableExternalControl(Name));
+        if (BossModIPC.Get().Get(_presetName) is not null) // one time overwrite in case I update the preset
+            BossModIPC.Get().Create(_preset, true);
         try {
             while (!CancelToken.IsCancellationRequested && tweak.Running) {
                 tweak.StopIfNoRemaining();
@@ -50,7 +50,7 @@ internal sealed class FateGrind(FateToolKit tweak) : TaskBase {
                         break;
                     case GrindState.Engaging:
                         // this should only ever happen during hot reloading vbm during a fate
-                        if (PublicEvent.CurrentFate is { IsOnMap: true } current && !Service.BossMod.HasTempMap())
+                        if (PublicEvent.CurrentFate is { IsOnMap: true } current && !BossModIPC.Get().HasTempMap())
                             await GenerateObstacleMap(current);
                         await NextFrame();
                         break;
@@ -166,8 +166,8 @@ internal sealed class FateGrind(FateToolKit tweak) : TaskBase {
 
         public MoveStopReason CheckStuck(Vector3 currentPosition) {
             var now = Environment.TickCount64;
-            var isRunning = Service.Navmesh.IsRunning();
-            var isPathfinding = Service.Navmesh.PathfindInProgress;
+            var isRunning = NavmeshIPC.Get().IsRunning();
+            var isPathfinding = NavmeshIPC.Get().PathfindInProgress;
 
             if (isRunning || isPathfinding)
                 LastPathActivityAt = now;
@@ -435,22 +435,22 @@ internal sealed class FateGrind(FateToolKit tweak) : TaskBase {
         using var scope = BeginScope(nameof(GenerateObstacleMap));
 
         // bitmap is built via vnav and doesn't await the mesh still being built
-        if (!Service.Navmesh.IsReady) {
+        if (!NavmeshIPC.Get().IsReady) {
             Status = "Waiting for Navmesh";
-            await WaitUntil(() => Service.Navmesh.IsReady || Service.Navmesh.BuildProgress >= 0, "WaitForBuildStart");
-            if (Service.Navmesh.BuildProgress >= 0)
-                await WaitWhile(() => Service.Navmesh.BuildProgress >= 0, "BuildMesh");
-            if (!Service.Navmesh.IsReady) {
+            await WaitUntil(() => NavmeshIPC.Get().IsReady || NavmeshIPC.Get().BuildProgress >= 0, "WaitForBuildStart");
+            if (NavmeshIPC.Get().BuildProgress >= 0)
+                await WaitWhile(() => NavmeshIPC.Get().BuildProgress >= 0, "BuildMesh");
+            if (!NavmeshIPC.Get().IsReady) {
                 Warning($"Navmesh not ready; skipping obstacle map for fate {evt.Id}");
                 return;
             }
         }
 
         // sometimes the center of a fate is unreachable (tower fate in amh araeng), so generate from a reachable point then compensate for being off center
-        var safe = Service.Navmesh.NearestPointReachable(evt.Position, 5, 5);
+        var safe = NavmeshIPC.Get().NearestPointReachable(evt.Position, 5, 5);
         float? margin = safe is { } ? Vector3.Distance(evt.Position, safe.Value) : null;
         try {
-            if (!Service.BossMod.Generate(safe ?? evt.Position, evt.Radius + margin ?? 10, false)) {
+            if (!BossModIPC.Get().Generate(safe ?? evt.Position, evt.Radius + margin ?? 10, false)) {
                 Warning($"Obstacle map generation failed to start for fate {evt.Id}");
                 _obstacleMapBlacklist.Add(evt.Id);
                 return;
@@ -465,7 +465,7 @@ internal sealed class FateGrind(FateToolKit tweak) : TaskBase {
 
         var generationFailed = false;
         await WaitUntil(() => {
-            var status = Service.BossMod.GetGenerationStatus();
+            var status = BossModIPC.Get().GetGenerationStatus();
             if (status is TaskStatus.RanToCompletion) {
                 Log($"Obstacle map generated for fate {evt.Id}");
                 return true;
@@ -483,12 +483,12 @@ internal sealed class FateGrind(FateToolKit tweak) : TaskBase {
             return;
         }
 
-        if (Service.BossMod.EvaluateTempMapQuality() is { } quality) {
+        if (BossModIPC.Get().EvaluateTempMapQuality() is { } quality) {
             Log($"Generated obstacle map quality for fate {evt.Id}: {quality}");
             if (quality.IsBad) {
                 Log($"Obstacle map quality too poor. Clearing obstacle map. BossMod won't navigate in case of obstacles. Consider blacklisting this fate if it's problematic.");
                 _obstacleMapBlacklist.Add(evt.Id);
-                Service.BossMod.ClearTempMap();
+                BossModIPC.Get().ClearTempMap();
             }
         }
     }
@@ -622,16 +622,16 @@ internal sealed class FateGrind(FateToolKit tweak) : TaskBase {
                 return;
             }
 
-            if (Service.BossMod.GetActive() != _presetName) {
-                if (Service.BossMod.Get(_presetName) is null)
-                    Service.BossMod.Create(_preset, true);
+            if (BossModIPC.Get().GetActive() != _presetName) {
+                if (BossModIPC.Get().Get(_presetName) is null)
+                    BossModIPC.Get().Create(_preset, true);
                 else
-                    Service.BossMod.SetActive(_presetName);
+                    BossModIPC.Get().SetActive(_presetName);
             }
-            Service.BossMod.AddTransientStrategy(_presetName, "BossMod.Autorotation.MiscAI.AutoTarget", "MaxTargets", PullSize.ToString());
+            BossModIPC.Get().AddTransientStrategy(_presetName, "BossMod.Autorotation.MiscAI.AutoTarget", "MaxTargets", PullSize.ToString());
 
-            if (PublicEvent.CurrentFate is { Rule: PublicEvent.FateRule.Collect } && !Service.TextAdvance.IsInExternalControl())
-                Service.TextAdvance.EnableExternalControl(Name, new() { EnableTalkSkip = true, EnableRequestFill = true, EnableRequestHandin = true });
+            if (PublicEvent.CurrentFate is { Rule: PublicEvent.FateRule.Collect } && !TextAdvanceIpc.Get().IsInExternalControl())
+                TextAdvanceIpc.Get().EnableExternalControl(Name, new() { EnableTalkSkip = true, EnableRequestFill = true, EnableRequestHandin = true });
         }
         else {
             // Fate ended; clear NextFate so routing is correct. Only turn off combat preset once out of combat,
@@ -646,10 +646,10 @@ internal sealed class FateGrind(FateToolKit tweak) : TaskBase {
         if (clearNextFate)
             NextFate = null;
 
-        Service.BossMod.ClearActive();
+        BossModIPC.Get().ClearActive();
         ITargetManager.Get().Target = null; // avoid preset trying to go to the mob and interfering with casts
-        if (Service.TextAdvance.IsInExternalControl())
-            Service.TextAdvance.DisableExternalControl(Name);
+        if (TextAdvanceIpc.Get().IsInExternalControl())
+            TextAdvanceIpc.Get().DisableExternalControl(Name);
     }
 
     private bool TryGetValidMotivationNpc(PublicEvent fate, [NotNullWhen(true)] out IGameObject? npc) {

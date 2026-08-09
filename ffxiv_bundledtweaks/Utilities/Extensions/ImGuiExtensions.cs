@@ -193,10 +193,10 @@ public static class ImGuiExtensions {
 
         public static void PathfindButton(Vector3 pos) {
             if (ImGuiComponents.IconButton($"###Pathfind{pos}", FontAwesomeIcon.Map)) {
-                if (!Service.Navmesh.IsRunning())
-                    Service.Navmesh.PathfindAndMoveTo(pos, ICondition.Get()[ConditionFlag.InFlight]);
+                if (!NavmeshIPC.Get().IsRunning())
+                    NavmeshIPC.Get().PathfindAndMoveTo(pos, ICondition.Get()[ConditionFlag.InFlight]);
                 else
-                    Service.Navmesh.Stop();
+                    NavmeshIPC.Get().Stop();
             }
             if (ImGui.IsItemHovered()) ImGui.SetTooltip("Pathfind");
         }

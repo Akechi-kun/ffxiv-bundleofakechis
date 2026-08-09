@@ -117,7 +117,7 @@ public class FateToolKit : Tweak<FateToolKitConfig, FateToolKitWindow>, IFateGri
                 PendingStopWhenSafe = false;
                 ZoneItemTargets = [];
                 CurrentState = "Idle";
-                Service.BossMod.ClearActive();
+                BossModIPC.Get().ClearActive();
                 Svc.Automation.Stop();
                 RunUntilCompleted = null;
             }

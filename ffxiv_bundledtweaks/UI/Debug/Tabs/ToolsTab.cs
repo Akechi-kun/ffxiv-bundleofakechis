@@ -1,4 +1,4 @@
-﻿using Dalamud.Bindings.ImGui;
+using Dalamud.Bindings.ImGui;
 using FFXIVClientStructs.FFXIV.Client.Game;
 using FFXIVClientStructs.FFXIV.Client.Game.Event;
 using FFXIVClientStructs.FFXIV.Client.Game.Object;
@@ -12,7 +12,7 @@ internal class ToolsTab : DebugTab {
         if (ImGui.Button("Use all items")) {
             var itemIds = CollectUsableItemIds();
             if (itemIds.Count > 0) {
-                Service.Automation.Start(AutoTask.From(async t => {
+                AutomationService.Get().Automation.Start(AutoTask.From(async t => {
                     foreach (var itemId in itemIds) {
                         UseItem(itemId);
                         await t.WaitUntil(() => !IObjectTable.Get().LocalPlayer?.IsBusy ?? false, "NotBusy");

@@ -12,8 +12,8 @@ public class BoolConfigAttribute : BaseConfigAttribute {
         var cmdMethod = tweak.CachedType.GetMethods(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance)
             .FirstOrDefault(mi => mi.GetCustomAttribute<CommandHandlerAttribute>()?.ConfigFieldName == fieldInfo.Name);
         var cmdAttr = cmdMethod?.GetCustomAttribute<CommandHandlerAttribute>();
-        var missingIpcs = Service.IPC.GetMissing(fieldInfo)
-            .Concat(Service.IPC.GetMissing(cmdMethod))
+        var missingIpcs = IPCRegistry.Get().GetMissing(fieldInfo)
+            .Concat(IPCRegistry.Get().GetMissing(cmdMethod))
             .Distinct()
             .ToArray();
         var label = cmdAttr?.Commands.FirstOrDefault() ?? (!attr?.Label.IsEmpty ?? false ? attr!.Label : fieldInfo.Name.SplitWords());

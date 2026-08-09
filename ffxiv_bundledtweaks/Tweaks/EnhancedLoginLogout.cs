@@ -27,7 +27,7 @@ public class EnhancedLoginLogout : Tweak<EnhancedLoginLogoutConfig> {
 
         ImGui.DrawSection("Login Commands");
 
-        if (Service.AutoRetainerIPC.IsLoaded)
+        if (AutoRetainerIPC.Get().IsLoaded)
             ImGui.Checkbox("Run Commands if AutoRetainer is active", ref Config.RunCommandsWhenARIsActive);
 
         if (Config.Chars.All(c => c.CID != 0)) {
@@ -68,7 +68,7 @@ public class EnhancedLoginLogout : Tweak<EnhancedLoginLogoutConfig> {
 
     private string ConvertToCommand(string cmd) => cmd.StartsWith('/') ? cmd : $"/{cmd}";
     private void RunCommands() {
-        if (Service.AutoRetainerIPC.IsLoaded && !Config.RunCommandsWhenARIsActive && (Service.AutoRetainerIPC.IsBusy() || Service.AutoRetainerIPC.GetMultiModeEnabled())) return;
+        if (AutoRetainerIPC.Get().IsLoaded && !Config.RunCommandsWhenARIsActive && (AutoRetainerIPC.Get().IsBusy() || AutoRetainerIPC.Get().GetMultiModeEnabled())) return;
         var commands = Config.Chars
             .Where(x => x.CID == 0 || x.CID == IPlayerState.Get().ContentId)
             .OrderByDescending(x => x.Name == "Global")

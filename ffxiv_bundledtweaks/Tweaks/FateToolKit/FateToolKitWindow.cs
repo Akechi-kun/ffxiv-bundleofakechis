@@ -51,7 +51,7 @@ public class FateToolKitWindow : MinimisableWindow {
                     }
                     else {
                         _tweak.ToggleRunning();
-                        Service.Navmesh.Stop();
+                        NavmeshIPC.Get().Stop();
                     }
                 }
                 else {
@@ -154,10 +154,10 @@ public class FateToolKitWindow : MinimisableWindow {
                             : nameWidth,
                         0
                     ))) {
-                        if (Service.Navmesh.IsRunning())
-                            Service.Navmesh.Stop();
+                        if (NavmeshIPC.Get().IsRunning())
+                            NavmeshIPC.Get().Stop();
                         else
-                            Service.Navmesh.PathfindAndMoveTo(fate.Position.RandomPoint(fate.Radius * 0.5f).OnMesh(), ICondition.Get()[ConditionFlag.InFlight]);
+                            NavmeshIPC.Get().PathfindAndMoveTo(fate.Position.RandomPoint(fate.Radius * 0.5f).OnMesh(), ICondition.Get()[ConditionFlag.InFlight]);
                     }
                 }
 

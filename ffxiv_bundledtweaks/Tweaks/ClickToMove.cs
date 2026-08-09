@@ -35,7 +35,7 @@ public unsafe partial class ClickToMove : Tweak<ClickToMoveConfiguration> {
         IAddonLifecycle.Get().UnregisterListener(HandleMapClick);
     }
 
-    private bool CanPathfind(MovementType type) => type is MovementType.Pathfind && Service.IPC.GetMissing(type).Length == 0;
+    private bool CanPathfind(MovementType type) => type is MovementType.Pathfind && IPCRegistry.Get().GetMissing(type).Length == 0;
 
     private void HandleMapClick(AddonEvent type, AddonArgs args) {
         if (!Config.MapClickEnabled || IObjectTable.Get().LocalPlayer is not { } player) return;
@@ -53,7 +53,7 @@ public unsafe partial class ClickToMove : Tweak<ClickToMoveConfiguration> {
 
             if (args.GetAddon<AddonAreaMap>()->GetMouseWorldCoords() is { } coords) {
                 if (CanPathfind(Config.MapClickMovement))
-                    Service.Navmesh.PathfindAndMoveTo(coords.OnMesh(), Control.CanFly);
+                    NavmeshIPC.Get().PathfindAndMoveTo(coords.OnMesh(), Control.CanFly);
                 else {
                     movement.Enabled = true;
                     movement.DesiredPosition = new(coords.X, player.Position.Y, coords.Y);
@@ -86,8 +86,8 @@ public unsafe partial class ClickToMove : Tweak<ClickToMoveConfiguration> {
 
         IGameGui.Get().ScreenToWorld(ImGui.GetIO().MousePos, out var pos, 100000f);
         if (CanPathfind(Config.WorldClickMovement)) {
-            if (Service.Navmesh.IsRunning()) Service.Navmesh.Stop();
-            Service.Navmesh.PathfindAndMoveTo(pos, false);
+            if (NavmeshIPC.Get().IsRunning()) NavmeshIPC.Get().Stop();
+            NavmeshIPC.Get().PathfindAndMoveTo(pos, false);
         }
         else {
             movement.Enabled = true;

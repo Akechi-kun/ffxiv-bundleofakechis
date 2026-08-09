@@ -96,7 +96,7 @@ public class Plugin : IDalamudPlugin {
                     break;
                 case "stop":
                     Svc.Automation.Stop();
-                    Service.Automation.Stop();
+                    AutomationService.Get().Automation.Stop();
                     foreach (var t in Tweaks)
                         t.StopAutomation();
                     foreach (var t in Tweaks.OfType<ARTweak>())

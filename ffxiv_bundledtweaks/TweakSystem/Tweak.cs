@@ -17,7 +17,7 @@ public abstract partial class Tweak : ITweak {
         InternalName = CachedType.Name;
         IncompatibilityWarnings = [.. CachedType.GetCustomAttributes<IncompatibilityWarningAttribute>()];
 
-        Requirements = Service.IPC.GetMany([.. CachedType.GetCustomAttributes<RequiresAttribute>().SelectMany(r => r.Id.Flags).Where(id => id != Ipc.None).Distinct()]);
+        Requirements = IPCRegistry.Get().GetMany([.. CachedType.GetCustomAttributes<RequiresAttribute>().SelectMany(r => r.Id.Flags).Where(id => id != Ipc.None).Distinct()]);
         RequiredClientStructsVersion = (CachedType.GetCustomAttribute<RequiresClientStructsAttribute>()?.MinVersion ?? 0, CachedType.GetCustomAttribute<RequiresClientStructsAttribute>()?.MaxVersion ?? uint.MaxValue);
         IsDebug = CachedType.GetCustomAttribute<DebugAttribute>() != null;
         var disabledAttr = CachedType.GetCustomAttribute<DisabledAttribute>();
@@ -345,8 +345,8 @@ public abstract partial class Tweak // Internal
             }
 
             if (enabled && methodInfo.GetCustomAttributes<RequiresAttribute>().SelectMany(r => r.Id.Flags).Where(id => id != Ipc.None).Distinct().ToArray() is { Length: > 0 } reqs) {
-                if (!Service.IPC.AreAllLoaded(reqs)) {
-                    var missing = Service.IPC.GetMissing(reqs);
+                if (!IPCRegistry.Get().AreAllLoaded(reqs)) {
+                    var missing = IPCRegistry.Get().GetMissing(reqs);
                     Warning($"Cannot enable command(s) [{string.Join(", ", attr.Commands)}]: missing dependencies: {string.Join(", ", missing.Select(ipc => ipc.Name))}");
                     enabled = false;
                 }
@@ -385,9 +385,9 @@ public abstract partial class Tweak // Internal
             }
 
             if (enabled && methodInfo.GetCustomAttributes<RequiresAttribute>().SelectMany(r => r.Id.Flags).Where(id => id != Ipc.None).Distinct().ToArray() is { Length: > 0 } reqs) {
-                if (!Service.IPC.AreAllLoaded(reqs)) {
+                if (!IPCRegistry.Get().AreAllLoaded(reqs)) {
                     if (!onlyAbsent) {
-                        var missing = Service.IPC.GetMissing(reqs);
+                        var missing = IPCRegistry.Get().GetMissing(reqs);
                         var missingNames = missing.Length > 0 ? string.Join(", ", missing.Select(ipc => ipc.Name)) : "one or more required IPCs are not registered";
                         Warning($"Cannot enable command(s) [{string.Join(", ", attr.Commands)}]: missing dependencies: {missingNames}");
                     }
@@ -472,8 +472,8 @@ public abstract partial class Tweak // Internal
         var originalHandler = methodInfo.CreateDelegate<IReadOnlyCommandInfo.HandlerDelegate>(this);
         void handler(string cmd, string args) {
             if (methodInfo.GetCustomAttributes<RequiresAttribute>().SelectMany(r => r.Id.Flags).Where(id => id != Ipc.None).Distinct().ToArray() is { Length: > 0 } reqs) {
-                if (!Service.IPC.AreAllLoaded(reqs)) {
-                    var missing = Service.IPC.GetMissing(reqs);
+                if (!IPCRegistry.Get().AreAllLoaded(reqs)) {
+                    var missing = IPCRegistry.Get().GetMissing(reqs);
                     ModuleMessage($"Command {cmd} requires: {string.Join(", ", missing.Select(ipc => ipc.Name))}");
                     return;
                 }

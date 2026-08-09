@@ -11,9 +11,9 @@ public class EnumConfigAttribute : BaseConfigAttribute {
     public override void Draw(Tweak tweak, object config, FieldInfo fieldInfo) {
         var enumType = fieldInfo.FieldType;
         var attr = fieldInfo.GetCustomAttribute<BaseConfigAttribute>();
-        var fieldMissing = Service.IPC.GetMissing(fieldInfo);
+        var fieldMissing = IPCRegistry.Get().GetMissing(fieldInfo);
         var selectedValue = (Enum)fieldInfo.GetValue(config)!;
-        var selectedMissing = Service.IPC.GetMissing(selectedValue);
+        var selectedMissing = IPCRegistry.Get().GetMissing(selectedValue);
         var missingIpcs = fieldMissing.Concat(selectedMissing).Distinct().ToArray();
 
         string GetOptionLabel(Enum value) => value.ToString();
@@ -32,7 +32,7 @@ public class EnumConfigAttribute : BaseConfigAttribute {
             if (combo.Success) {
                 foreach (var name in labels) {
                     var value = (Enum)Enum.Parse(enumType, name);
-                    var valueMissing = Service.IPC.GetMissing(value);
+                    var valueMissing = IPCRegistry.Get().GetMissing(value);
                     var unavailable = valueMissing.Length > 0;
 
                     if (ImGui.Selectable(GetOptionLabel(value), Equals(selectedValue, value), unavailable ? ImGuiSelectableFlags.Disabled : ImGuiSelectableFlags.None) && !unavailable) {

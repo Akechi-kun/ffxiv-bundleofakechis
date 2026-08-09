@@ -16,7 +16,7 @@ public sealed class KillFlag(string world) : TaskBase {
             await HandleWorldTravel();
 
         await MoveToFlag(MovementConfig.Default.WithOptions(MovementOptions.Mount | (IPlayerState.Get().MapFlag.TerritoryId != 180 ? MovementOptions.Fly : MovementOptions.None)).WithTolerance(5f));
-        using var stop = new OnDispose(() => Service.BossMod.ClearActive());
+        using var stop = new OnDispose(() => BossModIPC.Get().ClearActive());
         await Kill();
     }
 
@@ -25,8 +25,8 @@ public sealed class KillFlag(string world) : TaskBase {
             IChatGui.Get().SendMessage("/return");
             await WaitUntilTerritory(IPlayerState.Get().HomeAetheryte.Value.Territory.RowId);
         }
-        Service.Lifestream.ExecuteCommand(world);
-        await WaitUntilThenFalse(Service.Lifestream.IsBusy, "LifestreamWaitForFinish");
+        LifestreamIPC.Get().ExecuteCommand(world);
+        await WaitUntilThenFalse(LifestreamIPC.Get().IsBusy, "LifestreamWaitForFinish");
         await WaitWhileBusy();
     }
 
@@ -37,10 +37,10 @@ public sealed class KillFlag(string world) : TaskBase {
             await MoveTo(target.Position, MovementConfig.Default.WithTolerance(TARGET_APPROACH_DISTANCE + 2f).WithOptions(MovementOptions.Dismount));
             await MoveIfNoLoS(target);
             ITargetManager.Get().Target = target;
-            Service.BossMod.SetActiveList(["VBM Default", "VBM AI"]);
+            BossModIPC.Get().SetActiveList(["VBM Default", "VBM AI"]);
             Status = $"Waiting for {target.Name} to die";
             await TargetDead(target);
-            Service.BossMod.ClearActive();
+            BossModIPC.Get().ClearActive();
         }
         else {
             Log("No hunt found.");
@@ -48,7 +48,7 @@ public sealed class KillFlag(string world) : TaskBase {
     }
 
     private IGameObject? FindHuntTarget()
-        => Service.Navmesh.FlagToPoint() is not { } fp ? null
+        => NavmeshIPC.Get().FlagToPoint() is not { } fp ? null
             : IObjectTable.Get().Where(o => o is IBattleNpc { NameId: > 0 } && Vector3.Distance(o.Position, fp) <= HUNT_DETECTION_RADIUS)
             .Select(o => (Object: o, Distance: Vector3.Distance(o.Position, fp), Row: NotoriousMonster.FirstOrNull(r => o.BaseId == r.BNpcBase.RowId)))
             .Where(t => t.Row.HasValue)
@@ -59,7 +59,7 @@ public sealed class KillFlag(string world) : TaskBase {
     private async Task MoveIfNoLoS(DGameObject target) {
         if (!target.IsInLineOfSight()) {
             Log($"No line of sight to {target.Name}, moving...");
-            var validPosition = Service.Navmesh.PointOnFloor(target.Position, false, 5);
+            var validPosition = NavmeshIPC.Get().PointOnFloor(target.Position, false, 5);
             if (validPosition.HasValue) {
                 try {
                     await MoveTo(validPosition.Value, MovementConfig.Default);
@@ -79,7 +79,7 @@ public sealed class KillFlag(string world) : TaskBase {
                     target.Position.Z + LOS_SEARCH_RADIUS * (float)Math.Sin(angle)
                 );
 
-                if (Service.Navmesh.PointOnFloor(searchPos, false, 1) is { } point && target.IsInLineOfSight(point)) {
+                if (NavmeshIPC.Get().PointOnFloor(searchPos, false, 1) is { } point && target.IsInLineOfSight(point)) {
                     try {
                         await MoveTo(point, MovementConfig.Default);
                         return;

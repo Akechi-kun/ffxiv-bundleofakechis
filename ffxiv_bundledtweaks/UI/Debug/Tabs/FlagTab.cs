@@ -16,7 +16,7 @@ internal unsafe class FlagTab : DebugTab {
 
         ImGui.Text($"Map Position: {IPlayerState.Get().MapFlag.Position}");
 
-        if (Service.Navmesh.FlagToPoint() is not { } pos) return;
+        if (NavmeshIPC.Get().FlagToPoint() is not { } pos) return;
         ImGui.Text($"World Position: {pos}");
 
         var territory = IPlayerState.Get().MapFlag.TerritoryId;
