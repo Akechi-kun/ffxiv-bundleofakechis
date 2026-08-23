@@ -20,7 +20,7 @@ public sealed class LifestreamIPC : BaseIPC, IPluginService {
     public bool IsBusy() => _isBusy.HasFunction && _isBusy.InvokeFunc();
 
     public void ExecuteCommand(string command) {
-        if (_executeCommand.HasFunction)
+        if (_executeCommand.HasAction)
             _executeCommand.InvokeAction(command);
     }
 }
