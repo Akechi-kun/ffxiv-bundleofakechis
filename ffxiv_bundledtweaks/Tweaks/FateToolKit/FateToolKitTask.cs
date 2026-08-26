@@ -446,11 +446,17 @@ internal sealed class FateGrind(FateToolKit tweak) : TaskBase {
             }
         }
 
+        if (PublicEvent.GetFateById(evt.Id) is not { Position: var position and not { X: 0, Y: 0, Z: 0 } } current) {
+            Warning($"Fate {evt.Id} no longer available; skipping obstacle map");
+            return;
+        }
+        evt = current;
+
         // sometimes the center of a fate is unreachable (tower fate in amh araeng), so generate from a reachable point then compensate for being off center
-        var safe = NavmeshIPC.Get().NearestPointReachable(evt.Position, 5, 5);
-        float? margin = safe is { } ? Vector3.Distance(evt.Position, safe.Value) : null;
+        var safe = NavmeshIPC.Get().NearestPointReachable(position, 5, 5);
+        float? margin = safe is { } ? Vector3.Distance(position, safe.Value) : null;
         try {
-            if (!BossModIPC.Get().Generate(safe ?? evt.Position, evt.Radius + margin ?? 10, false)) {
+            if (!BossModIPC.Get().Generate(safe ?? position, evt.Radius + margin ?? 10, false)) {
                 Warning($"Obstacle map generation failed to start for fate {evt.Id}");
                 _obstacleMapBlacklist.Add(evt.Id);
                 return;
