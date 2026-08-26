@@ -83,13 +83,22 @@ internal sealed class FateGrind(FateToolKit tweak) : TaskBase {
 
     public PublicEvent? NextFate { get; set; }
     private uint? ReturnToFateId { get; set; } // when we die, if the fate we were in progressed enough to not qualify, we want to return to it anyway
-    private uint? LastStuckFateId { get; set; }
-    private int ConsecutiveStuckRetries { get; set; }
+    private readonly HashSet<uint> _skippedFateIds = []; // deferred until another fate completes, or all skips are exhausted
+    private uint? _lastEngagedFateId;
     private uint? FollowUpFateId { get; set; } // id to store to check if NextFate is a follow up to this
     private long FollowUpWatchUntilMs { get; set; }
     private uint? WaitForExpiryFateId { get; set; } // id for when we leave a collect fate. Stay in zone until fate is null
 
     public IOrderedEnumerable<PublicEvent> AvailableFates => FateToolKit.ApplySortOrder(PublicEvent.Fates.Where(tweak.FateConditions), tweak.Config.SortOrder);
+    private IEnumerable<PublicEvent> SelectableFates {
+        get {
+            var fates = AvailableFates.Where(f => !_skippedFateIds.Contains(f.Id));
+            if (PublicEvent.CurrentFate is { Rule: PublicEvent.FateRule.Collect, Progress: >= 100, Id: var currentId })
+                fates = fates.Where(f => f.Id != currentId);
+            return fates;
+        }
+    }
+    private bool HasSkippedFatesOnly => AvailableFates.Any() && !SelectableFates.Any();
     private bool HasTwistOfFate => IObjectTable.Get().LocalPlayer?.StatusList.HasTwistOfFate() ?? false;
 
     private GrindState State {
@@ -115,7 +124,7 @@ internal sealed class FateGrind(FateToolKit tweak) : TaskBase {
                 // treat completed collect fates as done and wait for out of combat/not busy before trying to move away
                 if (current is { Rule: PublicEvent.FateRule.Collect, Progress: >= 100, Id: var id } && !IObjectTable.Get().LocalPlayer.IsBusy) {
                     WaitForExpiryFateId = id;
-                    return AvailableFates.FirstOrDefault(f => f.Id != id) is { } ? GrindState.BetweenFates : GrindState.WaitingForFates;
+                    return SelectableFates.FirstOrDefault() is { } ? GrindState.BetweenFates : GrindState.WaitingForFates;
                 }
                 Status = "Engaging";
                 return GrindState.Engaging;
@@ -127,13 +136,10 @@ internal sealed class FateGrind(FateToolKit tweak) : TaskBase {
             if (!HasTwistOfFate && !ICondition.Get()[ConditionFlag.InCombat] && tweak.IsZoneItemTargetComplete(IPlayerState.Get().Territory.RowId, out _))
                 return GrindState.SwapZones;
 
-            if (AvailableFates.FirstOrDefault() is { })
+            if (SelectableFates.FirstOrDefault() is { })
                 return GrindState.BetweenFates;
 
-            if (!AvailableFates.Any())
-                return GrindState.WaitingForFates;
-
-            return GrindState.Idle;
+            return GrindState.WaitingForFates;
         }
     }
     private enum GrindState {
@@ -245,11 +251,14 @@ internal sealed class FateGrind(FateToolKit tweak) : TaskBase {
         using var scope = BeginScope(nameof(MoveToFate));
         if (Player is null) return;
 
-        IEnumerable<PublicEvent> GetAvailableFates() {
-            // If current is a collect at 100% we're leaving it; pick a different fate.
-            if (PublicEvent.CurrentFate is { Rule: PublicEvent.FateRule.Collect, Progress: >= 100, Id: var currentId })
-                return AvailableFates.Where(f => f.Id != currentId);
-            return AvailableFates;
+        IEnumerable<PublicEvent> GetAvailableFates() => SelectableFates;
+
+        void SkipFate(uint fateId, string reason) {
+            Warning($"Skipping fate {fateId}: {reason}");
+            _skippedFateIds.Add(fateId);
+            if (ReturnToFateId == fateId)
+                ReturnToFateId = null;
+            NextFate = null;
         }
 
         bool TrySelectNextFate(out PublicEvent selected) {
@@ -265,7 +274,7 @@ internal sealed class FateGrind(FateToolKit tweak) : TaskBase {
             if (FollowUpFateId is { } parentId && Environment.TickCount64 < FollowUpWatchUntilMs) {
                 var parent = Fate.GetRow(parentId);
                 // allow even if pending
-                if (PublicEvent.Fates.Where(f => f.Id > parentId && Fate.GetRow(f.Id).Location == parent.Location).OrderBy(f => Player!.DistanceTo(f.Position)).FirstOrDefault() is { } followUp) {
+                if (GetAvailableFates().Where(f => f.Id > parentId && Fate.GetRow(f.Id).Location == parent.Location).OrderBy(f => Player!.DistanceTo(f.Position)).FirstOrDefault() is { } followUp) {
                     selected = followUp;
                     return true;
                 }
@@ -369,7 +378,8 @@ internal sealed class FateGrind(FateToolKit tweak) : TaskBase {
         }
 
         await GenerateObstacleMap(nextFate);
-        await MoveTo(msh, MovementConfig.Everything.WithTolerance(3),
+        const float moveTolerance = 3f;
+        if (!await TryMoveTo(msh, MovementConfig.Everything.WithTolerance(moveTolerance),
             // in progress = urgent, otherwise I don't think teleporting all the time is necessary
             // also prohibit when you have the xp buff or when waiting for collect fate rewards
             allowTeleportIfFaster: NextFate is { Progress: > 0 } && !HasTwistOfFate && WaitForExpiryFateId is null,
@@ -377,26 +387,16 @@ internal sealed class FateGrind(FateToolKit tweak) : TaskBase {
             onStopReached: async () => {
                 if (stopReason == MoveStopReason.NpcLoaded)
                     await ActivateFate();
-            });
+            })) {
+            SkipFate(nextFate.Id, "failed to start pathfinding");
+            return;
+        }
 
         Log($"{nameof(MoveToFate)} finished with stopReason={stopReason} fate={NextFate?.Id}");
 
         if (stopReason == MoveStopReason.StuckRetry && NextFate is { Id: var stuckFateId }) {
-            if (LastStuckFateId == stuckFateId)
-                ConsecutiveStuckRetries++;
-            else {
-                LastStuckFateId = stuckFateId;
-                ConsecutiveStuckRetries = 1;
-            }
-
-            if (ConsecutiveStuckRetries >= 2) {
-                Warning($"Escalating repeated stuck retries to teleport for fate {stuckFateId}");
-                stopReason = MoveStopReason.StuckTeleport;
-            }
-        }
-        else if (stopReason != MoveStopReason.StuckTeleport) {
-            LastStuckFateId = null;
-            ConsecutiveStuckRetries = 0;
+            SkipFate(stuckFateId, "stuck while pathfinding");
+            return;
         }
 
         if (stopReason == MoveStopReason.HigherPriority)
@@ -411,12 +411,15 @@ internal sealed class FateGrind(FateToolKit tweak) : TaskBase {
 
         if (stopReason == MoveStopReason.StuckTeleport && WaitForExpiryFateId is null && NextFate is { Id: var fateId } && PublicEvent.GetFateById(fateId) is { } currentFate) {
             NextFate = currentFate;
-            LastStuckFateId = null;
-            ConsecutiveStuckRetries = 0;
             Status = "Teleporting to fate";
             var fateTerritoryId = Player.Territory.RowId;
             await TeleportTo(fateTerritoryId, currentFate.Position, allowSameZoneTeleport: true);
             await UseAethernet(fateTerritoryId, currentFate.Position);
+            return;
+        }
+
+        if (stopReason == MoveStopReason.None && NextFate is { Id: var unreachedFateId } && !Player.WithinRange(msh, moveTolerance)) {
+            SkipFate(unreachedFateId, "pathfinding stopped before reaching destination");
             return;
         }
 
@@ -547,7 +550,7 @@ internal sealed class FateGrind(FateToolKit tweak) : TaskBase {
             using var scope = BeginScope("SwapZones");
             var destination = tweak.GetNextPreferredSwapZone(Player.Territory.RowId) ?? GetNextAchievementZone() ?? GetRandomSameExpacZone();
             if (destination == Player.Territory.RowId) {
-                Status = "Waiting for fates in selected zones";
+                Status = HasSkippedFatesOnly ? "Waiting for another fate (current target unreachable)" : "Waiting for fates in selected zones";
                 await Mount();
                 await NextFrame(60);
                 return;
@@ -560,7 +563,7 @@ internal sealed class FateGrind(FateToolKit tweak) : TaskBase {
         }
         else {
             using var scope = BeginScope("WaitForFates");
-            Status = HasTwistOfFate ? "Waiting for fates (preserving Twist of Fate)" : "Waiting for fates to spawn";
+            Status = HasSkippedFatesOnly ? "Waiting for another fate (current target unreachable)" : HasTwistOfFate ? "Waiting for fates (preserving Twist of Fate)" : "Waiting for fates to spawn";
             await Mount();
             await NextFrame(60);
         }
@@ -607,6 +610,7 @@ internal sealed class FateGrind(FateToolKit tweak) : TaskBase {
 
     private void HandleIntegrations() {
         if (PublicEvent.CurrentFate is { } fate) {
+            _lastEngagedFateId = fate.Id;
             // when we leave collect fates early, it's still CurrentFate, so we need to ignore that and deactivate anyway
             if (fate is { Rule: PublicEvent.FateRule.Collect, Progress: >= 100 } && (NextFate is null || NextFate.Id != fate.Id)) {
                 // don't deactivate before we're out of combat
@@ -640,6 +644,11 @@ internal sealed class FateGrind(FateToolKit tweak) : TaskBase {
                 TextAdvanceIpc.Get().EnableExternalControl(Name, new() { EnableTalkSkip = true, EnableRequestFill = true, EnableRequestHandin = true });
         }
         else {
+            if (_lastEngagedFateId is { }) {
+                // allow skipped fates to retry
+                _skippedFateIds.Clear();
+                _lastEngagedFateId = null;
+            }
             // Fate ended; clear NextFate so routing is correct. Only turn off combat preset once out of combat,
             // so we don't get stuck if a non-fate mob is still aggroed when the fate completes.
             NextFate = null;
