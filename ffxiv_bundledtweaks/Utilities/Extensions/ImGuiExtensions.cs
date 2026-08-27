@@ -188,7 +188,7 @@ public static class ImGuiExtensions {
                     ImGui.TextV(label);
                 }
             }
-            catch (Exception e) { e.Log(); }
+            catch (Exception e) { IPluginLog.Get().Error(e, "Error drawing progress bar"); }
         }
 
         public static void PathfindButton(Vector3 pos) {

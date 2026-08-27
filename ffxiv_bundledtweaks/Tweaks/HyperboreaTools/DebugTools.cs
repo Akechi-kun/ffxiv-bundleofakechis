@@ -95,7 +95,7 @@ public partial class DebugTools : Tweak<DebugToolsConfiguration> {
     private unsafe void OnSetup(AddonEvent type, AddonArgs args) {
         if (!Config.AutoVoidIslandRest) return;
         if (AgentMJICraftSchedule.Instance()->Data->RestCycles.Hex() != 8321u) {
-            IPluginLog.Get().Debug($"Setting rest: {8321u:X}");
+            Debug($"Setting rest: {8321u:X}");
             AgentMJICraftSchedule.Instance()->Data->NewRestCycles = 8321u;
             var eventData = stackalloc int[] { 0, 0, 0 };
             var atkvalues = new Span<AtkValue>([new() { Type = AtkValueType.Int, Int = 0 }]);

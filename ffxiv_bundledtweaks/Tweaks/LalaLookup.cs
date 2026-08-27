@@ -79,6 +79,6 @@ public class LalaLookup : Tweak {
             else
                 ModuleMessage($"Unable to find lodestone ID for {playerName}");
         }
-        catch (Exception e) { e.Log(); }
+        catch (Exception e) { Error(e, "Error looking up character on Lalachievements"); }
     }
 }

@@ -11,13 +11,13 @@ public partial class Commands : Tweak<CommandsConfiguration> {
         if (!uint.TryParse(arguments, out var itemId)) return;
         var item = new ItemHandle(itemId);
         if (!item.TrySetItemLocation()) {
-            IPluginLog.Get().DuoLogError($"Failed to find item {itemId} in inventory");
+            ModuleMessage($"Failed to find item {itemId} in inventory");
             return;
         }
         if (item.CanEquip(out var logMessage))
             item.Equip();
         else
-            IPluginLog.Get().Warning($"Unable to equip item {item}: {logMessage.Value.Text}");
+            ModuleMessage($"Unable to equip item {item}: {logMessage.Value.Text}");
     }
 }
 

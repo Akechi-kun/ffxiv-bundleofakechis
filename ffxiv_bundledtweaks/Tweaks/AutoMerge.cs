@@ -35,6 +35,6 @@ public class AutoMerge : Tweak {
                 }
             }
         }
-        catch (Exception ex) { ex.Log(); }
+        catch (Exception ex) { Error(ex, "Error during auto-merge"); }
     }
 }

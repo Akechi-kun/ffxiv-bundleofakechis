@@ -38,7 +38,7 @@ public partial class DebugTools : Tweak<DebugToolsConfiguration> {
             var actionID = uint.Parse(args[1]);
             ActionManager.Instance()->UseActionLocation(actionType, actionID);
         }
-        catch (Exception e) { e.Log(); }
+        catch (Exception e) { Error(e, "Error executing direct action"); }
     }
 
     private static ActionType ParseActionType(string input) {

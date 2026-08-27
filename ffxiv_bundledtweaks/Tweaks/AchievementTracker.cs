@@ -143,7 +143,7 @@ public class AchievementTrackerWindow(AchievementTracker tweak) : Window($"Achie
                 DrawAchievementsList([.. tweak.Config.Achievements.Where(a => category.EqualsIgnoreCase(a.Category))]);
             }
         }
-        catch (Exception e) { e.Log(); }
+        catch (Exception e) { tweak.Error(e, "Error drawing achievements"); }
     }
 
     private void DrawAchievementsList(List<AchievementTracker.Achv> achievements) {
