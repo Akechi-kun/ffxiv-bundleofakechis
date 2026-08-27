@@ -4,6 +4,7 @@
         <Version>0.0</Version>
         <LangVersion>preview</LangVersion>
 		<GenerateErrorForMissingTargetingPacks>false</GenerateErrorForMissingTargetingPacks>
+		<RootNamespace>ComplexTweaks</RootNamespace>
 		<LocalCS>false</LocalCS>
 
 		<Author>croizat</Author>
