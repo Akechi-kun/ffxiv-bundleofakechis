@@ -26,7 +26,7 @@ public class ARQuesting : ARTweak<ARQuestingConfiguration> {
 
     public override void OnCharacterReadyToPostProcess() => Svc.Automation.Start(new RunQuestionable(_quests, Config.ReturnHome), AutoRetainer.FinishCharacterPostProcess);
 
-    private sealed class RunQuestionable(List<string> questIds, bool returnHome) : TaskBase {
+    private sealed class RunQuestionable(List<string> questIds, bool returnHome) : AutoTask {
         protected override async Task Execute() {
             foreach (var quest in questIds) {
                 Status = $"Doing quest #{quest}";
