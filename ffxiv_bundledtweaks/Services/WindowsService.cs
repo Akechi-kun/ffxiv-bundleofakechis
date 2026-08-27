@@ -4,8 +4,6 @@ using Dalamud.Interface.Windowing;
 namespace ComplexTweaks.Services;
 
 public sealed class WindowsService : IPluginService, IDisposable {
-    public int InitOrder => 5;
-
     public WindowSystem WindowSystem { get; } = new(nameof(ComplexTweaks));
 
     private HaselWindow? _mainWindow;

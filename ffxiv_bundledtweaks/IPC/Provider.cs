@@ -3,8 +3,6 @@
 namespace ComplexTweaks.IPC;
 
 public sealed class Provider : IPluginService, IDisposable {
-    public int InitOrder => 10;
-
     private readonly ICallGateProvider<string, bool> _isTweakEnabled;
     private readonly ICallGateProvider<string, bool, object> _setTweakState;
 

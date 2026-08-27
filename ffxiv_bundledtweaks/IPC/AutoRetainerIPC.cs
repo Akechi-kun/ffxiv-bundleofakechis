@@ -3,8 +3,6 @@ using Dalamud.Plugin.Ipc;
 namespace ComplexTweaks.IPC;
 
 public sealed class AutoRetainerIPC : BaseIPC, IPluginService {
-    public int InitOrder => 10;
-
     public override Ipc Id => Ipc.AutoRetainer;
     public override string Name => "AutoRetainer";
     public override string Repo => Punish;

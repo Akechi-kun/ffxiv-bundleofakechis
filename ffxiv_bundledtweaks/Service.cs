@@ -4,20 +4,16 @@ using System.Reflection;
 namespace ComplexTweaks.Services;
 
 public sealed class AutoRetainerApiService : IPluginService, IDisposable {
-    public int InitOrder => 10;
     public AutoRetainerApi Api { get; } = new();
     public void Dispose() => Api.Dispose();
 }
 
 public sealed class AutomationService : IPluginService, IDisposable {
-    public int InitOrder => 10;
     public Automation Automation { get; } = new();
     public void Dispose() => Automation.Dispose();
 }
 
 public sealed class IPCRegistry : IPluginService {
-    public int InitOrder => 50;
-
     private readonly Dictionary<Ipc, BaseIPC> _byId = [];
 
     public IPCRegistry() {

@@ -3,8 +3,6 @@ using Dalamud.Plugin.Ipc;
 namespace ComplexTweaks.IPC;
 
 public sealed class LifestreamIPC : BaseIPC, IPluginService {
-    public int InitOrder => 10;
-
     public override Ipc Id => Ipc.Lifestream;
     public override string Name => "Lifestream";
     public override string Repo => Nightmare;

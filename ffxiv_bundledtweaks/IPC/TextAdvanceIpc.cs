@@ -3,8 +3,6 @@ using Dalamud.Plugin.Ipc;
 namespace ComplexTweaks.IPC;
 
 public sealed class TextAdvanceIpc : BaseIPC, IPluginService {
-    public int InitOrder => 10;
-
     public override Ipc Id => Ipc.TextAdvance;
     public override string Name => "TextAdvance";
     public override string Repo => Nightmare;

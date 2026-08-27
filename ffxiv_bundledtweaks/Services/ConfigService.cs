@@ -7,8 +7,6 @@ using YamlDotNet.Serialization.TypeResolvers;
 namespace ComplexTweaks.Services;
 
 public sealed class ConfigService : IPluginService {
-    public int InitOrder => 0;
-
     private static readonly string ConfigFileName = "ezAutomaton.yaml";
 
     public Config Config { get; private set; }
