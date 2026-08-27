@@ -1,5 +1,4 @@
-﻿using ComplexTweaks.Tasks;
-using Dalamud.Bindings.ImGui;
+﻿using Dalamud.Bindings.ImGui;
 using Dalamud.Game.ClientState.Objects.Types;
 using Dalamud.Interface.Utility.Raii;
 using FFXIVClientStructs.FFXIV.Client.Game;
@@ -13,9 +12,6 @@ internal class TasksTab : DebugTab {
             if (ImGui.Button("Stop current task"))
                 Svc.Automation.Stop();
         ImGui.Text($"{Svc.Automation.Name}: {Svc.Automation.Status}");
-
-        if (ImGui.Button("transmute"))
-            Svc.Automation.Start(new MateriaTransmutation());
 
         if (ImGui.Button("void all weeaboos"))
             Svc.Automation.Start(new VoidMatches("weeaboo"));
