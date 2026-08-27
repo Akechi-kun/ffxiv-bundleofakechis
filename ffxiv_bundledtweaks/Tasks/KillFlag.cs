@@ -21,7 +21,7 @@ public sealed class KillFlag(string world) : TaskBase {
     }
 
     private async Task HandleWorldTravel() {
-        if (C.EnabledTweaks.Contains(nameof(InstantReturn)) && IPlayerState.Get().Territory.RowId != IPlayerState.Get().HomeAetheryte.Value.Territory.RowId) {
+        if (ConfigService.Get().Config.EnabledTweaks.Contains(nameof(InstantReturn)) && IPlayerState.Get().Territory.RowId != IPlayerState.Get().HomeAetheryte.Value.Territory.RowId) {
             IChatGui.Get().SendMessage("/return");
             await WaitUntilTerritory(IPlayerState.Get().HomeAetheryte.Value.Territory.RowId);
         }

@@ -17,7 +17,7 @@ public abstract class Tweak<T> : Tweak {
             Config = (T)(TweakConfigsType
                 .GetProperties()?
                 .FirstOrDefault(pi => pi!.PropertyType == type, null)?
-                .GetValue(C.Tweaks)
+                .GetValue(ConfigService.Get().Config.Tweaks)
                 ?? throw new InvalidOperationException($"Configuration for {type.Name} not found."))!;
         }
         else
@@ -51,7 +51,7 @@ public abstract class Tweak<TConfig, TWindow> : Tweak where TWindow : Window {
         Config = (TConfig)(TweakConfigsType
             .GetProperties()?
             .FirstOrDefault(pi => pi!.PropertyType == configType, null)?
-            .GetValue(C.Tweaks)
+            .GetValue(ConfigService.Get().Config.Tweaks)
             ?? throw new InvalidOperationException($"Configuration for {configType.Name} not found."))!;
     }
 

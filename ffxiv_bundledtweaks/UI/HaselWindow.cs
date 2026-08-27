@@ -8,7 +8,7 @@ namespace ComplexTweaks.UI;
 public partial class HaselWindow : Window {
     // Style from HaselTweaks
     // https://github.com/Haselnussbomber/HaselTweaks
-    public HaselWindow() : base($"{Name} v{P.VersionString}###{nameof(HaselWindow)}") {
+    public HaselWindow() : base($"{Svc.Interface.Manifest.Name} v{Svc.Interface.Manifest.AssemblyVersion.ToString(2)}###{nameof(HaselWindow)}") {
         Size = new(SidebarWidth * 3.5f + ImGui.GetStyle().ItemSpacing.X + ImGui.GetStyle().FramePadding.X * 2, 500);
         Flags |= ImGuiWindowFlags.NoResize | ImGuiWindowFlags.NoSavedSettings;
         AllowClickthrough = false;
@@ -47,7 +47,7 @@ public partial class HaselWindow : Window {
         ImGui.TableSetupColumn("Checkbox", ImGuiTableColumnFlags.WidthFixed);
         ImGui.TableSetupColumn("Tweak Name", ImGuiTableColumnFlags.WidthStretch);
 
-        foreach (var tweak in TweakService.Get().Tweaks.Where(t => !t.Disabled && (!t.IsDebug || C.ShowDebug)).OrderBy(t => t.Name)) {
+        foreach (var tweak in TweakService.Get().Tweaks.Where(t => !t.Disabled && (!t.IsDebug || ConfigService.Get().Config.ShowDebug)).OrderBy(t => t.Name)) {
             ImGui.TableNextRow();
             ImGui.TableNextColumn();
 
@@ -86,7 +86,7 @@ public partial class HaselWindow : Window {
                 fixY = true;
             }
             else {
-                ImGuiEx.CollectionCheckbox($"##Enabled_{tweak.InternalName}", tweak.InternalName, C.EnabledTweaks);
+                ImGuiEx.CollectionCheckbox($"##Enabled_{tweak.InternalName}", tweak.InternalName, ConfigService.Get().Config.EnabledTweaks);
             }
 
             ImGui.TableNextColumn();
@@ -246,9 +246,10 @@ public partial class HaselWindow : Window {
         ImGui.SameLine();
         ImGui.DrawLink("Ko-fi", "Ko-fi", "https://ko-fi.com/croizat");
 
-        if (P.VersionString.Length > 1) {
-            ImGui.SetCursorPos(ImGui.GetCursorPos() + ImGui.GetContentRegionAvail() - ImGui.CalcTextSize($"v{P.VersionString}"));
-            ImGui.Text($"v{P.VersionString}");
+        var version = Svc.Interface.Manifest.AssemblyVersion.ToString(2);
+        if (version.Length > 1) {
+            ImGui.SetCursorPos(ImGui.GetCursorPos() + ImGui.GetContentRegionAvail() - ImGui.CalcTextSize($"v{version}"));
+            ImGui.Text($"v{version}");
         }
     }
 }

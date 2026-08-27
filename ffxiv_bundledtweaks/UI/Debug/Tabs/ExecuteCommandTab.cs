@@ -33,7 +33,7 @@ internal unsafe class ExecuteCommandTab : DebugTab {
         DrawLocationExecuteCommand();
     }
 
-    public override bool DrawConditions() => C.ShowDebug;
+    public override bool DrawConditions() => ConfigService.Get().Config.ShowDebug;
 
     private void DrawSimpleExecuteCommand() {
         using var _ = ImRaii.PushId("simple");

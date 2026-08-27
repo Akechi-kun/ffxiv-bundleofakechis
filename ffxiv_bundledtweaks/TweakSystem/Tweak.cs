@@ -75,15 +75,16 @@ public abstract partial class Tweak : ITweak {
     public virtual void OnEnable() { }
     public virtual void OnDisable() { }
 
-    public bool ShouldEnable() => C.EnabledTweaks.Contains(InternalName) && Status != TweakStatus.Enabled && (!IsDebug || C.ShowDebug);
-    public bool ShouldDisable() => Status == TweakStatus.Enabled && (!C.EnabledTweaks.Contains(InternalName) || IsDebug && !C.ShowDebug);
+    public bool ShouldEnable() => ConfigService.Get().Config.EnabledTweaks.Contains(InternalName) && Status != TweakStatus.Enabled && (!IsDebug || ConfigService.Get().Config.ShowDebug);
+    public bool ShouldDisable() => Status == TweakStatus.Enabled && (!ConfigService.Get().Config.EnabledTweaks.Contains(InternalName) || IsDebug && !ConfigService.Get().Config.ShowDebug);
 
     public Task StartAsync(CancellationToken _) {
-        if (!C.EnabledTweaks.Contains(InternalName))
+        var cfg = ConfigService.Get().Config;
+        if (!cfg.EnabledTweaks.Contains(InternalName))
             return Task.CompletedTask;
 
-        if (IsDebug && !C.ShowDebug) {
-            C.EnabledTweaks.Remove(InternalName);
+        if (IsDebug && !cfg.ShowDebug) {
+            cfg.EnabledTweaks.Remove(InternalName);
             return Task.CompletedTask;
         }
 
@@ -178,8 +179,12 @@ public abstract partial class Tweak : ITweak {
     public bool HasRuntimeRequirements()
         => Requirements.All(r => r.IsLoaded) && MeetsClientStructsRequirements();
 
-    public bool MeetsClientStructsRequirements()
-        => P.IsLocalCs || Svc.Interface.ClientStructsVersion <= RequiredClientStructsVersion.Max && Svc.Interface.ClientStructsVersion >= RequiredClientStructsVersion.Min;
+    public bool MeetsClientStructsRequirements() {
+#if LOCAL_CS
+        return true;
+#endif
+        return Svc.Interface.ClientStructsVersion <= RequiredClientStructsVersion.Max && Svc.Interface.ClientStructsVersion >= RequiredClientStructsVersion.Min;
+    }
 
     private IEnumerable<object> EnumerateHooks()
         => CachedType

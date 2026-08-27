@@ -14,13 +14,13 @@ public sealed class Provider : IPluginService, IDisposable {
         _setTweakState.RegisterAction(SetTweakState);
     }
 
-    public bool IsTweakEnabled(string className) => C.EnabledTweaks.Contains(className);
+    public bool IsTweakEnabled(string className) => ConfigService.Get().Config.EnabledTweaks.Contains(className);
 
     public void SetTweakState(string className, bool state) {
         if (state)
-            C.EnabledTweaks.Add(className);
+            ConfigService.Get().Config.EnabledTweaks.Add(className);
         else
-            C.EnabledTweaks.Remove(className);
+            ConfigService.Get().Config.EnabledTweaks.Remove(className);
     }
 
     public void Dispose() {

@@ -9,7 +9,7 @@ public sealed class TweakService : IPluginService, IAsyncDisposable {
     public readonly HashSet<Tweak> Tweaks = [];
 
     public TweakService() {
-        C.EnabledTweaks.CollectionChanged += OnChange;
+        ConfigService.Get().Config.EnabledTweaks.CollectionChanged += OnChange;
         Svc.Interface.ActivePluginsChanged += OnPluginsChanged;
     }
 
@@ -39,7 +39,7 @@ public sealed class TweakService : IPluginService, IAsyncDisposable {
 
     private void OnPluginsChanged(IActivePluginsChangedEventArgs args) {
         foreach (var tweak in Tweaks) {
-            if (C.EnabledTweaks.Contains(tweak.InternalName) && tweak.CanBeEnabled())
+            if (ConfigService.Get().Config.EnabledTweaks.Contains(tweak.InternalName) && tweak.CanBeEnabled())
                 _ = tweak.StartAsync(CancellationToken.None);
 
             if (tweak.Status == TweakStatus.Enabled && !tweak.HasRuntimeRequirements())
@@ -51,7 +51,7 @@ public sealed class TweakService : IPluginService, IAsyncDisposable {
     }
 
     public ValueTask DisposeAsync() {
-        C.EnabledTweaks.CollectionChanged -= OnChange;
+        ConfigService.Get().Config.EnabledTweaks.CollectionChanged -= OnChange;
         Svc.Interface.ActivePluginsChanged -= OnPluginsChanged;
 
         foreach (var t in Tweaks) {

@@ -160,7 +160,7 @@ public class ARSwitcher : Tweak {
             ICondition.Get()[ConditionFlag.OccupiedInCutSceneEvent] || ICondition.Get()[ConditionFlag.WatchingCutscene] ||
             ICondition.Get()[ConditionFlag.WatchingCutscene78] || ICondition.Get()[ConditionFlag.InCombat]) {
             INotificationManager.Get().AddNotification(new Notification {
-                Title = $"{Plugin.Name} - {Name}",
+                Title = $"{Svc.Interface.Manifest.Name} - {Name}",
                 Content = "Can't switch characters (bound by duty or occupied)",
                 Type = NotificationType.Error
             });
@@ -168,7 +168,7 @@ public class ARSwitcher : Tweak {
         }
 
         INotificationManager.Get().AddNotification(new Notification {
-            Title = $"{Plugin.Name} - {Name}",
+            Title = $"{Svc.Interface.Manifest.Name} - {Name}",
             Content = $"Switch to {target}.",
             Type = NotificationType.Success,
         });
