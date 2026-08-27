@@ -29,7 +29,7 @@
 //    private AddonController<AtkUnitBase>? _controller;
 //    private readonly List<CircleButtonNode> _btns = [];
 
-//    public override unsafe void Enable() {
+//    public override unsafe void OnEnable() {
 //        _controller = new AddonController<AtkUnitBase> {
 //            AddonName = "LetterList",
 //            OnSetup = OnLetterListSetup,
@@ -39,7 +39,7 @@
 //        _controller.Enable();
 //    }
 
-//    public override void Disable() {
+//    public override void OnDisable() {
 //        DisposeButtons();
 //        _controller?.Dispose();
 //    }

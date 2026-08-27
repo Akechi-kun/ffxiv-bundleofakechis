@@ -63,8 +63,8 @@ public class EnhancedLoginLogout : Tweak<EnhancedLoginLogoutConfig> {
         }
     }
 
-    public override void Enable() => ProperOnLogin.RegisterInteractable(RunCommands); // TODO: see if regular login can be used yet
-    public override void Disable() => ProperOnLogin.Unregister(RunCommands);
+    public override void OnEnable() => ProperOnLogin.RegisterInteractable(RunCommands); // TODO: see if regular login can be used yet
+    public override void OnDisable() => ProperOnLogin.Unregister(RunCommands);
 
     private string ConvertToCommand(string cmd) => cmd.StartsWith('/') ? cmd : $"/{cmd}";
     private void RunCommands() {

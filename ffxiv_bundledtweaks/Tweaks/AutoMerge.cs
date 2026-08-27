@@ -6,8 +6,8 @@ public class AutoMerge : Tweak {
     public override string Name => "Auto Merge";
     public override string Description => "Merge incomplete stacks upon opening your inventory.";
 
-    public override void Enable() => IAddonLifecycle.Get().RegisterListener(AddonEvent.PostShow, ["InventoryExpansion", "InventoryLarge", "Inventory", "AetherBags_MainBags"], OnSetup);
-    public override void Disable() => IAddonLifecycle.Get().UnregisterListener(OnSetup);
+    public override void OnEnable() => IAddonLifecycle.Get().RegisterListener(AddonEvent.PostShow, ["InventoryExpansion", "InventoryLarge", "Inventory", "AetherBags_MainBags"], OnSetup);
+    public override void OnDisable() => IAddonLifecycle.Get().UnregisterListener(OnSetup);
 
     private unsafe void OnSetup(AddonEvent type, AddonArgs args) {
         try {

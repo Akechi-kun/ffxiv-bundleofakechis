@@ -2,72 +2,40 @@ using clib;
 using ComplexTweaks.Configuration;
 using Dalamud.Plugin;
 using FFXIVClientStructs.FFXIV.Client.Game.Event;
-using System.Collections.Specialized;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace ComplexTweaks;
 
-public class Plugin : IDalamudPlugin {
+public sealed class Plugin(IDalamudPluginInterface dalamud) : IAsyncDalamudPlugin {
     public static string Name => "CBT";
     private const string Command = "/cbt";
     public static Plugin P { get; private set; } = null!;
     public static Config C { get; private set; } = null!;
     public string VersionString => Svc.Interface.Manifest.AssemblyVersion.ToString(2);
 
-    public static readonly HashSet<Tweak> Tweaks = [];
-    public readonly bool IsLocalCs;
+    public bool IsLocalCs { get; private set; }
 
-    public Plugin(IDalamudPluginInterface pluginInterface, IDataManager data, ISigScanner sigs) {
+    public async Task LoadAsync(CancellationToken cancellationToken) {
         P = this;
 #if LOCAL_CS
-        pluginInterface.InitCustomClientStructs();
+        dalamud.InitCustomClientStructs();
         IsLocalCs = true;
 #endif
-        ECommons.ECommonsMain.Init(pluginInterface, this);
-        CLibMain.Init(pluginInterface, P, CLibModule.Automation);
+        ECommons.ECommonsMain.Init(dalamud, this);
+        CLibMain.Init(dalamud, this, CLibModule.Automation);
 
         C = ConfigService.Get().Config;
 
         ICommandManager.Get().AddHandler(Command, new(OnCommand) { HelpMessage = $"Opens the {Name} menu" });
 
-        IFramework.Get().RunOnFrameworkThread(InitializeTweaks);
-        C.EnabledTweaks.CollectionChanged += OnChange;
-        Svc.Interface.ActivePluginsChanged += OnPluginsChanged;
+        await TweakService.Get().InitializeTweaksAsync(cancellationToken);
     }
 
-    public static void OnChange(object? sender, NotifyCollectionChangedEventArgs e) {
-        foreach (var t in Tweaks) {
-            if (C.EnabledTweaks.Contains(t.InternalName) && !t.Enabled)
-                t.EnableInternal();
-            else if (!C.EnabledTweaks.Contains(t.InternalName) && t.Enabled || t.Enabled && t.IsDebug && !C.ShowDebug)
-                t.DisableInternal();
-            ConfigService.Get().Save();
-        }
-    }
-
-    private static void OnPluginsChanged(IActivePluginsChangedEventArgs args) {
-        foreach (var tweak in Tweaks) {
-            if (C.EnabledTweaks.Contains(tweak.InternalName) && !tweak.Enabled && !tweak.Outdated && !tweak.Disabled)
-                if (tweak.CanBeEnabled())
-                    tweak.EnableInternal();
-
-            if (tweak.Enabled && !tweak.CanBeEnabled())
-                tweak.DisableInternal();
-
-            if (tweak.Enabled && tweak.CanBeEnabled())
-                tweak.RefreshCommands();
-        }
-    }
-
-    public void Dispose() {
+    public async ValueTask DisposeAsync() {
         ICommandManager.Get().RemoveHandler(Command);
-        foreach (var tweak in Tweaks) {
-            IPluginLog.Get().Debug($"Disposing {tweak.InternalName}");
-            tweak.DisposeInternal();
-        }
-        C.EnabledTweaks.CollectionChanged -= OnChange;
-        Svc.Interface.ActivePluginsChanged -= OnPluginsChanged;
         ConfigService.Get().Save();
-        CLibMain.Dispose();
+        await CLibMain.DisposeAsync();
     }
 
     private void OnCommand(string command, string args) {
@@ -82,7 +50,7 @@ public class Plugin : IDalamudPlugin {
                     WindowsService.Get().ToggleDebug();
                     break;
                 case "enable":
-                    if (Tweaks.FirstOrDefault(t => t.InternalName == @params[0]) is { } tweak && !C.EnabledTweaks.Contains(tweak.InternalName) && (!tweak.IsDebug || C.ShowDebug))
+                    if (TweakService.Get().Tweaks.FirstOrDefault(t => t.InternalName == @params[0]) is { } tweak && !C.EnabledTweaks.Contains(tweak.InternalName) && (!tweak.IsDebug || C.ShowDebug))
                         C.EnabledTweaks.Add(tweak.InternalName);
                     break;
                 case "disable":
@@ -96,39 +64,15 @@ public class Plugin : IDalamudPlugin {
                     break;
                 case "stop":
                     Svc.Automation.Stop();
-                    AutomationService.Get().Automation.Stop();
-                    foreach (var t in Tweaks)
+                    foreach (var t in TweakService.Get().Tweaks)
                         t.StopAutomation();
-                    foreach (var t in Tweaks.OfType<ARTweak>())
+                    foreach (var t in TweakService.Get().Tweaks.OfType<ARTweak>())
                         t.AutoRetainer.FinishCharacterPostProcess();
                     break;
                 case "leave":
                     EventFramework.LeaveCurrentContent(true);
                     break;
             }
-        }
-    }
-
-    private void InitializeTweaks() {
-        foreach (var tweakType in GetType().Assembly.GetTypes()
-                     .Where(type => type is { IsClass: true, IsAbstract: false } && typeof(Tweak).IsAssignableFrom(type))) {
-            IPluginLog.Get().Verbose($"Initializing {tweakType.Name}");
-            try {
-                Tweaks.Add((Tweak)Activator.CreateInstance(tweakType)!);
-            }
-            catch (Exception ex) {
-                ex.Log($"Failed to initialize {tweakType.Name}");
-            }
-        }
-
-        foreach (var tweak in Tweaks) {
-            if (!C.EnabledTweaks.Contains(tweak.InternalName))
-                continue;
-
-            if (C.EnabledTweaks.Contains(tweak.InternalName) && tweak.IsDebug && !C.ShowDebug)
-                C.EnabledTweaks.Remove(tweak.InternalName);
-
-            tweak.EnableInternal();
         }
     }
 }

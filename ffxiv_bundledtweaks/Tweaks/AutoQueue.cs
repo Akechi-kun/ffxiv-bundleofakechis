@@ -9,8 +9,8 @@ internal class AutoQueue : Tweak {
     public override string Description => "Auto queue into a pre-checked duty (on zone change).\n" +
         "If in a party, waits for all players to be in the overworld, and either targetable or in another zone from you.";
 
-    public override void Enable() => IClientState.Get().TerritoryChanged += OnTerritoryChanged;
-    public override void Disable() => IClientState.Get().TerritoryChanged -= OnTerritoryChanged;
+    public override void OnEnable() => IClientState.Get().TerritoryChanged += OnTerritoryChanged;
+    public override void OnDisable() => IClientState.Get().TerritoryChanged -= OnTerritoryChanged;
 
     private void OnTerritoryChanged(uint obj) {
         if (IPlayerState.Get() is { IsInDuty: true } or { IsPenalised: true }) return;

@@ -1,6 +1,5 @@
 using Dalamud.Bindings.ImGui;
 using FFXIVClientStructs.FFXIV.Client.Game;
-using FFXIVClientStructs.FFXIV.Client.Game.Event;
 using FFXIVClientStructs.FFXIV.Client.Game.Object;
 using FFXIVClientStructs.FFXIV.Client.UI.Agent;
 using Lumina.Excel.Sheets;
@@ -12,7 +11,7 @@ internal class ToolsTab : DebugTab {
         if (ImGui.Button("Use all items")) {
             var itemIds = CollectUsableItemIds();
             if (itemIds.Count > 0) {
-                AutomationService.Get().Automation.Start(AutoTask.From(async t => {
+                Svc.Automation.Start(AutoTask.From(async t => {
                     foreach (var itemId in itemIds) {
                         UseItem(itemId);
                         await t.WaitUntil(() => !IObjectTable.Get().LocalPlayer?.IsBusy ?? false, "NotBusy");

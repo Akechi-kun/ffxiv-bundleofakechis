@@ -14,7 +14,7 @@ public class ARSwitcher : Tweak {
 
     private IDtrBarEntry? _dtrBarEntry;
 
-    public override void Enable() {
+    public override void OnEnable() {
         _dtrBarEntry ??= IDtrBar.Get().Get("Character Index", "Unknown Character Index");
         _dtrBarEntry.OnClick = @event => {
             unsafe {
@@ -33,7 +33,7 @@ public class ARSwitcher : Tweak {
         IClientState.Get().Login += UpdateDtrBar;
     }
 
-    public override void Disable() {
+    public override void OnDisable() {
         _dtrBarEntry?.Remove();
         IClientState.Get().Login -= UpdateDtrBar;
     }

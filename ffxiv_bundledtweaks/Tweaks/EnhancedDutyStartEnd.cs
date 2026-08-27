@@ -26,13 +26,13 @@ public class EnhancedDutyStartEnd : Tweak<EnhancedDutyStartEndConfiguration> {
     public override string Name => "Enhanced Duty Start/End";
     public override string Description => "Automatically execute certain actions when the duty starts or ends.";
 
-    public override void Enable() {
+    public override void OnEnable() {
         IDutyState.Get().DutyStarted += OnDutyStart;
         IDutyState.Get().DutyCompleted += OnDutyComplete;
         IClientState.Get().TerritoryChanged += OnTerritoryChanged;
     }
 
-    public override void Disable() {
+    public override void OnDisable() {
         IDutyState.Get().DutyStarted -= OnDutyStart;
         IDutyState.Get().DutyCompleted -= OnDutyComplete;
         IClientState.Get().TerritoryChanged -= OnTerritoryChanged;

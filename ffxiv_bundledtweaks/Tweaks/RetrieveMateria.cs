@@ -10,8 +10,8 @@ internal class RetrieveMateria : Tweak {
     public override string Name => "Retrieve All Materia";
     public override string Description => "Adds a context menu item that will retrieve all materia from an item.";
 
-    public override void Enable() => IContextMenu.Get().OnMenuOpened += OnOpenContextMenu;
-    public override void Disable() => IContextMenu.Get().OnMenuOpened -= OnOpenContextMenu;
+    public override void OnEnable() => IContextMenu.Get().OnMenuOpened += OnOpenContextMenu;
+    public override void OnDisable() => IContextMenu.Get().OnMenuOpened -= OnOpenContextMenu;
 
     private void OnOpenContextMenu(IMenuOpenedArgs args) {
         if (args is not { MenuType: ContextMenuType.Inventory, Target: MenuTargetInventory { TargetItem: { ItemId: not 0, Materia: var materia } } inv } || materia.ToArray().All(m => m == 0)) return;

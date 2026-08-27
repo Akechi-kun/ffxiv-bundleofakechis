@@ -11,12 +11,12 @@ public partial class FasterRepairAll : Tweak {
     public override string Description => "Instantly repair all inventories when repairing at an npc.";
 
     private const uint eventParamId = 0x43425400;
-    public override void Enable() {
+    public override void OnEnable() {
         IAddonLifecycle.Get().RegisterListener(AddonEvent.PostSetup, "Repair", AddEvent);
         IAddonLifecycle.Get().RegisterListener(AddonEvent.PreReceiveEvent, "Repair", HandleEvent);
     }
 
-    public override void Disable() {
+    public override void OnDisable() {
         IAddonLifecycle.Get().UnregisterListener(AddEvent);
         IAddonLifecycle.Get().UnregisterListener(HandleEvent);
     }

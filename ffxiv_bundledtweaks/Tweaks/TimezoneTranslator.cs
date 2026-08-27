@@ -50,8 +50,8 @@ public class TimezoneTranslator : Tweak {
             "Europe/Paris") },
     };
 
-    public override void Enable() => IChatGui.Get().ChatMessage += OnChatMessage;
-    public override void Disable() => IChatGui.Get().ChatMessage -= OnChatMessage;
+    public override void OnEnable() => IChatGui.Get().ChatMessage += OnChatMessage;
+    public override void OnDisable() => IChatGui.Get().ChatMessage -= OnChatMessage;
 
     private void OnChatMessage(IHandleableChatMessage message) {
         if (message.LogKind is not XivChatType.Notice) return;

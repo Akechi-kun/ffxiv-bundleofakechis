@@ -11,8 +11,8 @@ internal class AutoEquipXPBoosts : Tweak {
     public override string Name => "Auto Equip Exp Items";
     public override string Description => "Automatically equips any exp boosting item on level change.";
 
-    public override void Enable() => IClientState.Get().LevelChanged += CheckForLevelSync;
-    public override void Disable() => IClientState.Get().LevelChanged -= CheckForLevelSync;
+    public override void OnEnable() => IClientState.Get().LevelChanged += CheckForLevelSync;
+    public override void OnDisable() => IClientState.Get().LevelChanged -= CheckForLevelSync;
 
     private readonly List<ExpItem> _expItems =
     [

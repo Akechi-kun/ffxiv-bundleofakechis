@@ -6,8 +6,8 @@ public class AutoPillion : Tweak {
     public override string Name => "Auto Pillion";
     public override string Description => "Automatically hop in to other peoples' mounts when you are near them.";
 
-    public override void Enable() => IFramework.Get().Update += OnUpdate;
-    public override void Disable() => IFramework.Get().Update -= OnUpdate;
+    public override void OnEnable() => IFramework.Get().Update += OnUpdate;
+    public override void OnDisable() => IFramework.Get().Update -= OnUpdate;
 
     private void OnUpdate(IFramework framework) {
         if (IObjectTable.Get().LocalPlayer is not { Available: true, IsBusy: false, GameObjectId: var playerId } || ICondition.Get()[ConditionFlag.Mounted]) {

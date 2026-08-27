@@ -4,7 +4,6 @@ using Dalamud.Game.ClientState.Objects.Types;
 using Dalamud.Game.Text;
 using Dalamud.Game.Text.SeStringHandling.Payloads;
 using FFXIVClientStructs.FFXIV.Client.Game;
-using FFXIVClientStructs.FFXIV.Client.Game.Character;
 using FFXIVClientStructs.FFXIV.Client.Game.Control;
 using FFXIVClientStructs.FFXIV.Client.Game.MJI;
 using System.Diagnostics.CodeAnalysis;
@@ -50,13 +49,13 @@ public class AutoFollow : Tweak<AutoFollowConfiguration> {
             ClearMaster();
     }
 
-    public override void Enable() {
+    public override void OnEnable() {
         IFramework.Get().Update += Follow;
         IChatGui.Get().ChatMessage += OnChatMessage;
         movement = new();
     }
 
-    public override void Disable() {
+    public override void OnDisable() {
         IFramework.Get().Update -= Follow;
         IChatGui.Get().ChatMessage -= OnChatMessage;
         movement.Dispose();

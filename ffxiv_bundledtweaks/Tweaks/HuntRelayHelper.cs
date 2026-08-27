@@ -84,13 +84,13 @@ public class HuntRelayHelper : Tweak<HuntRelayHelperConfiguration> {
         uint? CreatureNameId
     );
 
-    public override void Enable() {
+    public override void OnEnable() {
         IChatGui.Get().ChatMessage += OnChatMessage;
         RelayLinkPayload = IChatGui.Get().AddChatLinkHandler((uint)LinkHandlerId.RelayLinkPayload, HandleRelayLink);
         Svc.Interface.GetIpcSubscriber<HuntAlertMessage, object>("HuntAlerts.OnHuntAlertMessageReceived").Subscribe(OnHuntAlert);
     }
 
-    public override void Disable() {
+    public override void OnDisable() {
         IChatGui.Get().ChatMessage -= OnChatMessage;
         IChatGui.Get().RemoveChatLinkHandler((uint)LinkHandlerId.RelayLinkPayload);
         Svc.Interface.GetIpcSubscriber<HuntAlertMessage, object>("HuntAlerts.OnHuntAlertMessageReceived").Unsubscribe(OnHuntAlert);

@@ -16,8 +16,8 @@ public class SimpleCurrencyAlert : Tweak<SimpleCurrencyAlertConfig> {
     public override string Name => "Simple Currency Alert";
     public override string Description => "Probably won't reset your config every update. Triggers on zone change.";
 
-    public override void Enable() => IClientState.Get().TerritoryChanged += OnTerritoryChanged;
-    public override void Disable() => IClientState.Get().TerritoryChanged -= OnTerritoryChanged;
+    public override void OnEnable() => IClientState.Get().TerritoryChanged += OnTerritoryChanged;
+    public override void OnDisable() => IClientState.Get().TerritoryChanged -= OnTerritoryChanged;
 
     private void OnTerritoryChanged(uint obj) {
         foreach (var currency in Config.Alerts) {

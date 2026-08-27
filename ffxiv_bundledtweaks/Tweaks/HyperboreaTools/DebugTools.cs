@@ -29,14 +29,14 @@ public partial class DebugTools : Tweak<DebugToolsConfiguration> {
     public override string Name => "Debug Tools";
     public override string Description => "Debug tools for use in hyperborea/firewall";
 
-    public override void Enable() {
+    public override void OnEnable() {
         _keys = ConfigKey.Where(x => x.RowId is >= 12 and <= 18).ToDictionary(x => x.Label.ToString(), x => x);
         IAddonLifecycle.Get().RegisterListener(AddonEvent.PostSetup, "MJICraftSchedule", OnSetup);
         IClientState.Get().EnterPvP += OnEnterPvP;
         IFramework.Get().Update += OnUpdate;
     }
 
-    public override void Disable() {
+    public override void OnDisable() {
         IAddonLifecycle.Get().UnregisterListener(OnSetup);
         IClientState.Get().EnterPvP -= OnEnterPvP;
         IFramework.Get().Update -= OnUpdate;

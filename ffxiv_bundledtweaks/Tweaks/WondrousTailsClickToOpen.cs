@@ -18,13 +18,13 @@ internal class WondrousTailsClickToOpen : Tweak {
     private List<ContentFinderCondition> _sheet = null!;
     private unsafe ContentsFinderQueueInfo* QueueInfo => ContentsFinder.Instance()->GetQueueInfo();
 
-    public override void Enable() {
+    public override void OnEnable() {
         IAddonLifecycle.Get().RegisterListener(AddonEvent.PostSetup, "WeeklyBingo", OnAddonSetup);
         IAddonLifecycle.Get().RegisterListener(AddonEvent.PreFinalize, "WeeklyBingo", OnAddonFinalize);
         _sheet = [.. ContentFinderCondition.Where(x => !x.MSQRoulette)];
     }
 
-    public override void Disable() {
+    public override void OnDisable() {
         IAddonLifecycle.Get().UnregisterListener(OnAddonSetup);
         IAddonLifecycle.Get().UnregisterListener(OnAddonFinalize);
     }

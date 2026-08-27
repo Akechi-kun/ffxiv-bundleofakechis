@@ -1,4 +1,4 @@
-﻿namespace ComplexTweaks.TweakSystem;
+namespace ComplexTweaks.TweakSystem;
 
 public abstract class ARTweak<T> : Tweak<T> {
     public ARTweak() : base() => AutoRetainer = new(Name);
@@ -8,16 +8,16 @@ public abstract class ARTweak<T> : Tweak<T> {
     public abstract void OnCharacterPostProcessStep();
     public abstract void OnCharacterReadyToPostProcess();
 
-    public override void Enable() {
+    public override void OnEnable() {
         AutoRetainer.OnCharacterPostprocessStep += OnCharacterPostProcessStep;
         AutoRetainer.OnCharacterReadyToPostProcess += OnCharacterReadyToPostProcess;
-        base.Enable();
+        base.OnEnable();
     }
 
-    public override void Disable() {
+    public override void OnDisable() {
         AutoRetainer.OnCharacterPostprocessStep -= OnCharacterPostProcessStep;
         AutoRetainer.OnCharacterReadyToPostProcess -= OnCharacterReadyToPostProcess;
-        base.Disable();
+        base.OnDisable();
     }
 
     public override void Dispose() {

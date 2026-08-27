@@ -1,3 +1,6 @@
+using System.Threading;
+using System.Threading.Tasks;
+
 namespace ComplexTweaks.TweakSystem;
 
 public interface ITweak : IDisposable {
@@ -8,15 +11,14 @@ public interface ITweak : IDisposable {
     string Name { get; }
     string Description { get; }
 
-    bool Outdated { get; }
-    bool Ready { get; }
-    bool Enabled { get; }
+    TweakStatus Status { get; }
 
-    void SetupAddressHooks();
-    void SetupVTableHooks();
+    void OnEnable();
+    void OnDisable();
 
-    void Enable();
-    void Disable();
+    Task StartAsync(CancellationToken cancellationToken);
+    Task StopAsync(CancellationToken cancellationToken);
+
     void DrawConfig();
     void OnConfigChange(string fieldName);
 }

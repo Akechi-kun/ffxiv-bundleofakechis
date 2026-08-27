@@ -1,4 +1,3 @@
-using AutoRetainerAPI;
 using System.Reflection;
 
 namespace ComplexTweaks.Services;
@@ -6,11 +5,6 @@ namespace ComplexTweaks.Services;
 public sealed class AutoRetainerApiService : IPluginService, IDisposable {
     public AutoRetainerApi Api { get; } = new();
     public void Dispose() => Api.Dispose();
-}
-
-public sealed class AutomationService : IPluginService, IDisposable {
-    public Automation Automation { get; } = new();
-    public void Dispose() => Automation.Dispose();
 }
 
 public sealed class IPCRegistry : IPluginService {

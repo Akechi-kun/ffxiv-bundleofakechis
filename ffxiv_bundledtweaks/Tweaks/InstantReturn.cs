@@ -11,8 +11,8 @@ public partial class InstantReturn : Tweak {
     public override string Name => "Quick Return";
     public override string Description => "Calls the return function directly";
 
-    public override void Enable() => IAddonLifecycle.Get().RegisterListener(AddonEvent.PostSetup, "SelectYesno", HandleReturn);
-    public override void Disable() => IAddonLifecycle.Get().UnregisterListener(HandleReturn);
+    public override void OnEnable() => IAddonLifecycle.Get().RegisterListener(AddonEvent.PostSetup, "SelectYesno", HandleReturn);
+    public override void OnDisable() => IAddonLifecycle.Get().UnregisterListener(HandleReturn);
 
     [AddressHook<AgentReturn>(nameof(AgentReturn.MemberFunctionPointers.Return))]
     private unsafe void AgentReturn_Return(AgentReturn* agent) {

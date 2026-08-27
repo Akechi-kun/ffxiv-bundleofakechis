@@ -25,12 +25,12 @@ public unsafe partial class ClickToMove : Tweak<ClickToMoveConfiguration> {
 
     private OverrideMovement movement = null!;
 
-    public override void Enable() {
+    public override void OnEnable() {
         movement = new();
         IAddonLifecycle.Get().RegisterListener(AddonEvent.PostReceiveEvent, "AreaMap", HandleMapClick);
     }
 
-    public override void Disable() {
+    public override void OnDisable() {
         movement.Dispose();
         IAddonLifecycle.Get().UnregisterListener(HandleMapClick);
     }

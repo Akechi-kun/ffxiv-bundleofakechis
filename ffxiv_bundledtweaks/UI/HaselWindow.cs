@@ -20,7 +20,7 @@ public partial class HaselWindow : Window {
     private string _selectedTweak = string.Empty;
     private string? _splashText = null;
 
-    private Tweak? SelectedTweak => Plugin.Tweaks.FirstOrDefault(t => t.Name == _selectedTweak);
+    private Tweak? SelectedTweak => TweakService.Get().Tweaks.FirstOrDefault(t => t.Name == _selectedTweak);
 
     public override void OnClose() {
         _splashText = null;
@@ -47,14 +47,14 @@ public partial class HaselWindow : Window {
         ImGui.TableSetupColumn("Checkbox", ImGuiTableColumnFlags.WidthFixed);
         ImGui.TableSetupColumn("Tweak Name", ImGuiTableColumnFlags.WidthStretch);
 
-        foreach (var tweak in Plugin.Tweaks.Where(t => !t.Disabled && (!t.IsDebug || C.ShowDebug)).OrderBy(t => t.Name)) {
+        foreach (var tweak in TweakService.Get().Tweaks.Where(t => !t.Disabled && (!t.IsDebug || C.ShowDebug)).OrderBy(t => t.Name)) {
             ImGui.TableNextRow();
             ImGui.TableNextColumn();
 
-            var enabled = tweak.Enabled;
+            var enabled = tweak.Status == TweakStatus.Enabled;
             var fixY = false;
 
-            if (!tweak.Ready || tweak.Outdated) {
+            if (tweak.Status.IsTerminal()) {
                 var startPos = ImGui.GetCursorPos();
                 var drawList = ImGui.GetWindowDrawList();
                 var pos = ImGui.GetWindowPos() + startPos - new Vector2(0, ImGui.GetScrollY());
@@ -65,9 +65,8 @@ public partial class HaselWindow : Window {
                 ImGui.Dummy(size);
 
                 if (ImGui.IsItemHovered()) {
-                    var (status, color) = GetTweakStatus(tweak);
                     using var tooltip = ImRaii.Tooltip();
-                    ImGui.TextColored((uint)color, status);
+                    ImGui.TextColored((uint)tweak.Status.GetColor(), tweak.Status.GetName());
                 }
 
                 drawList.AddRectFilled(pos, pos + size, ImGui.GetColorU32(ImGuiCol.FrameBg), 3f, ImDrawFlags.RoundCornersAll);
@@ -95,7 +94,7 @@ public partial class HaselWindow : Window {
             if (fixY)
                 ImGui.PushCursorY(3); // if i only knew why this happens
 
-            using var colour = ImRaii.PushColor(ImGuiCol.Text, !tweak.Ready || tweak.Outdated ? EzColor.RedBright : !enabled ? (uint)Colors.Grey : ImGui.GetColorU32(ImGuiCol.Text), !tweak.Ready || tweak.Outdated || !enabled);
+            using var colour = ImRaii.PushColor(ImGuiCol.Text, tweak.Status.IsTerminal() ? EzColor.RedBright : !enabled ? (uint)Colors.Grey : ImGui.GetColorU32(ImGuiCol.Text), tweak.Status.IsTerminal() || !enabled);
 
             if (ImGui.Selectable($"{tweak.Name}##Selectable_{tweak.Name}", _selectedTweak == tweak.Name))
                 _selectedTweak = _selectedTweak != tweak.Name ? tweak.Name : string.Empty;
@@ -118,7 +117,8 @@ public partial class HaselWindow : Window {
 
         ImGui.TextColored((uint)Colors.Gold, tweak.Name);
 
-        var (status, color) = GetTweakStatus(tweak);
+        var status = tweak.Status.GetName();
+        var color = tweak.Status.GetColor();
 
         var posX = ImGui.GetCursorPosX();
         var windowX = ImGui.GetContentRegionAvail().X;
@@ -211,29 +211,6 @@ public partial class HaselWindow : Window {
         }
 
         tweak.DrawConfig();
-    }
-
-    private static (string, EzColor) GetTweakStatus(Tweak tweak) {
-        var status = "???";
-        var color = Colors.Grey3;
-
-        if (tweak.Outdated) {
-            status = "Outdated";
-            color = EzColor.RedBright;
-        }
-        else if (!tweak.Ready) {
-            status = "Initialization Failed";
-            color = EzColor.RedBright;
-        }
-        else if (tweak.Enabled) {
-            status = "Enabled";
-            color = EzColor.GreenBright;
-        }
-        else if (!tweak.Enabled) {
-            status = "Disabled";
-        }
-
-        return (status, color);
     }
 
     private static readonly string[] SplashTexts =
