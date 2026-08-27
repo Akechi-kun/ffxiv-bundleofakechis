@@ -49,7 +49,9 @@ internal sealed class FateGrind(FateToolKit tweak) : TaskBase {
                         await Revive();
                         break;
                     case GrindState.Engaging:
-                        // this should only ever happen during hot reloading vbm during a fate
+                        if (Player.Mounted) // if the destination was in the ground and we got 'stuck' before it but in the fate, you'd be left mounted
+                            await Dismount();
+                        // this should only ever happen when hot reloading vbm during a fate
                         if (PublicEvent.CurrentFate is { IsOnMap: true } current && !BossModIPC.Get().HasTempMap())
                             await GenerateObstacleMap(current);
                         await NextFrame();
@@ -304,7 +306,7 @@ internal sealed class FateGrind(FateToolKit tweak) : TaskBase {
         var rnd = NextFate.Position.RandomPoint(NextFate.Radius * 0.5f);
         var msh = rnd.OnMesh();
         WarningIf(rnd == msh, "Failed to find a random point on mesh. Destination might not land.");
-        Log($"[NextFate={NextFate.Position}] -> [rnd={rnd}] -> [mesh={msh}]");
+        Log($"[NextFate={Player.Territory}-{NextFate.Position}] -> [rnd={rnd}] -> [mesh={msh}]");
 
         var progress = new MoveTracker(Player.Position, Environment.TickCount64);
         var stopReason = MoveStopReason.None;
@@ -394,7 +396,24 @@ internal sealed class FateGrind(FateToolKit tweak) : TaskBase {
 
         Log($"{nameof(MoveToFate)} finished with stopReason={stopReason} fate={NextFate?.Id}");
 
+        // destination can be off-mesh / underground while we're already inside the fate circle
+        bool IsAlreadyAtFate(PublicEvent fate)
+            => PublicEvent.CurrentFate?.Id == fate.Id || Player.FlatDistanceTo(fate.Position) <= fate.Radius;
+
+        async Task JoinFate() {
+            if (NextFate is { State: FateState.Preparing, MotivationNpcId: not 0xE0000000 } && PublicEvent.Fates.Any(f => f.Id == NextFate.Id))
+                await ActivateFate();
+            else if (Player.Mounted)
+                await Dismount();
+        }
+
         if (stopReason == MoveStopReason.StuckRetry && NextFate is { Id: var stuckFateId }) {
+            if (IsAlreadyAtFate(NextFate)) {
+                Log($"Stuck near fate {stuckFateId} but already inside its area; treating as arrived");
+                await JoinFate();
+                return;
+            }
+
             SkipFate(stuckFateId, "stuck while pathfinding");
             return;
         }
@@ -409,16 +428,30 @@ internal sealed class FateGrind(FateToolKit tweak) : TaskBase {
             return;
         }
 
-        if (stopReason == MoveStopReason.StuckTeleport && WaitForExpiryFateId is null && NextFate is { Id: var fateId } && PublicEvent.GetFateById(fateId) is { } currentFate) {
-            NextFate = currentFate;
-            Status = "Teleporting to fate";
-            var fateTerritoryId = Player.Territory.RowId;
-            await TeleportTo(fateTerritoryId, currentFate.Position, allowSameZoneTeleport: true);
-            await UseAethernet(fateTerritoryId, currentFate.Position);
+        if (stopReason == MoveStopReason.StuckTeleport && WaitForExpiryFateId is null && NextFate is { Id: var fateId }) {
+            if (IsAlreadyAtFate(NextFate)) {
+                Log($"Stuck teleport triggered for fate {fateId} but already inside its area; treating as arrived");
+                await JoinFate();
+                return;
+            }
+
+            if (PublicEvent.GetFateById(fateId) is { } currentFate) {
+                NextFate = currentFate;
+                Status = "Teleporting to fate";
+                var fateTerritoryId = Player.Territory.RowId;
+                await TeleportTo(fateTerritoryId, currentFate.Position, allowSameZoneTeleport: true);
+                await UseAethernet(fateTerritoryId, currentFate.Position);
+            }
             return;
         }
 
         if (stopReason == MoveStopReason.None && NextFate is { Id: var unreachedFateId } && !Player.WithinRange(msh, moveTolerance)) {
+            if (IsAlreadyAtFate(NextFate)) {
+                Log($"Pathfinding stopped short of mesh point for fate {unreachedFateId} but already inside its area; treating as arrived");
+                await JoinFate();
+                return;
+            }
+
             SkipFate(unreachedFateId, "pathfinding stopped before reaching destination");
             return;
         }
