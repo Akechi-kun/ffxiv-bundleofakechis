@@ -288,23 +288,7 @@ public abstract partial class Tweak // Config / Commands
             if (attr.ConfigFieldName != fieldName)
                 continue;
 
-            var enabled = string.IsNullOrEmpty(attr.ConfigFieldName);
-            if (!string.IsNullOrEmpty(attr.ConfigFieldName) && CachedConfigType != null) {
-                var config = GetConfigObject();
-                if (config != null)
-                    enabled |= (CachedConfigType.GetField(attr.ConfigFieldName)?.GetValue(config) as bool?)
-                        ?? throw new InvalidOperationException($"Configuration field {attr.ConfigFieldName} in {CachedConfigType.Name} not found.");
-            }
-
-            if (enabled && methodInfo.GetCustomAttributes<RequiresAttribute>().SelectMany(r => r.Id.Flags).Where(id => id != Ipc.None).Distinct().ToArray() is { Length: > 0 } reqs) {
-                if (!IPCRegistry.Get().AreAllLoaded(reqs)) {
-                    var missing = IPCRegistry.Get().GetMissing(reqs);
-                    Warning($"Cannot enable command(s) [{string.Join(", ", attr.Commands)}]: missing dependencies: {string.Join(", ", missing.Select(ipc => ipc.Name))}");
-                    enabled = false;
-                }
-            }
-
-            if (enabled)
+            if (IsCommandEnabled(methodInfo, attr, warnIfMissingReqs: true))
                 foreach (var c in attr.Commands)
                     EnableCommand(c, attr.HelpMessage, methodInfo);
             else
@@ -326,27 +310,7 @@ public abstract partial class Tweak // Config / Commands
     protected virtual void EnableCommands(bool onlyAbsent = false) {
         foreach (var methodInfo in CommandHandlers) {
             var attr = methodInfo.GetCustomAttribute<CommandHandlerAttribute>()!;
-            var enabled = string.IsNullOrEmpty(attr.ConfigFieldName);
-
-            if (!string.IsNullOrEmpty(attr.ConfigFieldName) && CachedConfigType != null) {
-                var config = GetConfigObject();
-                if (config != null)
-                    enabled |= (CachedConfigType.GetField(attr.ConfigFieldName)?.GetValue(config) as bool?)
-                        ?? throw new InvalidOperationException($"Configuration field {attr.ConfigFieldName} in {CachedConfigType.Name} not found.");
-            }
-
-            if (enabled && methodInfo.GetCustomAttributes<RequiresAttribute>().SelectMany(r => r.Id.Flags).Where(id => id != Ipc.None).Distinct().ToArray() is { Length: > 0 } reqs) {
-                if (!IPCRegistry.Get().AreAllLoaded(reqs)) {
-                    if (!onlyAbsent) {
-                        var missing = IPCRegistry.Get().GetMissing(reqs);
-                        var missingNames = missing.Length > 0 ? string.Join(", ", missing.Select(ipc => ipc.Name)) : "one or more required IPCs are not registered";
-                        Warning($"Cannot enable command(s) [{string.Join(", ", attr.Commands)}]: missing dependencies: {missingNames}");
-                    }
-                    continue;
-                }
-            }
-
-            if (!enabled)
+            if (!IsCommandEnabled(methodInfo, attr, warnIfMissingReqs: !onlyAbsent))
                 continue;
 
             foreach (var c in attr.Commands) {
@@ -371,27 +335,54 @@ public abstract partial class Tweak // Config / Commands
     protected virtual void DisableCommands() {
         foreach (var methodInfo in CommandHandlers) {
             var attr = methodInfo.GetCustomAttribute<CommandHandlerAttribute>()!;
-            var enabled = string.IsNullOrEmpty(attr.ConfigFieldName);
+            if (!IsCommandConfigEnabled(attr))
+                continue;
 
-            if (!string.IsNullOrEmpty(attr.ConfigFieldName) && CachedConfigType != null) {
-                var config = GetConfigObject();
-                if (config != null)
-                    enabled |= (CachedConfigType.GetField(attr.ConfigFieldName)?.GetValue(config) as bool?)
-                        ?? throw new InvalidOperationException($"Configuration field {attr.ConfigFieldName} in {CachedConfigType.Name} not found.");
-            }
-
-            if (enabled)
-                foreach (var c in attr.Commands)
-                    DisableCommand(c);
+            foreach (var c in attr.Commands)
+                DisableCommand(c);
         }
+    }
+
+    private bool IsCommandEnabled(MethodInfo methodInfo, CommandHandlerAttribute attr, bool warnIfMissingReqs) {
+        if (!IsCommandConfigEnabled(attr))
+            return false;
+
+        var missing = GetMissingCommandRequirements(methodInfo);
+        if (missing.Length == 0)
+            return true;
+
+        if (warnIfMissingReqs) {
+            var missingNames = missing.Length > 0 ? string.Join(", ", missing.Select(ipc => ipc.Name)) : "one or more required IPCs are not registered";
+            Warning($"Cannot enable command(s) [{string.Join(", ", attr.Commands)}]: missing dependencies: {missingNames}");
+        }
+        return false;
+    }
+
+    private bool IsCommandConfigEnabled(CommandHandlerAttribute attr) {
+        if (string.IsNullOrEmpty(attr.ConfigFieldName))
+            return true;
+        if (CachedConfigType == null)
+            return false;
+
+        var config = GetConfigObject();
+        if (config == null)
+            return false;
+
+        return (CachedConfigType.GetField(attr.ConfigFieldName)?.GetValue(config) as bool?)
+            ?? throw new InvalidOperationException($"Configuration field {attr.ConfigFieldName} in {CachedConfigType.Name} not found.");
+    }
+
+    private static BaseIPC[] GetMissingCommandRequirements(MethodInfo methodInfo) {
+        var reqs = methodInfo.GetCustomAttributes<RequiresAttribute>().SelectMany(r => r.Id.Flags).Where(id => id != Ipc.None).Distinct().ToArray();
+        if (reqs.Length == 0)
+            return [];
+        return IPCRegistry.Get().AreAllLoaded(reqs) ? [] : IPCRegistry.Get().GetMissing(reqs);
     }
 
     protected void DrawCommands() {
         var commandHandlers = CommandHandlers
             .Select(m => m.GetCustomAttribute<CommandHandlerAttribute>()!)
-            .Where(attr =>
-                string.IsNullOrEmpty(attr.ConfigFieldName) ||
-                CachedConfigType != null && GetConfigObject() != null && (bool?)CachedConfigType.GetField(attr.ConfigFieldName)?.GetValue(GetConfigObject()) == true)
+            .Where(IsCommandConfigEnabled)
             .Where(attr => attr.Commands.Any(cmd => ICommandManager.Get().Commands.ContainsKey(cmd)));
 
         if (!commandHandlers.Any())
@@ -420,18 +411,15 @@ public abstract partial class Tweak // Config / Commands
     private void EnableCommand(string command, string helpMessage, MethodInfo methodInfo) {
         var originalHandler = methodInfo.CreateDelegate<IReadOnlyCommandInfo.HandlerDelegate>(this);
         void handler(string cmd, string args) {
-            if (methodInfo.GetCustomAttributes<RequiresAttribute>().SelectMany(r => r.Id.Flags).Where(id => id != Ipc.None).Distinct().ToArray() is { Length: > 0 } reqs) {
-                if (!IPCRegistry.Get().AreAllLoaded(reqs)) {
-                    var missing = IPCRegistry.Get().GetMissing(reqs);
-                    ModuleMessage($"Command {cmd} requires: {string.Join(", ", missing.Select(ipc => ipc.Name))}");
-                    return;
-                }
+            var missing = GetMissingCommandRequirements(methodInfo);
+            if (missing.Length > 0) {
+                ModuleMessage($"Command {cmd} requires: {string.Join(", ", missing.Select(ipc => ipc.Name))}");
+                return;
             }
 
             originalHandler(cmd, args);
         }
 
-        // replace if already registered
         if (ICommandManager.Get().Commands.ContainsKey(command))
             ICommandManager.Get().RemoveHandler(command);
 
