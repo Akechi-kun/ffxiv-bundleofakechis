@@ -1,3 +1,4 @@
+using FFXIVClientStructs.FFXIV.Client.System.Input;
 using FFXIVClientStructs.FFXIV.Client.UI;
 using FFXIVClientStructs.FFXIV.Component.GUI;
 
@@ -9,19 +10,22 @@ public partial class PreventConfirmTargetingChat : Tweak {
 
     [AddressHook<AtkModule>(nameof(AtkModule.MemberFunctionPointers.HandleInput))]
     public unsafe byte HandleInput(AtkModule* atkModule, UIInputData* inputData, bool isPadMouseModeEnabled) {
+        var ret = HandleInputHook.Original(atkModule, inputData, isPadMouseModeEnabled);
+        if (atkModule is null || inputData is null)
+            return ret;
+
         try {
-            if (inputData->IsInputIdPressed(FFXIVClientStructs.FFXIV.Client.System.Input.InputId.OK)) {
-                if (atkModule->AtkUnitManager->FocusedAddon is not null and var f && f->NameString == "ChatLog") {
-                    atkModule->AtkUnitManager->FocusedAddon = null;
+            if (inputData->IsInputIdPressed(InputId.OK) && atkModule->AtkUnitManager is not null and var unitManager && unitManager->FocusedAddon is not null and var focusedAddon && focusedAddon->NameString == "ChatLog") {
+                unitManager->FocusedAddon = null;
+                if (atkModule->AtkStage is not null)
                     atkModule->AtkStage->ClearFocus();
-                }
             }
 
-            return HandleInputHook.Original(atkModule, inputData, isPadMouseModeEnabled);
+            return ret;
         }
         catch (Exception ex) {
-            Error(ex, $"Error clearing chat focus");
-            return HandleInputHook.Original(atkModule, inputData, isPadMouseModeEnabled);
+            Error(ex, "Error clearing chat focus");
+            return ret;
         }
     }
 }
