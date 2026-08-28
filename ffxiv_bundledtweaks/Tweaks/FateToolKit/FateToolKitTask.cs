@@ -605,7 +605,7 @@ internal sealed class FateGrind(FateToolKit tweak) : TaskBase {
     private async Task SwapNewItemTarget() {
         if (!tweak.IsZoneItemTargetComplete(Player.Territory.RowId, out var destination))
             return;
-        using var scope = BeginScope("SwapNewItemTarget");
+        using var scope = BeginScope(nameof(SwapNewItemTarget));
         var fromTerritoryId = Player.Territory.RowId;
         if (destination != fromTerritoryId) {
             Status = "ZoneItemTarget complete. Swapping zones.";
@@ -621,7 +621,7 @@ internal sealed class FateGrind(FateToolKit tweak) : TaskBase {
         if (tweak.GetCurrentMode().GetSwapZoneActions(fromTerritoryId, toTerritoryId) is not { } actions)
             return;
 
-        using var scope = BeginScope("OnSwapZone");
+        using var scope = BeginScope(nameof(ApplySwapZoneActions));
 
         if (actions.EquipItemId is { } itemId) {
             var item = new ItemHandle(itemId);

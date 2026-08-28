@@ -49,7 +49,7 @@ internal class AutoEquipXPBoosts : Tweak {
 
     private sealed class EquipItems(List<ExpItem> expItems) : TaskBase {
         protected override async Task Execute() {
-            using var scope = BeginScope("EquipItems");
+            using var scope = BeginScope(nameof(EquipItems));
             await WaitWhileBusy();
             if (IPlayerState.Get().TerritoryIntendedUse is not (TerritoryIntendedUse.Dungeon or TerritoryIntendedUse.Raid1 or TerritoryIntendedUse.Raid2 or TerritoryIntendedUse.AllianceRaid)) return;
             if (IPlayerState.Get().ContentFinderCondition is { Value.ContentType.RowId: 28 }) return; // skip ults
