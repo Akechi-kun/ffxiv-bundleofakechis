@@ -306,7 +306,7 @@ internal sealed class FateGrind(FateToolKit tweak) : TaskBase {
         var rnd = NextFate.Position.RandomPoint(NextFate.Radius * 0.5f);
         var msh = rnd.OnMesh();
         WarningIf(rnd == msh, "Failed to find a random point on mesh. Destination might not land.");
-        Log($"[NextFate={Player.Territory}-{NextFate.Position}] -> [rnd={rnd}] -> [mesh={msh}]");
+        Log($"[NextFate={Player.Territory.RowId}-{NextFate.Position}] -> [rnd={rnd}] -> [mesh={msh}]");
 
         var progress = new MoveTracker(Player.Position, Environment.TickCount64);
         var stopReason = MoveStopReason.None;
