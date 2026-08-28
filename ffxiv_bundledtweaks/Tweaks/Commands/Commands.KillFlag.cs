@@ -1,4 +1,7 @@
 using Dalamud.Game.ClientState.Objects.Types;
+using FFXIVClientStructs.FFXIV.Client.Game;
+using FFXIVClientStructs.FFXIV.Client.UI.Agent;
+using FFXIVClientStructs.FFXIV.Client.UI.Info;
 using Lumina.Excel.Sheets;
 using System.Threading.Tasks;
 
@@ -22,22 +25,36 @@ public sealed class KillFlag(string world) : TaskBase {
     private const float TARGET_APPROACH_DISTANCE = 3.0f;
 
     protected override async Task Execute() {
-        if (!world.IsEmpty)
-            await HandleWorldTravel();
+        using var scope = BeginScope(nameof(KillFlag));
+        if (!world.IsEmpty && IDataManager.Get().FindRow<World>(r => r.Name.ToString().Contains(world, StringComparison.OrdinalIgnoreCase)) is { RowId: var id })
+            await HandleWorldTravel((ushort)id);
 
         await MoveToFlag(MovementConfig.Default.WithOptions(MovementOptions.Mount | (IPlayerState.Get().MapFlag.TerritoryId != 180 ? MovementOptions.Fly : MovementOptions.None)).WithTolerance(5f));
         using var stop = new OnDispose(() => BossModIPC.Get().ClearActive());
         await Kill();
     }
 
-    private async Task HandleWorldTravel() {
-        if (ConfigService.Get().Config.EnabledTweaks.Contains(nameof(InstantReturn)) && IPlayerState.Get().Territory.RowId != IPlayerState.Get().HomeAetheryte.Value.Territory.RowId) {
-            IChatGui.Get().SendMessage("/return");
-            await WaitUntilTerritory(IPlayerState.Get().HomeAetheryte.Value.Territory.RowId);
+    private async Task HandleWorldTravel(ushort worldId) {
+        using var scope = BeginScope(nameof(HandleWorldTravel));
+        if (ConfigService.Get().Config.EnabledTweaks.Contains(nameof(InstantReturn)) && IPlayerState.Get().Territory.RowId != IPlayerState.Get().HomeAetheryte.Value.Territory.RowId)
+            await Return();
+        unsafe {
+            AgentWorldTravel.Instance()->Travel(worldId);
         }
-        LifestreamIPC.Get().ExecuteCommand(world);
-        await WaitUntilThenFalse(LifestreamIPC.Get().IsBusy, "LifestreamWaitForFinish");
-        await WaitWhileBusy();
+        await WaitUntil(() => IPlayerState.Get().CurrentWorld.RowId == worldId && IObjectTable.Get().LocalPlayer.Interactable, "WaitForWorldTravel");
+    }
+
+    private async Task Return() {
+        using var scope = BeginScope(nameof(Return));
+        if (InfoProxyCrossRealm.IsLocalPlayerInParty()) {
+            if (InfoProxyCrossRealm.IsLocalPlayerPartyLeader())
+                await WaitUntil(IPartyList.Get().DisbandParty, "WaitForDisband");
+            else
+                await WaitUntil(IPartyList.Get().LeaveParty, "WaitForLeave");
+        }
+
+        GameMain.ExecuteCommand(CommandFlag.InstantReturn.Value);
+        await WaitUntilTerritory(IPlayerState.Get().HomeAetheryte.Value.Territory.RowId);
     }
 
     private async Task Kill() {
@@ -67,6 +84,7 @@ public sealed class KillFlag(string world) : TaskBase {
             .FirstOrDefault();
 
     private async Task MoveIfNoLoS(DGameObject target) {
+        using var scope = BeginScope(nameof(MoveIfNoLoS));
         if (!target.IsInLineOfSight()) {
             Log($"No line of sight to {target.Name}, moving...");
             var validPosition = NavmeshIPC.Get().PointOnFloor(target.Position, false, 5);
@@ -107,7 +125,7 @@ public sealed class KillFlag(string world) : TaskBase {
     }
 
     private async Task TargetDead(DGameObject target) {
-        using var scope = BeginScope("TargetDead");
+        using var scope = BeginScope(nameof(TargetDead));
         while (target != null && !target.IsDead)
             await NextFrame(30);
     }
