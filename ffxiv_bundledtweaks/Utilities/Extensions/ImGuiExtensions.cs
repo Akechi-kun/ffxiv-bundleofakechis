@@ -1,9 +1,9 @@
+using clib.Ui;
 using Dalamud.Bindings.ImGui;
 using Dalamud.Interface;
 using Dalamud.Interface.Components;
 using Dalamud.Interface.Textures.TextureWraps;
 using Dalamud.Interface.Utility.Raii;
-using ECommons.ImGuiMethods;
 using System.ComponentModel;
 using System.Reflection;
 using System.Threading.Tasks;
@@ -28,7 +28,7 @@ public static class ImGuiExtensions {
                 ImGui.SetMouseCursor(ImGuiMouseCursor.Hand);
 
                 using var tooltip = ImRaii.Tooltip();
-                ImGui.TextColored(EzColor.White, title);
+                ImGui.TextColored(Color.White, title);
 
                 var pos = ImGui.GetCursorPos();
                 ImGui.GetWindowDrawList().AddText(
@@ -53,10 +53,7 @@ public static class ImGuiExtensions {
             if (PushDown)
                 ImGui.PushCursorY(style.ItemSpacing.Y * 2);
 
-            var color = Colors.Gold;
-            if (RespectUiTheme && Colors.IsLightTheme)
-                color = EzColor.FromUiForeground(UIColor);
-
+            var color = RespectUiTheme && Colors.IsLightTheme ? Color.FromUiForeground(UIColor) : Color.Gold;
             ImGui.TextColored(color, Label);
 
             if (drawSeparator) {
@@ -74,8 +71,8 @@ public static class ImGuiExtensions {
                 ConfigService.Get().Save();
         }
 
-        public static void Icon(FontAwesomeIcon icon, EzColor? col = null, string? tooltip = null) {
-            using (col is { } c ? ImRaii.PushColor(ImGuiCol.Text, c.Vector4) : null) {
+        public static void Icon(FontAwesomeIcon icon, Color? col = null, string? tooltip = null) {
+            using (col is { } c ? ImRaii.PushColor(ImGuiCol.Text, (Vector4)c) : null) {
                 using (ImRaii.PushFont(UiBuilder.IconFont))
                     ImGui.Text(icon.ToIconString());
             }
@@ -250,7 +247,7 @@ public static class ImGuiExtensions {
             using (var _ = ImRaii.PushColor(ImGuiCol.Text, (uint)Colors.Field))
                 ImGui.Text($"{field}:");
             ImGui.SameLine();
-            using (var _ = ImRaii.PushColor(ImGuiCol.Text, EzColor.White.Vector4))
+            using (var _ = ImRaii.PushColor(ImGuiCol.Text, (Vector4)Color.White))
                 ImGui.Text($"{(valueCondition is { } condition && condition || valueCondition is not { } ? value : "N/A")}");
         }
 
@@ -262,11 +259,11 @@ public static class ImGuiExtensions {
 
         public static bool ToggleableCheckmark(string id, ref bool enabled) {
             var icon = enabled ? FontAwesomeIcon.Check : FontAwesomeIcon.Times;
-            var color = enabled ? EzColor.GreenBright : EzColor.RedBright;
+            var color = enabled ? Color.Green : Color.Red;
 
             if (!id.StartsWith("##")) id = "##" + id;
 
-            using var _ = ImRaii.PushColor(ImGuiCol.Text, color.Vector4).Push(ImGuiCol.Button, 0).Push(ImGuiCol.ButtonActive, 0).Push(ImGuiCol.ButtonHovered, 0);
+            using var _ = ImRaii.PushColor(ImGuiCol.Text, (Vector4)color).Push(ImGuiCol.Button, 0).Push(ImGuiCol.ButtonActive, 0).Push(ImGuiCol.ButtonHovered, 0);
             using (ImRaii.PushFont(UiBuilder.IconFont)) {
                 var clicked = ImGui.Button(icon.ToIconString() + id);
                 if (clicked)

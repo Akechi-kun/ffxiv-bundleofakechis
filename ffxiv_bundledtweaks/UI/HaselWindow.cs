@@ -1,3 +1,4 @@
+using clib.Ui;
 using Dalamud.Bindings.ImGui;
 using Dalamud.Interface.Utility.Raii;
 using Dalamud.Interface.Windowing;
@@ -77,11 +78,11 @@ public partial class HaselWindow : Window {
 
                 drawList.PathLineTo(pos);
                 drawList.PathLineTo(pos + size);
-                drawList.PathStroke(EzColor.RedBright, ImDrawFlags.None, frameHeight / 5f * 0.5f);
+                drawList.PathStroke(Color.Red, ImDrawFlags.None, frameHeight / 5f * 0.5f);
 
                 drawList.PathLineTo(pos + new Vector2(0, size.Y));
                 drawList.PathLineTo(pos + new Vector2(size.X, 0));
-                drawList.PathStroke(EzColor.RedBright, ImDrawFlags.None, frameHeight / 5f * 0.5f);
+                drawList.PathStroke(Color.Red, ImDrawFlags.None, frameHeight / 5f * 0.5f);
 
                 fixY = true;
             }
@@ -94,7 +95,7 @@ public partial class HaselWindow : Window {
             if (fixY)
                 ImGui.PushCursorY(3); // if i only knew why this happens
 
-            using var colour = ImRaii.PushColor(ImGuiCol.Text, tweak.Status.IsTerminal() ? EzColor.RedBright : !enabled ? (uint)Colors.Grey : ImGui.GetColorU32(ImGuiCol.Text), tweak.Status.IsTerminal() || !enabled);
+            using var colour = ImRaii.PushColor(ImGuiCol.Text, tweak.Status.IsTerminal() ? Color.Red : !enabled ? (uint)Colors.Grey : ImGui.GetColorU32(ImGuiCol.Text), tweak.Status.IsTerminal() || !enabled);
 
             if (ImGui.Selectable($"{tweak.Name}##Selectable_{tweak.Name}", _selectedTweak == tweak.Name))
                 _selectedTweak = _selectedTweak != tweak.Name ? tweak.Name : string.Empty;
@@ -115,7 +116,7 @@ public partial class HaselWindow : Window {
 
         using var id = ImRaii.PushId(tweak.Name);
 
-        ImGui.TextColored((uint)Colors.Gold, tweak.Name);
+        ImGui.TextColored((uint)Color.Gold, tweak.Name);
 
         var status = tweak.Status.GetName();
         var color = tweak.Status.GetColor();
@@ -233,7 +234,7 @@ public partial class HaselWindow : Window {
     private void DrawSplash() {
         _splashText ??= SplashTexts[Random.Shared.Next(SplashTexts.Length)];
         ImGui.SetCursorPosX(ImGui.GetCursorPosX() + ImGui.GetColumnWidth() * 0.5f - ImGui.CalcTextSize(_splashText).X * 0.5f);
-        ImGui.FlashText(_splashText, Colors.Gold, ImGui.GetStyle().Colors[(int)ImGuiCol.WindowBg], 2);
+        ImGui.FlashText(_splashText, Color.Gold, ImGui.GetStyle().Colors[(int)ImGuiCol.WindowBg], 2);
 
         AsciiSplash.Draw(80);
     }

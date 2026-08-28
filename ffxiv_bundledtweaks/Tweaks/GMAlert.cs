@@ -1,3 +1,4 @@
+using clib.Ui;
 using Dalamud.Bindings.ImGui;
 using Dalamud.Interface;
 using Dalamud.Interface.Components;
@@ -53,7 +54,7 @@ public partial class GMAlert : Tweak<GMAlertConfiguration> {
 
         ImGui.Checkbox("Kill Game", ref Config.KillGame);
 
-        ImGui.TextColoredWrapped(Colors.Gold, "Execute Commands");
+        ImGui.TextColoredWrapped(Color.Gold, "Execute Commands");
         if (ImGui.InputText($"##Commands", ref _cmd, 50, ImGuiInputTextFlags.EnterReturnsTrue))
             Config.Commands.Add(_cmd.StartsWith('/') ? _cmd : $"/{_cmd}");
 

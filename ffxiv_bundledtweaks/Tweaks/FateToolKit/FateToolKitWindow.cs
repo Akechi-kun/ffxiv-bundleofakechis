@@ -1,3 +1,4 @@
+using clib.Ui;
 using clib.ImGuiHelpers;
 using Dalamud.Bindings.ImGui;
 using Dalamud.Game.Text;
@@ -5,7 +6,6 @@ using Dalamud.Interface;
 using Dalamud.Interface.Components;
 using Dalamud.Interface.Utility.Raii;
 using Dalamud.Interface.Windowing;
-using ECommons.ImGuiMethods;
 using System.Globalization;
 using System.Reflection;
 using System.Text;
@@ -101,7 +101,7 @@ public class FateToolKitWindow : MinimisableWindow {
             DrawModeButton();
             ImGui.SameLine();
             using (var _ = ImRaii.Disabled(_tweak.ModeSuppliesSwapZones))
-            using (var zoneButtonColor = ImRaii.PushColor(ImGuiCol.Text, _tweak.HasSelectedSwapZones ? (uint)Colors.Gold : ImGui.GetColorU32(ImGuiCol.Text))) {
+            using (var zoneButtonColor = ImRaii.PushColor(ImGuiCol.Text, _tweak.HasSelectedSwapZones ? (uint)Color.Gold : ImGui.GetColorU32(ImGuiCol.Text))) {
                 if (ImGuiComponents.IconButton("###ZoneSelector", FontAwesomeIcon.Globe))
                     _tweak.OpenZoneSelector();
             }
@@ -135,7 +135,7 @@ public class FateToolKitWindow : MinimisableWindow {
 
             var availableWidth = ImGui.GetContentRegionAvail().X;
             var displayName = FormatDisplayName(fate);
-            var nameWidth = Math.Min(200f.Scale(), availableWidth * 0.4f);
+            var nameWidth = Math.Min(200f.Scaled(), availableWidth * 0.4f);
             var progressWidth = Math.Max(1f, availableWidth - nameWidth - ImGui.GetStyle().ItemSpacing.X);
 
             using (var buttonStyle = ImRaii.PushStyle(ImGuiStyleVar.ButtonTextAlign, new Vector2(0, 0.5f)))
@@ -147,7 +147,7 @@ public class FateToolKitWindow : MinimisableWindow {
                     ImGui.SameLine(0f, 0f);
                 }
 
-                using (var nameCol = ImRaii.PushColor(ImGuiCol.Text, isAvailable && !isBlacklisted ? (uint)EzColor.White : Colors.Grey3)) {
+                using (var nameCol = ImRaii.PushColor(ImGuiCol.Text, isAvailable && !isBlacklisted ? (uint)Color.White : Colors.Grey3)) {
                     if (ImGui.Button(displayName, new Vector2(
                         fate.HasBonus
                             ? Math.Max(1f, nameWidth - ImGui.IconUnitWidth())
@@ -205,7 +205,7 @@ public class FateToolKitWindow : MinimisableWindow {
         }
     }
 
-    private static void DrawHeaderChip(string text, EzColor background, EzColor textColor) {
+    private static void DrawHeaderChip(string text, Color background, Color textColor) {
         using var chipColor = ImRaii.PushColor(ImGuiCol.Button, (uint)background)
             .Push(ImGuiCol.ButtonHovered, (uint)background)
             .Push(ImGuiCol.ButtonActive, (uint)background)

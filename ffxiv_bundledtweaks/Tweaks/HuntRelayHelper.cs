@@ -372,7 +372,7 @@ public class HuntRelayHelper : Tweak<HuntRelayHelperConfiguration> {
 
         World? partial = null;
         if (Config.AllowPartialWorldMatches)
-            foreach (var word in RemoveConflicts(text).Split(' ').Where(t => !ECommons.GenericHelpers.IsNullOrEmpty(t) && t.Length > 2))
+            foreach (var word in RemoveConflicts(text).Split(' ').Where(t => !t.IsEmpty && t.Length > 2))
                 partial ??= World.FirstOrNull(x => x.IsPublic && x.DataCenter.RowId == IPlayerState.Get().CurrentWorld.Value.DataCenter.RowId && x.Name.ExtractText().Contains(word.FilterNonAlphanumeric(), StringComparison.OrdinalIgnoreCase));
 
         return (partial ?? World.FirstOrNull(x => x.IsPublic && RemoveConflicts(text).Contains(x.Name.ExtractText(), StringComparison.OrdinalIgnoreCase)) ?? null, heuristicInstance != 0 ? (uint)heuristicInstance : (uint)mapInstance, (uint)relayType);

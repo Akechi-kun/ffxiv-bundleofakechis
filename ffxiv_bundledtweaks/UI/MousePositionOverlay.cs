@@ -1,7 +1,7 @@
-﻿using ComplexTweaks.Tweaks;
+﻿using clib.Ui;
+using ComplexTweaks.Tweaks;
 using Dalamud.Bindings.ImGui;
 using Dalamud.Interface.Windowing;
-using ECommons.ImGuiMethods;
 
 namespace ComplexTweaks.UI;
 
@@ -22,11 +22,11 @@ public class MousePositionOverlay : Window {
     public override void Draw() {
         var pos = ImGui.GetMousePos();
         if (IGameGui.Get().ScreenToWorld(pos, out var res)) {
-            var col = GradientColor.Get(EzColor.RedBright, EzColor.YellowBright);
-            DrawRingWorld(res, 0.5f, ImGui.ColorConvertFloat4ToU32(col), 2f);
+            var col = Color.GetGradient(Color.Red, Color.Yellow);
+            DrawRingWorld(res, 0.5f, col, 2f);
             var l = MathF.Sqrt(2f) / 2f * 0.5f;
-            DrawLineWorld(res + new Vector3(-l, 0, -l), res + new Vector3(l, 0, l), ImGui.ColorConvertFloat4ToU32(col), 2f);
-            DrawLineWorld(res + new Vector3(l, 0, -l), res + new Vector3(-l, 0, l), ImGui.ColorConvertFloat4ToU32(col), 2f);
+            DrawLineWorld(res + new Vector3(-l, 0, -l), res + new Vector3(l, 0, l), col, 2f);
+            DrawLineWorld(res + new Vector3(l, 0, -l), res + new Vector3(-l, 0, l), col, 2f);
         }
     }
 

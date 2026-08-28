@@ -1,5 +1,6 @@
+using clib.Ui;
+using ComplexTweaks.Utilities;
 using Dalamud.Interface;
-using ECommons.ImGuiMethods;
 
 namespace ComplexTweaks.Attributes.Config;
 
@@ -8,5 +9,5 @@ public class ConfigInfoAttribute(string label, string desc) : Attribute {
     public string Label { get; init; } = label;
     public string Description { get; init; } = desc;
     public FontAwesomeIcon Icon { get; init; } = FontAwesomeIcon.InfoCircle;
-    public EzColor Color { get; init; } = Colors.Grey;
+    public Color Color { get; init; } = Colors.Grey;
 }

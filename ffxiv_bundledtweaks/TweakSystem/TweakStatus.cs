@@ -1,4 +1,4 @@
-using ECommons.ImGuiMethods;
+using clib.Ui;
 
 namespace ComplexTweaks.TweakSystem;
 
@@ -21,9 +21,9 @@ public static class TweakStatusExtensions {
             _ => status.ToString(),
         };
 
-        public EzColor GetColor() => status switch {
-            TweakStatus.Error or TweakStatus.Outdated => EzColor.RedBright,
-            TweakStatus.Enabled => EzColor.GreenBright,
+        public Color GetColor() => status switch {
+            TweakStatus.Error or TweakStatus.Outdated => Color.Red,
+            TweakStatus.Enabled => Color.Green,
             _ => Colors.Grey3,
         };
 

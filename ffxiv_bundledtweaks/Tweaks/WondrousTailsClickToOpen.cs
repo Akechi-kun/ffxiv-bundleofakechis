@@ -1,3 +1,4 @@
+using Dalamud.Bindings.ImGui;
 using Dalamud.Game.Addon.Events;
 using Dalamud.Game.Addon.Events.EventDataTypes;
 using ECommons.ImGuiMethods;
@@ -83,7 +84,7 @@ internal class WondrousTailsClickToOpen : Tweak {
         if (selectedTask is PlayerState.WeeklyBingoTaskStatus.Open) {
             var dutiesForTask = GetInstanceListFromId(bingoData);
             var duties = ContentFinderCondition.Where(c => dutiesForTask.Contains(c.TerritoryType.RowId)).Select(x => x.RowId).ToList();
-            if (ImGuiEx.Ctrl) {
+            if (ImGui.GetIO().KeyCtrl) {
                 if (ContentFinderCondition.GetRowOrNull(duties.First())?.ClassJobLevelRequired < PlayerState.Instance()->MaxLevel - 20)
                     QueueDuty([duties.First()], false);
                 else

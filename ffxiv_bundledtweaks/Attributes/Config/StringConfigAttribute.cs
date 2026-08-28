@@ -1,6 +1,6 @@
-using Dalamud.Interface;
-using ECommons.ImGuiMethods;
+using clib.Ui;
 using Dalamud.Bindings.ImGui;
+using Dalamud.Interface;
 using System.Reflection;
 using System.Text.RegularExpressions;
 
@@ -33,11 +33,11 @@ public class StringConfigAttribute : BaseConfigAttribute {
                 try {
                     _ = new Regex(value);
                     ImGui.SameLine();
-                    ImGui.Icon(FontAwesomeIcon.Check, EzColor.Green, "Valid regex pattern");
+                    ImGui.Icon(FontAwesomeIcon.Check, Colors.Valid, "Valid regex pattern");
                 }
                 catch (ArgumentException) {
                     ImGui.SameLine();
-                    ImGui.Icon(FontAwesomeIcon.Ban, EzColor.Red, "Invalid regex pattern");
+                    ImGui.Icon(FontAwesomeIcon.Ban, Colors.Invalid, "Invalid regex pattern");
                 }
             }
         }

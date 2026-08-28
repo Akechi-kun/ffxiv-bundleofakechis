@@ -1,5 +1,5 @@
+using clib.Ui;
 using Dalamud.Interface;
-using ECommons.ImGuiMethods;
 
 namespace ComplexTweaks.Attributes.Config;
 
@@ -7,6 +7,6 @@ namespace ComplexTweaks.Attributes.Config;
 public class NetworkWarningAttribute : ConfigInfoAttribute {
     public NetworkWarningAttribute() : base("Network Warning", "This option sends network/server requests. Use at your own risk.") {
         Icon = FontAwesomeIcon.Bolt;
-        Color = EzColor.YellowBright;
+        Color = Color.Yellow;
     }
 }
