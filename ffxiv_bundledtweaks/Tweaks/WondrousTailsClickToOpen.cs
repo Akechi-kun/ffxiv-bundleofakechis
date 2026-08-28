@@ -144,21 +144,21 @@ internal class WondrousTailsClickToOpen : Tweak {
                         switch (bingoOrderData.RowId) {
                             // Crystalline Conflict
                             case 52:
-                                if (ImGuiEx.Ctrl)
+                                if (ImGui.GetIO().KeyCtrl)
                                     QueueDuty([40], true); // Casual Match
                                 else
                                     OpenDuty([40], true);
                                 break;
                             // Frontlines
                             case 54:
-                                if (ImGuiEx.Ctrl)
+                                if (ImGui.GetIO().KeyCtrl)
                                     QueueDuty([7], true);
                                 else
                                     OpenDuty([7], true);
                                 break;
                             // Rival Wings
                             case 67:
-                                if (ImGuiEx.Ctrl)
+                                if (ImGui.GetIO().KeyCtrl)
                                     QueueDuty([599], false); // Hidden Gorge
                                 else
                                     OpenDuty([599], false);
