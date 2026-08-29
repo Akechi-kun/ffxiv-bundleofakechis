@@ -4,8 +4,6 @@ using Dalamud.Interface;
 using Dalamud.Interface.Components;
 using Dalamud.Interface.Textures.TextureWraps;
 using Dalamud.Interface.Utility.Raii;
-using System.ComponentModel;
-using System.Reflection;
 using System.Threading.Tasks;
 
 namespace ComplexTweaks.Utilities.Extensions;
@@ -217,38 +215,6 @@ public static class ImGuiExtensions {
 
             if (elapsedTime >= duration)
                 startTime = currentTime;
-        }
-
-        public static string EnumString(Enum v) {
-            var name = v.ToString();
-            return v.GetType().GetField(name)?.GetCustomAttribute<DescriptionAttribute>()?.Description ?? name;
-        }
-
-        public static bool Enum<T>(string label, ref T v) where T : Enum {
-            var res = false;
-            ImGui.SetNextItemWidth(200);
-            using var combo = ImRaii.Combo(label, EnumString(v));
-            if (!combo) return false;
-            foreach (var opt in System.Enum.GetValues(v.GetType())) {
-                if (ImGui.Selectable(EnumString((Enum)opt), opt.Equals(v))) {
-                    v = (T)opt;
-                    res = true;
-                }
-            }
-            return res;
-        }
-
-        public static void DrawTableColumn(string name) {
-            ImGui.TableNextColumn();
-            ImGui.Text(name);
-        }
-
-        public static void FieldAndValue(string field, object value, bool? valueCondition = null) {
-            using (var _ = ImRaii.PushColor(ImGuiCol.Text, (uint)Colors.Field))
-                ImGui.Text($"{field}:");
-            ImGui.SameLine();
-            using (var _ = ImRaii.PushColor(ImGuiCol.Text, (Vector4)Color.White))
-                ImGui.Text($"{(valueCondition is { } condition && condition || valueCondition is not { } ? value : "N/A")}");
         }
 
         public static void SpacedSeparator() {

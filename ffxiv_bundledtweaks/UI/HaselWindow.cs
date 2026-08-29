@@ -2,7 +2,6 @@ using clib.Ui;
 using Dalamud.Bindings.ImGui;
 using Dalamud.Interface.Utility.Raii;
 using Dalamud.Interface.Windowing;
-using ECommons.ImGuiMethods;
 
 namespace ComplexTweaks.UI;
 
@@ -87,7 +86,7 @@ public partial class HaselWindow : Window {
                 fixY = true;
             }
             else {
-                ImGuiEx.CollectionCheckbox($"##Enabled_{tweak.InternalName}", tweak.InternalName, ConfigService.Get().Config.EnabledTweaks);
+                ImGui.CollectionCheckbox($"##Enabled_{tweak.InternalName}", tweak.InternalName, ConfigService.Get().Config.EnabledTweaks);
             }
 
             ImGui.TableNextColumn();

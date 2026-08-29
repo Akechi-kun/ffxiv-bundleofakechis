@@ -1,7 +1,7 @@
 using Dalamud.Bindings.ImGui;
 using Dalamud.Interface;
 using Dalamud.Interface.Components;
-using ECommons.Events;
+using FFXIVClientStructs.FFXIV.Client.Game.UI;
 
 namespace ComplexTweaks.Tweaks;
 
@@ -10,7 +10,7 @@ public class EnhancedLoginLogoutConfig {
     public bool RunCommandsWhenARIsActive = false;
 }
 
-public class EnhancedLoginLogout : Tweak<EnhancedLoginLogoutConfig> {
+public partial class EnhancedLoginLogout : Tweak<EnhancedLoginLogoutConfig> {
     // TODO: hook logout and run commands then too
     public override string Name => "Enhanced Login";
     public override string Description => "Additional options when logging in.";
@@ -52,21 +52,26 @@ public class EnhancedLoginLogout : Tweak<EnhancedLoginLogoutConfig> {
             foreach (var cmd in c.LoginCommands.ToList()) {
                 var tmp = cmd;
                 if (ImGui.InputText($"##{c.CID}_{cmd}", ref tmp, 150))
-                    c.LoginCommands[c.LoginCommands.IndexOf(cmd)] = ConvertToCommand(tmp);
+                    c.LoginCommands[c.LoginCommands.IndexOf(cmd)] = tmp.EnsureIsCommand();
                 ImGui.SameLine();
                 if (ImGuiComponents.IconButton($"{c.CID}_{cmd}", FontAwesomeIcon.Trash))
                     c.LoginCommands.Remove(cmd);
             }
             var newcmd = string.Empty;
             if (ImGui.InputText($"##{c.CID}_new", ref newcmd, 150, ImGuiInputTextFlags.EnterReturnsTrue))
-                c.LoginCommands.Add(ConvertToCommand(newcmd));
+                c.LoginCommands.Add(newcmd.EnsureIsCommand());
         }
     }
 
-    public override void OnEnable() => ProperOnLogin.RegisterInteractable(RunCommands); // TODO: see if regular login can be used yet
-    public override void OnDisable() => ProperOnLogin.Unregister(RunCommands);
+    // TODO: replace with CS
+    [SigHook("E8 ?? ?? ?? ?? 66 0F 1F 44 00 ?? 48 C7 87 ?? ?? ?? ?? ?? ?? ?? ??")]
+    internal unsafe void OnWarpComplete(WarpInfo* warp, nint a2, int a3) {
+        OnWarpCompleteHook.Original(warp, a2, a3);
+        if (warp->WarpType == WarpType.Login) {
+            RunCommands();
+        }
+    }
 
-    private string ConvertToCommand(string cmd) => cmd.StartsWith('/') ? cmd : $"/{cmd}";
     private void RunCommands() {
         if (AutoRetainerIPC.Get().IsLoaded && !Config.RunCommandsWhenARIsActive && (AutoRetainerIPC.Get().IsBusy() || AutoRetainerIPC.Get().GetMultiModeEnabled())) return;
         var commands = Config.Chars

@@ -1,11 +1,12 @@
-using clib.Ui;
 using clib.ImGuiHelpers;
+using clib.Ui;
 using Dalamud.Bindings.ImGui;
 using Dalamud.Game.Text;
 using Dalamud.Interface;
 using Dalamud.Interface.Components;
 using Dalamud.Interface.Utility.Raii;
 using Dalamud.Interface.Windowing;
+using FFXIVClientStructs.FFXIV.Client.Enums;
 using System.Globalization;
 using System.Reflection;
 using System.Text;
@@ -102,8 +103,12 @@ public class FateToolKitWindow : MinimisableWindow {
             ImGui.SameLine();
             using (var _ = ImRaii.Disabled(_tweak.ModeSuppliesSwapZones))
             using (var zoneButtonColor = ImRaii.PushColor(ImGuiCol.Text, _tweak.HasSelectedSwapZones ? (uint)Color.Gold : ImGui.GetColorU32(ImGuiCol.Text))) {
-                if (ImGuiComponents.IconButton("###ZoneSelector", FontAwesomeIcon.Globe))
-                    _tweak.OpenZoneSelector();
+                if (ImGuiComponents.IconButton("###ZoneSelector", FontAwesomeIcon.Globe)) {
+                    TerritorySelectWindow.Show(_tweak.SelectedSwapZones, new() {
+                        Filter = row => row.IsInUse && row.TerritoryIntendedUse.Value.StructsEnum is TerritoryIntendedUse.Overworld && !row.IsPvpZone,
+                        Columns = TerritorySelectColumn.All & ~TerritorySelectColumn.Duty & ~TerritorySelectColumn.IntendedUse,
+                    });
+                }
             }
             if (_tweak.ModeSuppliesSwapZones)
                 ImGui.TooltipOnHover(ImGui.IsItemHovered(ImGuiHoveredFlags.AllowWhenDisabled), "Zone list is defined by the current grind mode. Switch to None to select zones manually.");

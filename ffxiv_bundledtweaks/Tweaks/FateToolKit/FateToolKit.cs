@@ -1,4 +1,4 @@
-using ECommons.ImGuiMethods.TerritorySelection;
+using clib.Ui;
 using Lumina.Excel.Sheets;
 using TerritoryIntendedUse = FFXIVClientStructs.FFXIV.Client.Enums.TerritoryIntendedUse;
 
@@ -257,20 +257,6 @@ public class FateToolKit : Tweak<FateToolKitConfig, FateToolKitWindow>, IFateGri
         if (zones[_selectedZoneRotation] == currentTerritoryId)
             _selectedZoneRotation = (_selectedZoneRotation + 1) % zones.Count;
         return zones[_selectedZoneRotation];
-    }
-
-    internal void OpenZoneSelector() {
-        var selector = new TerritorySelector(SelectedSwapZones, (_, selected) => {
-            SelectedSwapZones.Clear();
-            foreach (var zoneId in selected)
-                SelectedSwapZones.Add(zoneId);
-        }, "FTK Zones");
-
-        var allowedIds = TerritoryType.Where(row => row.IsInUse && row.TerritoryIntendedUse.Value.StructsEnum is TerritoryIntendedUse.Overworld && !row.IsPvpZone).Select(row => row.RowId).ToHashSet();
-        selector.HiddenTerritories = [.. TerritoryType.Select(row => row.RowId).Where(id => !allowedIds.Contains(id))];
-
-        selector.HiddenCategories = [TerritorySelector.Category.All];
-        selector.SelectedCategory = TerritorySelector.Category.World;
     }
 
     public void ToggleRunning() {
