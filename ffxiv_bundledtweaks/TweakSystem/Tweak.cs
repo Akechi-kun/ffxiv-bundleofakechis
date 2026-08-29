@@ -161,8 +161,10 @@ public abstract partial class Tweak : ITweak {
                 RemoveOwnedWindow();
             }
 
-            foreach (var hook in EnumerateHooks())
+            foreach (var hook in EnumerateHooks()) {
+                DisableHook(hook);
                 DisposeHook(hook);
+            }
 
             Automation?.Dispose();
         }
@@ -195,7 +197,7 @@ public abstract partial class Tweak : ITweak {
 
     private static void EnableHook(object hook) => InvokeHook(hook, nameof(Hook<>.Enable));
     private static void DisableHook(object hook) => InvokeHook(hook, nameof(Hook<>.Disable));
-    private static void DisposeHook(object hook) => InvokeHook(hook, nameof(IDisposable.Dispose));
+    private static void DisposeHook(object hook) => InvokeHook(hook, nameof(Hook<>.Dispose));
 
     private static void InvokeHook(object hook, string methodName)
         => hook.GetType().GetMethod(methodName, BindingFlags.Instance | BindingFlags.Public)!.Invoke(hook, null);
