@@ -3,7 +3,7 @@ namespace ComplexTweaks.TweakSystem;
 public abstract class ARTweak : Tweak {
     public ARTweak() : base() => AutoRetainer = new(Name);
 
-    public AutoRetainerApi AutoRetainer { get; set; }
+    public AutoRetainerIPC AutoRetainer { get; set; }
 
     public abstract void OnCharacterPostProcessStep();
     public abstract void OnCharacterReadyToPostProcess();

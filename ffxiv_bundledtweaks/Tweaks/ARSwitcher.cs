@@ -1,4 +1,3 @@
-using AutoRetainerAPI.Configuration;
 using Dalamud.Game.Gui.Dtr;
 using Dalamud.Game.Text;
 using Dalamud.Interface.ImGuiNotification;
@@ -45,8 +44,8 @@ public class ARSwitcher : Tweak {
         try {
             var currentWorld = IPlayerState.Get().CurrentWorld.Value.Name.ToString();
             var homeWorld = IPlayerState.Get().HomeWorld.Value.Name.ToString();
-            var characterIds = AutoRetainerApiService.Get().Api.GetRegisteredCharacters() ?? [];
-            var characterIdsOnHomeWorld = characterIds.Where(x => AutoRetainerApiService.Get().Api.GetOfflineCharacterData(x)?.World == homeWorld).ToList();
+            var characterIds = AutoRetainerIPC.Get().GetRegisteredCharacters();
+            var characterIdsOnHomeWorld = characterIds.Where(x => AutoRetainerIPC.Get().GetOfflineCharacterData(x)?.World == homeWorld).ToList();
 
             var seIconChar = SeIconChar.Instance1 + characterIdsOnHomeWorld.IndexOf(IPlayerState.Get().ContentId);
             if (currentWorld == homeWorld) {
@@ -80,7 +79,7 @@ public class ARSwitcher : Tweak {
         try {
             Verbose($"Switching characters ({direction})");
 
-            var characterIds = AutoRetainerApiService.Get().Api.GetRegisteredCharacters();
+            var characterIds = AutoRetainerIPC.Get().GetRegisteredCharacters();
             var index = characterIds.IndexOf(IPlayerState.Get().ContentId);
             if (index < 0) {
                 if (showError)
@@ -88,10 +87,10 @@ public class ARSwitcher : Tweak {
                 return null;
             }
 
-            OfflineCharacterData? target;
+            AutoRetainerIPC.OfflineCharacterData? target;
             do {
                 index = (index + direction + characterIds.Count) % characterIds.Count;
-                target = AutoRetainerApiService.Get().Api.GetOfflineCharacterData(characterIds[index]);
+                target = AutoRetainerIPC.Get().GetOfflineCharacterData(characterIds[index]);
                 if (target?.CID == IPlayerState.Get().ContentId) {
                     if (showError)
                         ModuleMessage("No character to switch to found.");
@@ -128,8 +127,9 @@ public class ARSwitcher : Tweak {
             if (args.Length < 2 || !int.TryParse(args[1], CultureInfo.InvariantCulture, out var index))
                 index = 1;
 
-            var targets = AutoRetainerApiService.Get().Api.GetRegisteredCharacters()
-                .Select(characterId => AutoRetainerApiService.Get().Api.GetOfflineCharacterData(characterId))
+            var targets = AutoRetainerIPC.Get().GetRegisteredCharacters()
+                .Select(characterId => AutoRetainerIPC.Get().GetOfflineCharacterData(characterId))
+                .OfType<AutoRetainerIPC.OfflineCharacterData>()
                 .Where(x => !x.ExcludeRetainer || !x.ExcludeWorkshop)
                 .Select(x => new { x.Name, x.World })
                 .ToList();

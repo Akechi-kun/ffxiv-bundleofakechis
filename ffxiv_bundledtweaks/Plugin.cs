@@ -11,7 +11,6 @@ public sealed class Plugin(IDalamudPluginInterface dalamud) : IAsyncDalamudPlugi
 #if LOCAL_CS
         dalamud.InitCustomClientStructs();
 #endif
-        ECommons.ECommonsMain.Init(dalamud, this);
         CLibMain.Init(dalamud, this, CLibModule.Automation);
 
         ICommandManager.Get().AddHandler("/cbt", new(OnCommand) { HelpMessage = $"Opens the {dalamud.Manifest.Name} menu" });

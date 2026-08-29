@@ -1,4 +1,3 @@
-global using AutoRetainerAPI;
 global using clib.Extensions;
 global using ComplexTweaks.Attributes;
 global using ComplexTweaks.Attributes.Config;
