@@ -1,6 +1,5 @@
-﻿using Dalamud.Bindings.ImGui;
+using Dalamud.Bindings.ImGui;
 using Dalamud.Interface.Utility.Raii;
-using ECommons.ImGuiMethods;
 using FFXIVClientStructs.FFXIV.Client.Game;
 
 namespace ComplexTweaks.UI.Debug.Tabs;
@@ -49,7 +48,7 @@ internal unsafe class ExecuteCommandTab : DebugTab {
         ImGui.TableSetColumnIndex(1);
 
         ImGui.SetNextItemWidth(250f);
-        ImGuiEx.EnumCombo("ExecuteCommandEnum", ref _flag);
+        ImGui.EnumCombo("ExecuteCommandEnum", ref _flag);
         ImGui.SameLine();
 
         if (!_useEcId)
@@ -102,7 +101,7 @@ internal unsafe class ExecuteCommandTab : DebugTab {
         ImGui.TableSetColumnIndex(1);
 
         ImGui.SetNextItemWidth(250f);
-        ImGuiEx.EnumCombo("ExecuteLocationCommandEnum", ref _flag2);
+        ImGui.EnumCombo("ExecuteLocationCommandEnum", ref _flag2);
         ImGui.SameLine();
 
         if (!_useElcId)
