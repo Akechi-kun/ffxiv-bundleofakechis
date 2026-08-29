@@ -1,5 +1,4 @@
 using clib.Ui;
-using ComplexTweaks.Utilities;
 using Dalamud.Interface;
 
 namespace ComplexTweaks.Attributes.Config;

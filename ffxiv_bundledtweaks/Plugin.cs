@@ -1,5 +1,4 @@
 using clib;
-using ComplexTweaks.Configuration;
 using Dalamud.Plugin;
 using FFXIVClientStructs.FFXIV.Client.Game.Event;
 using System.Threading;

@@ -1,7 +1,3 @@
-using clib.Ui;
-using Lumina.Excel.Sheets;
-using TerritoryIntendedUse = FFXIVClientStructs.FFXIV.Client.Enums.TerritoryIntendedUse;
-
 namespace ComplexTweaks.Tweaks;
 
 public enum FateSortCriteria {

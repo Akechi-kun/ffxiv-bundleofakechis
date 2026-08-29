@@ -16,7 +16,6 @@ global using System;
 global using System.Collections.Generic;
 global using System.Linq;
 global using System.Numerics;
-global using static ComplexTweaks.Plugin;
 global using static ComplexTweaks.Utilities.Enums;
 global using DGameObject = Dalamud.Game.ClientState.Objects.Types.IGameObject;
 global using Sheets = Lumina.Excel.Sheets;
