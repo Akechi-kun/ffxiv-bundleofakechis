@@ -1,4 +1,6 @@
+using clib.Configuration;
 using ComplexTweaks.Configuration;
+using Dalamud.Configuration;
 using System.IO;
 using YamlDotNet.Serialization;
 using YamlDotNet.Serialization.TypeInspectors;
@@ -14,8 +16,26 @@ public sealed class ConfigService : IPluginService {
     private string ConfigPath => Path.Combine(Svc.Interface.GetPluginConfigDirectory(), ConfigFileName);
 
     public ConfigService() {
-        Config = Load();
-        RunMigrations();
+        var (config, needsSave) = Load();
+        Config = config;
+        if (needsSave)
+            Save();
+    }
+
+    public T GetTweakConfig<T>(string tweakName) where T : new() {
+        if (Config.Tweaks.TryGetValue(tweakName, out var existing)) {
+            if (existing is T typed)
+                return typed;
+
+            if (TryConvert(existing, out T converted)) {
+                Config.Tweaks[tweakName] = converted!;
+                return converted;
+            }
+        }
+
+        var created = new T();
+        Config.Tweaks[tweakName] = created;
+        return created;
     }
 
     public void Save() {
@@ -28,40 +48,56 @@ public sealed class ConfigService : IPluginService {
         }
     }
 
-    private Config Load() {
+    private (Config config, bool needsSave) Load() {
         try {
             if (!File.Exists(ConfigPath))
-                return new Config();
+                return (new Config(), false);
 
             var yaml = File.ReadAllText(ConfigPath);
-            return Deserializer.Deserialize<Config>(yaml) ?? new Config();
+            var version = VersionProbe.Deserialize<ConfigVersionProbe>(yaml)?.Version ?? 0;
+
+            IPluginConfiguration initial = version < Config.CURRENT_CONFIG_VERSION ? LegacyDeserializer.Deserialize<LegacyConfig>(yaml) ?? new LegacyConfig() : Deserializer.Deserialize<Config>(yaml) ?? new Config();
+            var migrated = ConfigHelper.RunMigrationChain(initial, typeof(ConfigService).Assembly, out var final);
+            return ((Config)final, migrated);
         }
         catch (Exception ex) {
             IPluginLog.Get().Error(ex, $"[{nameof(ConfigService)}] Failed to load config, using defaults");
-            return new Config();
+            return (new Config(), false);
         }
     }
 
-    private void RunMigrations() {
-        IMigration[] migrations = [new V3(), new V4()];
-        var migrated = false;
-        foreach (var migration in migrations) {
-            if (Config.Version >= migration.Version)
-                continue;
-
-            IPluginLog.Get().Info($"Migrating from config version {Config.Version} to {migration.Version}");
-            var c = Config;
-            migration.Migrate(ref c);
-            Config = c;
-            Config.Version = migration.Version;
-            migrated = true;
+    private bool TryConvert<T>(object raw, out T result) where T : new() {
+        result = default!;
+        if (raw is T typed) {
+            result = typed;
+            return true;
         }
 
-        if (migrated)
-            Save();
+        try {
+            var nestedYaml = Serializer.Serialize(raw);
+            result = Deserializer.Deserialize<T>(nestedYaml) ?? new T();
+            return true;
+        }
+        catch (Exception ex) {
+            IPluginLog.Get().Warning(ex, $"[{nameof(ConfigService)}] Failed to convert tweak config to {typeof(T).Name}, using defaults");
+            result = new T();
+            return false;
+        }
     }
 
-    // because I need to use fields and not just props
-    private static readonly ISerializer Serializer = new SerializerBuilder().WithTypeInspector(inner => new CompositeTypeInspector(new ReadableFieldsTypeInspector(new StaticTypeResolver()), inner)).Build();
-    private static readonly IDeserializer Deserializer = new DeserializerBuilder().IgnoreUnmatchedProperties().Build();
+    private static readonly ISerializer Serializer = new SerializerBuilder()
+        .WithTypeInspector(inner => new CompositeTypeInspector(new ReadableFieldsTypeInspector(new StaticTypeResolver()), inner))
+        .Build();
+
+    private static readonly IDeserializer Deserializer = new DeserializerBuilder()
+        .IgnoreUnmatchedProperties()
+        .Build();
+
+    private static readonly IDeserializer LegacyDeserializer = new DeserializerBuilder()
+        .IgnoreUnmatchedProperties()
+        .Build();
+
+    private static readonly IDeserializer VersionProbe = new DeserializerBuilder()
+        .IgnoreUnmatchedProperties()
+        .Build();
 }

@@ -17,9 +17,9 @@ public class FateSortOrder {
 }
 
 public class FateToolKitConfig {
-    [IntConfig(DefaultValue = 900)] public int MaxDuration = 900;
-    [IntConfig(DefaultValue = 120)] public int MinTimeRemaining = 120;
-    [IntConfig(DefaultValue = 90)] public int MaxProgress = 90;
+    [IntConfig] public int MaxDuration = 900;
+    [IntConfig] public int MinTimeRemaining = 120;
+    [IntConfig] public int MaxProgress = 90;
     [BoolConfig] public bool SwapZones = true;
 
     public string DisplayNameFormat = "[{Level}] {Name}";

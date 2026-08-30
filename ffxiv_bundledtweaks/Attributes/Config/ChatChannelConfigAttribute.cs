@@ -74,9 +74,6 @@ public class ChatChannelConfigAttribute : BaseConfigAttribute {
         var columns = Math.Max(1, (int)(availableWidth / minColumnWidth));
         var rows = (int)Math.Ceiling(chatTypes.Count / (float)columns);
 
-        // Calculate actual column width to fill available space
-        var columnWidth = availableWidth / columns;
-
         if (ImGui.BeginTable("ChatChannels", columns, ImGuiTableFlags.NoBordersInBody)) {
             for (var row = 0; row < rows; row++) {
                 ImGui.TableNextRow();

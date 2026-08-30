@@ -7,7 +7,6 @@ namespace ComplexTweaks.Attributes.Config;
 
 [AttributeUsage(AttributeTargets.Field)]
 public class StringConfigAttribute : BaseConfigAttribute {
-    public string DefaultValue = string.Empty;
     public string IsRegex = string.Empty;
 
     public override void Draw(Tweak tweak, object config, FieldInfo fieldInfo) {
@@ -21,10 +20,7 @@ public class StringConfigAttribute : BaseConfigAttribute {
             OnChangeInternal(tweak, fieldInfo);
         }
 
-        if (DrawResetButton(DefaultValue)) {
-            fieldInfo.SetValue(config, DefaultValue);
-            OnChangeInternal(tweak, fieldInfo);
-        }
+        TryReset(tweak, config, fieldInfo);
 
         // validate regex if IsRegex is set
         if (!string.IsNullOrEmpty(IsRegex) && !string.IsNullOrEmpty(value)) {

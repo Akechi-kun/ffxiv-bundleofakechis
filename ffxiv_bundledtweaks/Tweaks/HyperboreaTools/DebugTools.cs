@@ -14,7 +14,7 @@ public class DebugToolsConfiguration {
     [BoolConfig] public bool EnableTPClick = false;
     [BoolConfig] public bool EnableNoClip = false;
 
-    [FloatConfig(DependsOn = nameof(EnableNoClip), DefaultValue = 0.05f)]
+    [FloatConfig(DependsOn = nameof(EnableNoClip))]
     public float NoClipSpeed = 0.05f;
 
     [BoolConfig] public bool EnableMoveSpeed = false;

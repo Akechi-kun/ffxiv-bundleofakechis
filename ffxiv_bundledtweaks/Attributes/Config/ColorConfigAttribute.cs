@@ -6,7 +6,6 @@ namespace ComplexTweaks.Attributes.Config;
 
 [AttributeUsage(AttributeTargets.Field)]
 public class ColorConfigAttribute : BaseConfigAttribute {
-    public Vector4 DefaultValue = Vector4.One;
     public ImGuiColorEditFlags Flags = ImGuiColorEditFlags.NoAlpha;
 
     public override void Draw(Tweak tweak, object config, FieldInfo fieldInfo) {
@@ -22,10 +21,7 @@ public class ColorConfigAttribute : BaseConfigAttribute {
             OnChangeInternal(tweak, fieldInfo);
         }
 
-        if (DrawResetButton(DefaultValue.ToString())) {
-            fieldInfo.SetValue(config, DefaultValue);
-            OnChangeInternal(tweak, fieldInfo);
-        }
+        TryReset(tweak, config, fieldInfo);
 
         DrawConfigInfos(fieldInfo);
 

@@ -1,12 +1,10 @@
 using Dalamud.Bindings.ImGui;
-using System.Globalization;
 using System.Reflection;
 
 namespace ComplexTweaks.Attributes.Config;
 
 [AttributeUsage(AttributeTargets.Field)]
 public class IntConfigAttribute : BaseConfigAttribute {
-    public int DefaultValue = 0;
     public int Min = 0;
     public int Max = 100;
     public bool SameLine = false;
@@ -25,10 +23,7 @@ public class IntConfigAttribute : BaseConfigAttribute {
             OnChangeInternal(tweak, fieldInfo);
         }
 
-        if (DrawResetButton(string.Format(CultureInfo.InvariantCulture, "{0:0.00}", DefaultValue))) {
-            fieldInfo.SetValue(config, DefaultValue);
-            OnChangeInternal(tweak, fieldInfo);
-        }
+        TryReset(tweak, config, fieldInfo);
 
         if (!attr?.Description.IsEmpty ?? false)
             ImGui.TextColoredWrapped(Colors.Grey, attr!.Description);

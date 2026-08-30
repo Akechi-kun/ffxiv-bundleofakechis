@@ -1,5 +1,6 @@
 using Dalamud.Interface;
 using Dalamud.Bindings.ImGui;
+using System.Globalization;
 using System.Reflection;
 
 namespace ComplexTweaks.Attributes.Config;
@@ -28,6 +29,19 @@ public abstract class BaseConfigAttribute : Attribute {
         }
     }
 
+    protected static bool TryReset(Tweak tweak, object config, FieldInfo fieldInfo) {
+        var defaultValue = fieldInfo.GetValue(Activator.CreateInstance(config.GetType())!);
+        if (defaultValue is null)
+            return false;
+
+        if (!DrawResetButton(FormatDefault(defaultValue)))
+            return false;
+
+        fieldInfo.SetValue(config, defaultValue);
+        tweak.CachedType.GetMethod(nameof(Tweak.OnConfigChangeInternal), BindingFlags.Instance | BindingFlags.NonPublic)?.Invoke(tweak, [fieldInfo.Name]);
+        return true;
+    }
+
     protected static bool DrawResetButton(string defaultValueString) {
         if (string.IsNullOrEmpty(defaultValueString))
             return false;
@@ -35,6 +49,13 @@ public abstract class BaseConfigAttribute : Attribute {
         ImGui.SameLine();
         return ImGui.IconButton(FontAwesomeIcon.Undo, "##Reset");
     }
+
+    protected static string FormatDefault(object value) => value switch {
+        float f => string.Format(CultureInfo.InvariantCulture, "{0:0.00}", f),
+        int i => string.Format(CultureInfo.InvariantCulture, "{0:0.00}", i),
+        string s => s,
+        _ => value.ToString() ?? string.Empty,
+    };
 
     protected static void DrawMissingIpcs(BaseIPC[] missingIpcs) {
         if (missingIpcs.Length == 0)

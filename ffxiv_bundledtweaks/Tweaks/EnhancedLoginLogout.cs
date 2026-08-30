@@ -22,9 +22,7 @@ public partial class EnhancedLoginLogout : Tweak<EnhancedLoginLogoutConfig> {
         //public List<string> LogoutCommands = [];
     }
 
-    public override void DrawConfig() {
-        base.DrawConfig();
-
+    protected override void DrawCustomConfig() {
         ImGui.DrawSection("Login Commands");
 
         if (AutoRetainerIPC.Get().IsLoaded)

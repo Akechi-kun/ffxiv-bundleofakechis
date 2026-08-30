@@ -8,7 +8,7 @@ namespace ComplexTweaks.Tweaks;
 public class AchievementTrackerConfiguration {
     public List<AchievementTracker.Achv> Achievements = [];
     [ColorConfig] public Vector4 BarColour = Vector4.One;
-    [IntConfig(DefaultValue = 60, SameLine = true)] public int UpdateFrequency = 60;
+    [IntConfig(SameLine = true)] public int UpdateFrequency = 60;
     [BoolConfig] public bool AutoRemoveCompleted = false;
 }
 

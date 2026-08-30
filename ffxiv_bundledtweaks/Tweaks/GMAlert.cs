@@ -13,9 +13,9 @@ public class GMAlertConfiguration {
     [BoolConfig] public bool Toast = false;
     [BoolConfig] public bool ChatMessage = false;
     [BoolConfig] public bool Sound = false;
-    [IntConfig(DependsOn = "Sound", DefaultValue = 3)] public int BeepCount = 3;
-    [IntConfig(DependsOn = "Sound", DefaultValue = 250)] public int BeepDuration = 250;
-    [IntConfig(DependsOn = "Sound", DefaultValue = 900)] public int BeepFrequency = 900;
+    [IntConfig(DependsOn = nameof(Sound))] public int BeepCount = 3;
+    [IntConfig(DependsOn = nameof(Sound))] public int BeepDuration = 250;
+    [IntConfig(DependsOn = nameof(Sound))] public int BeepFrequency = 900;
     [BoolConfig] public bool KillGame = false;
     public HashSet<string> Commands = [];
 }

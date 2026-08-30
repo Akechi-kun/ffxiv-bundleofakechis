@@ -102,9 +102,9 @@ public abstract partial class Tweak : ITweak {
             Information("Enabling tweak");
             EnsureWindow();
             EnableCommands();
+            OnEnable();
             foreach (var hook in EnumerateHooks())
                 EnableHook(hook);
-            OnEnable();
             Status = TweakStatus.Enabled;
         }
         catch (SignatureException ex) {
@@ -256,30 +256,38 @@ public abstract partial class Tweak // Config / Commands
             .Where(mi => mi.GetCustomAttribute<CommandHandlerAttribute>() != null);
 
     public virtual void DrawConfig() {
-        var config = GetConfigObject();
-        if (CachedConfigType != null && config != null) {
-            var configFields = CachedConfigType.GetFields()
-                .Select(fieldInfo => (FieldInfo: fieldInfo, Attribute: fieldInfo.GetCustomAttribute<BaseConfigAttribute>()))
-                .Where(tuple => tuple.Attribute != null)
-                .Cast<(FieldInfo, BaseConfigAttribute)>();
-
-            if (configFields.Any()) {
-                ImGui.DrawSection("Configuration");
-
-                foreach (var (field, attr) in configFields) {
-                    var hasDependency = !string.IsNullOrEmpty(attr.DependsOn);
-                    var isDisabled = hasDependency && (bool?)CachedConfigType.GetField(attr.DependsOn)?.GetValue(config) == false;
-
-                    using var id = ImRaii.PushId(field.Name);
-                    using var indent = ImGui.ConfigIndent(hasDependency);
-                    using var disabled = ImRaii.Disabled(isDisabled);
-
-                    attr.Draw(this, config, field);
-                }
-            }
-        }
-
+        DrawGeneratedConfig();
+        DrawCustomConfig();
         DrawCommands();
+    }
+
+    protected virtual void DrawCustomConfig() { }
+
+    protected void DrawGeneratedConfig() {
+        var config = GetConfigObject();
+        if (CachedConfigType is null || config is null)
+            return;
+
+        var configFields = CachedConfigType.GetFields()
+            .Select(fieldInfo => (FieldInfo: fieldInfo, Attribute: fieldInfo.GetCustomAttribute<BaseConfigAttribute>()))
+            .Where(tuple => tuple.Attribute != null)
+            .Cast<(FieldInfo, BaseConfigAttribute)>();
+
+        if (!configFields.Any())
+            return;
+
+        ImGui.DrawSection("Configuration");
+
+        foreach (var (field, attr) in configFields) {
+            var hasDependency = !string.IsNullOrEmpty(attr.DependsOn);
+            var isDisabled = hasDependency && (bool?)CachedConfigType.GetField(attr.DependsOn)?.GetValue(config) == false;
+
+            using var id = ImRaii.PushId(field.Name);
+            using var indent = ImGui.ConfigIndent(hasDependency);
+            using var disabled = ImRaii.Disabled(isDisabled);
+
+            attr.Draw(this, config, field);
+        }
     }
 
     public virtual void OnConfigChange(string fieldName) { }

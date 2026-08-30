@@ -11,7 +11,7 @@ using System.Diagnostics.CodeAnalysis;
 namespace ComplexTweaks.Tweaks;
 
 public class AutoFollowConfiguration {
-    [IntConfig(DefaultValue = 3)] public int DistanceToKeep = 3;
+    [IntConfig] public int DistanceToKeep = 3;
     [IntConfig] public int DisableIfFurtherThan;
     [BoolConfig] public bool OnlyInDuty;
     [BoolConfig] public bool ExcludeCombat;
