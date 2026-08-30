@@ -1,6 +1,6 @@
 namespace ComplexTweaks.TweakSystem;
 
-public abstract class ARTweak<T> : Tweak<T> {
+public abstract class ARTweak<T> : Tweak<T> where T : new() {
     public ARTweak() : base() => AutoRetainer = new(Name);
 
     public AutoRetainerIPC AutoRetainer { get; set; }
