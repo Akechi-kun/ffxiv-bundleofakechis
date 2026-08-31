@@ -59,13 +59,21 @@ public sealed class AutoRetainerIPC : BaseIPC, IPluginService, IDisposable {
         => _getOfflineCharacterData.HasFunction ? _getOfflineCharacterData.InvokeFunc(cid) : null;
 
     public void RequestCharacterPostprocess() {
-        if (_requestCharacterPostProcess?.HasFunction == true)
+        if (_requestCharacterPostProcess?.HasFunction == true) {
+            IPluginLog.Get().Debug($"[{_pluginName}] Requesting CharacterPostProcess");
             _requestCharacterPostProcess.InvokeAction(_pluginName!);
+        }
+        else
+            IPluginLog.Get().Warning($"[{_pluginName}] Unable to request CharacterPostProcess");
     }
 
     public void FinishCharacterPostProcess() {
-        if (_finishCharacterPostprocessRequest?.HasFunction == true)
+        if (_finishCharacterPostprocessRequest?.HasFunction == true) {
+            IPluginLog.Get().Debug($"[{_pluginName}] Finishing CharacterPostProcess");
             _finishCharacterPostprocessRequest.InvokeAction();
+        }
+        else
+            IPluginLog.Get().Warning($"[{_pluginName}] Unable to finish CharacterPostProcess");
     }
 
     public void Dispose() {
