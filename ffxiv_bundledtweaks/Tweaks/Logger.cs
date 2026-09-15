@@ -82,7 +82,8 @@ public unsafe partial class DebugLogging : Tweak {
 
     [AddressHook<EventFramework>(nameof(EventFramework.MemberFunctionPointers.ProcessInitializeScene))]
     internal void ProcessInitializeScene(EventFramework* thisPtr, GameObject* gameObject, EventId eventId, short scene, ulong sceneFlags, uint* sceneData, byte sceneDataCount) {
-        MethodBase.GetCurrentMethod()?.Log([(nint)thisPtr, (nint)gameObject, eventId, scene, sceneFlags, (nint)sceneData, sceneDataCount]);
+        if ((sceneFlags & (ulong)SceneFlag.ConditionCutscene) != 0)
+            Debug($"[{nameof(ProcessInitializeScene)}] cs event - eventId=[#{eventId.Id}/{eventId.EntryId} - {eventId.ContentId}], scene={scene}, sceneFlags={sceneFlags}, sceneDataCount={sceneDataCount}");
         ProcessInitializeSceneHook.Original(thisPtr, gameObject, eventId, scene, sceneFlags, sceneData, sceneDataCount);
     }
 

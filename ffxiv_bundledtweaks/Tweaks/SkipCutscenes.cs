@@ -1,4 +1,8 @@
+using FFXIVClientStructs.FFXIV.Client.Game.Event;
+using FFXIVClientStructs.FFXIV.Client.Game.Object;
+using FFXIVClientStructs.FFXIV.Client.Network;
 using FFXIVClientStructs.FFXIV.Common.Lua;
+using Lumina.Excel.Sheets;
 
 namespace ComplexTweaks.Tweaks;
 
@@ -29,4 +33,14 @@ public unsafe partial class SkipCutscenes : Tweak {
 
     [SigHook("48 8B 49 08 48 85 C9 74 0C 48 81 C1 ?? ?? ?? ?? E9 ?? ?? ?? ?? C3 CC CC CC CC CC CC CC CC CC CC 48 8B 41 08")]
     private long PlayFeedBuddyScene(nint a1) => 1;
+
+    [AddressHook<EventFramework>(nameof(EventFramework.MemberFunctionPointers.ProcessInitializeScene))]
+    private void ProcessInitializeScene(EventFramework* thisPtr, GameObject* gameObject, EventId eventId, short scene, ulong sceneFlags, uint* sceneData, byte sceneDataCount) {
+        var customDeliveryEntryIds = CustomTalk.Where(r => r.Name.ToString().StartsWith("CtsSfsCharacter")).Select(r => (ushort)(r.RowId & 0xFFFF));
+        if (customDeliveryEntryIds.Any(i => i == eventId.EntryId) && (sceneFlags & (ulong)SceneFlag.ConditionCutscene) != 0) {
+            PacketDispatcher.SendEventCompletePacket(eventId, scene, 0x40, null, 0, null);
+            return;
+        }
+        ProcessInitializeSceneHook.Original(thisPtr, gameObject, eventId, scene, sceneFlags, sceneData, sceneDataCount);
+    }
 }
