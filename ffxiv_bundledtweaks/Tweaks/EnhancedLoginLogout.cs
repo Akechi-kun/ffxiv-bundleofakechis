@@ -61,9 +61,8 @@ public partial class EnhancedLoginLogout : Tweak<EnhancedLoginLogoutConfig> {
         }
     }
 
-    // TODO: replace with CS
-    [SigHook("E8 ?? ?? ?? ?? 66 0F 1F 44 00 ?? 48 C7 87 ?? ?? ?? ?? ?? ?? ?? ??")]
-    internal unsafe void OnWarpComplete(WarpInfo* warp, nint a2, int a3) {
+    [AddressHook<WarpInfo>(nameof(WarpInfo.MemberFunctionPointers.CompleteWarp))]
+    internal unsafe void OnWarpComplete(WarpInfo* warp, int a2, int a3) {
         OnWarpCompleteHook.Original(warp, a2, a3);
         if (warp->WarpType == WarpType.Login) {
             RunCommands();
